@@ -1,0 +1,24 @@
+#CRC Codes for initially generated config files -- do not modify!
+adafruit_st7789_spi_config.h=-1473395859
+app_assert_config.h=1479688922
+app_log_config.h=-1893283838
+dmadrv_config.h=1207334949
+ffconf.h=1732097117
+mikroe_microsd_config.h=-1959436349
+sl_board_control_config.h=185964020
+sl_cli_config.h=2102969254
+sl_cli_config_inst.h=1907065601
+sl_clock_manager_oscillator_config.h=-1503885721
+sl_clock_manager_tree_config.h=-1856360918
+sl_core_config.h=-119586893
+sl_debug_swo_config.h=712797333
+sl_device_init_dcdc_config.h=-1580606003
+sl_device_init_emu_config.h=622680131
+sl_iostream_eusart_vcom_config.h=89939585
+sl_memory_manager_region_config.h=-132681117
+sl_simple_button_btn0_config.h=-82527053
+sl_simple_button_config.h=-1109451986
+sl_simple_led_led0_config.h=-62770971
+sl_sleeptimer_config.h=1360009810
+sl_spidrv_mikroe_config.h=-802630943
+spidrv_config.h=112055036
