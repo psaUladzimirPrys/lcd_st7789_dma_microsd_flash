@@ -334,6 +334,14 @@ sl_status_t adafruit_st7789_flush_area_rgb565(int16_t x1, int16_t y1,
                                               void (*callback)(void *arg),
                                               void *callback_arg);
 
+
+sl_status_t adafruit_st7789_draw_rgb_bitmap_from_flash(int16_t x,
+                                            int16_t y,
+                                            int16_t w,
+                                            int16_t h,
+                                            uint32_t flash_addr);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -8,6 +8,9 @@
 #ifndef FILE_STORAGE_H_
 #define FILE_STORAGE_H_
 
+// -----------------------------------------------------------------------------
+//                       Includes
+// -----------------------------------------------------------------------------
 #include "ff.h"
 #include "diskio.h"
 #include "sl_sdc_sd_card.h"

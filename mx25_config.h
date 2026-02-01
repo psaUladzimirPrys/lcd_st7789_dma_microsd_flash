@@ -1,8 +1,13 @@
 /*
  * mx25_config.h
  *
- *  Created on: 20 Jan. 2026.
- *      Author: priss
+ * Hardware-level driver for Macronix MX25xx SPI NOR Flash
+ *
+ * Supported devices:
+ *   MX25Lxxxx / MX25Rxxxx family
+ *
+ * Transport:
+ *   SPI (via Silicon Labs SPIDRV or USART SPI)
  */
 
 #ifndef MX25_CONFIG_H_
@@ -131,10 +136,10 @@ extern SPIDRV_HandleData_t mx25_spi_handle_data;
  * ========================================================================== */
 
 /* Maximum supported SPI clock for MX25L/MX25R */
-#define MX25_SPI_MAX_FREQ_HZ    50000000UL
+#define MX25_SPI_MAX_FREQ       38400000UL
 
 /* Recommended default */
-#define MX25_SPI_DEFAULT_FREQ   38400000 ///20000000UL
+#define MX25_SPI_DEFAULT_FREQ   MX25_SPI_MAX_FREQ    //19200000UL
 
 /* ============================================================================
  * Driver behavior configuration
@@ -159,8 +164,9 @@ extern SPIDRV_HandleData_t mx25_spi_handle_data;
  * #define MX25_DELAY_HOOK()  __NOP()
  */ 
 #ifndef MX25_DELAY_HOOK 
-//  #define MX25_DELAY_HOOK()      do {} while (0)
-#define MX25_DELAY_HOOK()  sl_sleeptimer_delay_millisecond(1)
+//  #define MX25_DELAY_HOOK()  do {} while (0)
+#define MX25_DELAY_HOOK()  sl_sleeptimer_delay_millisecond(10)
+//#define MX25_DELAY_HOOK()
 #endif
 
 #ifdef __cplusplus

@@ -43,6 +43,8 @@
 #include "sl_sleeptimer.h"
 #include "sl_component_catalog.h"
 #include "adafruit_st7789.h"
+#include "flash_storage.h"
+
 
 // -----------------------------------------------------------------------------
 //                       Macros
@@ -737,3 +739,93 @@ sl_status_t adafruit_st7789_flush_area_rgb565(int16_t x1, int16_t y1,
   callback(callback_arg);
   return status;
 }
+
+
+/**************************************************************************//**
+ *Read from SPI Flash at the specified flash_addr and Draw a 16-bit image (565 RGB) at the specified (x,y) position.
+ *****************************************************************************/
+sl_status_t adafruit_st7789_draw_rgb_bitmap_from_flash(int16_t x,
+                                            int16_t y,
+                                            int16_t w,
+                                            int16_t h,
+                                            uint32_t flash_address)
+{
+
+  int16_t x2;
+  int16_t y2;
+  int16_t bx1 = 0;
+  int16_t by1 = 0;
+  int16_t save_w = w;
+  sl_status_t status = SL_STATUS_OK;
+  uint32_t i, n, size, pixel_cnt;
+
+
+  if ( w * sizeof(int16_t) > DMADRV_MAX_XFER_COUNT) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
+
+
+  if ((x >= _width)
+      || (y >= _height)
+      || ((x2 = (x + w - 1)) < 0)
+      || ((y2 = (y + h - 1)) < 0)) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
+
+  if (x < 0) {
+    w += x;
+    bx1 = -x;
+    x = 0;
+  }
+  if (y < 0) {
+    h += y;
+    by1 = -y;
+    y = 0;
+  }
+  if (x2 >= _width) {
+    w = _width - x;
+  }
+  if (y2 >= _height) {
+    h = _height - y;
+  }
+
+  flash_address += (by1 * save_w + bx1) * 2;
+
+
+// mipi_dbi_device.api->select(&mipi_dbi_device);
+  adafruit_st7789_set_addr_window(x, y, w, h);
+//  mipi_dbi_device.api->deselect(&mipi_dbi_device);
+  
+  while ( (h--) && (status == SL_STATUS_OK)) {
+    
+    pixel_cnt = (uint32_t)w;
+    for (n = 0; n < pixel_cnt; n += MAX_XFER_PIXEL_COUNT) {
+
+      if (n + MAX_XFER_PIXEL_COUNT <= pixel_cnt) {
+        size = MAX_XFER_PIXEL_COUNT;
+      } else {
+        size = pixel_cnt - n;
+      }
+
+      flash_storage_read(flash_address, (uint8_t *)&dma_buffer[0], (size * 2));
+
+
+      for (i = 0; i < size; i++) {
+        dma_buffer[i] = ((uint16_t)(dma_buffer[i] & 0xff00) >> 8) | ((uint16_t)(dma_buffer[i] & 0xff) << 8);
+      }
+
+      // mipi_dbi_device.api->select(&mipi_dbi_device);
+      status = write_display(dma_buffer, size * 2, NULL);
+      // mipi_dbi_device.api->deselect(&mipi_dbi_device);
+
+      if (SL_STATUS_OK != status) {
+        break;
+      }
+      flash_address += (size * 2); 
+    }
+
+  }
+
+  return status;
+}
+

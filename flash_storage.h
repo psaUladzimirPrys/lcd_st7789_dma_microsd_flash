@@ -14,7 +14,8 @@
 #include <stdint.h>
 #include "sl_status.h"
 #include "em_gpio.h"
-#include "drv_digital_out.h"
+#include "mx25.h"
+#include "mx25_config.h"
 
 
 #ifdef __cplusplus

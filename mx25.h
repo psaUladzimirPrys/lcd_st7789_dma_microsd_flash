@@ -1,13 +1,6 @@
 /*
  * mx25.h
  *
- *  Created on: 20 янв. 2026 г.
- *      Author: priss
- */
-
-/*
- * mx25.h
- *
  * Application-level driver for Macronix MX25xx SPI NOR Flash
  *
  * Supported devices:
@@ -33,28 +26,30 @@
 #include "spidrv.h"
 #include "mx25_defs.h"
 
-/// Results of MX25 Flash driver
-typedef enum {
-  F_RES_OK = 0,           // 0: Successful.
-  F_RES_READ_ERROR,       // 1: Read Error.
-  F_RES_WRITE_ERROR,      // 2: Write Error.
-  F_RES_WPROTECT_ERROR,   // 3: Write Protected Error.
-  F_RES_NOTRDY,           // 4: Not Ready.
-  F_RES_PARAM_ERROR,      // 5: Invalid Parameter.
-  F_RES_TIMEOUT_ERROR,    // 6: Timeout Expired.
-  F_RES_TRANSMIT_ERROR,   // 7: Transmit data Error.
-  F_RES_INVALID_ADDRESS,  // 8: Invalid flash address.
-  F_RES_MISALIGNED_ADDRESS //9: Misaligned flash word address.
-} fresult_t;
-
-#define SPI_MASTER_CS_ENABLE   SPI_SLAVE_CHIP_SELECT_LOW
-#define SPI_MASTER_CS_DISABLE  SPI_SLAVE_CHIP_SELECT_HIGH
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+/// Results of MX25 Flash driver
+typedef enum {
+  F_RES_OK = 0,            // 0: Successful.
+  F_RES_READ_ERROR,        // 1: Read Error.
+  F_RES_WRITE_ERROR,       // 2: Write Error.
+  F_RES_WPROTECT_ERROR,    // 3: Write Protected Error.
+  F_RES_NOTRDY,            // 4: Not Ready.
+  F_RES_PARAM_ERROR,       // 5: Invalid Parameter.
+  F_RES_TIMEOUT_ERROR,     // 6: Timeout Expired.
+  F_RES_TRANSMIT_ERROR,    // 7: Transmit data Error.
+  F_RES_INVALID_ADDRESS,   // 8: Invalid flash address.
+  F_RES_MISALIGNED_ADDRESS, //9: Misaligned flash word address.
+  F_RES_WRITE_INHIBITED    //10: Write Inhibit Error.
+} fresult_t;
+
+#define SPI_MASTER_CS_ENABLE   SPI_SLAVE_CHIP_SELECT_LOW
+#define SPI_MASTER_CS_DISABLE  SPI_SLAVE_CHIP_SELECT_HIGH
 
 #define MX25_VERIFY_SUCCESS_OR_RETURN(x) \
   do {                                   \
@@ -140,7 +135,7 @@ sl_status_t mx25_read(spi_master_t *spi_handle, uint32_t addr, uint8_t *buf, uin
  * @return SL_STATUS_OK  - success
  * @return SL_STATUS_FLASH_PROGRAM_FAILED - invalid
  */
-sl_status_t mx25_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t *buf, uint32_t len);
+fresult_t mx25_page_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t *buf, uint32_t len);
 
 /* ============================================================================
  * Erase operations
@@ -153,7 +148,7 @@ sl_status_t mx25_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t *b
  *
  * @return SL_STATUS_OK  - success
  */
-sl_status_t mx25_erase_sector(spi_master_t *spi_handle, uint32_t addr);
+fresult_t mx25_erase_sector(spi_master_t *spi_handle, uint32_t addr);
 
 /**
  * @brief Erase 64KB block containing address.
@@ -162,7 +157,7 @@ sl_status_t mx25_erase_sector(spi_master_t *spi_handle, uint32_t addr);
  *
  * @return SL_STATUS_OK  - success
  */
-sl_status_t mx25_erase_block64(uint32_t addr);
+sl_status_t mx25_erase_block64(spi_master_t *spi_handle, uint32_t addr);
 
 /**
  * @brief Erase entire flash chip.
@@ -171,7 +166,7 @@ sl_status_t mx25_erase_block64(uint32_t addr);
  *
  * @return SL_STATUS_OK  - success
  */
-sl_status_t mx25_erase_chip(void);
+fresult_t mx25_erase_chip(spi_master_t *spi_handle);
 
 /* ============================================================================
  * Power management
@@ -182,7 +177,7 @@ sl_status_t mx25_erase_chip(void);
  *
  * @return SL_STATUS_OK - success
  */
-sl_status_t mx25_power_down(void);
+sl_status_t mx25_power_down(spi_master_t *spi_handle);
 
 /**
  * @brief Wake flash from deep power-down mode.

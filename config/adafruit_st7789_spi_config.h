@@ -97,7 +97,7 @@ extern "C"
 #define ADAFRUIT_ST7789_CLK_PIN                  2
 #endif
 
-// USART0 CS on PB00
+// USART0 CS on PC06
 #ifndef ADAFRUIT_ST7789_CS_PORT                 
 #define ADAFRUIT_ST7789_CS_PORT                  SL_GPIO_PORT_C
 #endif

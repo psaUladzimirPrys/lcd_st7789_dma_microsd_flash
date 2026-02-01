@@ -11,12 +11,10 @@
 
 #include <string.h>
 #include "app_log.h"
-#include "mx25.h"
-#include "mx25_config.h"
 #include "drv_digital_out.h"
 #include "flash_storage.h"
-
 #include "sl_spidrv_mikroe_config.h"
+
 /* ============================================================================
  * Internal context
  * ========================================================================== */
@@ -87,36 +85,36 @@ SPIDRV_Init_t flash_spidrv_init_mikroe = {
  * ========================================================================== */
 static sl_status_t validate_range(uint32_t addr, uint32_t len)
 {
+  uint32_t end_addr;
+
   if (!sd_flash.initialized) {
     return SL_STATUS_NOT_INITIALIZED;
   }
-
-  if (addr >= sd_flash.size_bytes) {
+  
+  if (len == 0) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  if (addr > (sd_flash.size_bytes - len)) {
+ /* addr must be inside flash */
+  if ( addr >= sd_flash.size_bytes ) {
+    return SL_STATUS_INVALID_PARAMETER;  // out of range
+  }
+
+  /* check overflow of addr + len */
+  end_addr = addr + len;
+  if (end_addr < addr) {
+    return SL_STATUS_INVALID_PARAMETER;   // uint32_t overflow
+  }
+
+  /* end must not exceed flash size */
+  if (end_addr > sd_flash.size_bytes) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
   return SL_STATUS_OK;
 }
 
-static bool verifyAddressRange(uint32_t address, uint32_t length)
-{
-  uint32_t deviceSize = mx25_get_size();
 
-  if ((length > deviceSize) || (address > deviceSize)) {
-    return false;
-  }
-
-  if ((address + length) <= deviceSize) {
-    return true;
-  }
-
-  // out of range
-  return false;
-}
 
 /* ============================================================================
  * GPIO initialization
@@ -199,8 +197,7 @@ static sl_status_t flash_spi_init(flash_spi_handle_t spi_handle)
   sl_status_code = flash_spi_getBitRate(&bitRate);
   if (sl_status_code == SL_STATUS_OK ) {
      app_log("Flash SPI bitrate=%luMHZ \r\n",bitRate);
-  }
-  else {
+  } else {
      app_log("Flash SPI bitrate ERROR\r\n");
   }
 
@@ -267,6 +264,18 @@ sl_status_t flash_storage_init(void)
     return st;
   }
 
+// Testing SPI CLK MAX bitrate
+//  Set fast SPI speed
+//  if (SPI_MASTER_SUCCESS != spi_master_set_speed(&sd_flash.spi, MX25_SPI_MAX_FREQ)) { //UP @TODO the Testing this an issue
+//    return SL_STATUS_TRANSMIT;
+//  }
+//   Attempt to re-detect SPI Flash at MAX SPI interface clock.
+//  st = mx25_detect_flash(&sd_flash.spi); //UP @TODO the Testing this an issue
+//  if (st != SL_STATUS_OK) {
+//    return st;
+//  }
+
+
   sd_flash.size_bytes = mx25_get_size();
   sd_flash.initialized = true;
 
@@ -318,7 +327,12 @@ sl_status_t flash_storage_write(uint32_t addr,
     return st;
   }
 
-  return mx25_write(&sd_flash.spi, addr, buf, len);
+   if (mx25_page_write(&sd_flash.spi, addr, buf, len) != F_RES_OK)
+   {
+      return SL_STATUS_FLASH_PROGRAM_FAILED;
+   }
+
+   return SL_STATUS_OK;
 }
 
 #if 0
@@ -355,6 +369,7 @@ sl_status_t flash_storage_erase_block64(uint32_t addr)
 
   return mx25_erase_block64(addr);
 }
+#endif
 
 sl_status_t flash_storage_erase_chip(void)
 {
@@ -362,7 +377,7 @@ sl_status_t flash_storage_erase_chip(void)
     return SL_STATUS_NOT_INITIALIZED;
   }
 
-  return mx25_erase_chip();
+  return mx25_erase_chip(&sd_flash.spi);
 }
-#endif
+
 

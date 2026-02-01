@@ -110,19 +110,19 @@
 /* ============================================================================
  * Status Register bits
  * ========================================================================== */
-#define MX25_SR_WIP                (1U << 0) /* Write In Progress */
-#define MX25_SR_WEL                (1U << 1) /* Write Enable Latch */
-#define MX25_SR_BP0                (1U << 2)
-#define MX25_SR_BP1                (1U << 3)
-#define MX25_SR_BP2                (1U << 4)
-#define MX25_SR_SRWD               (1U << 7)
+#define MX25_SR_WIP                ((uint8_t)(1U << 0)) /* Write In Progress */
+#define MX25_SR_WEL                ((uint8_t)(1U << 1)) /* Write Enable Latch */
+#define MX25_SR_BP0                ((uint8_t)(1U << 2))
+#define MX25_SR_BP1                ((uint8_t)(1U << 3))
+#define MX25_SR_BP2                ((uint8_t)(1U << 4))
+#define MX25_SR_SRWD               ((uint8_t)(1U << 7)) /* Write Protect Disable */
 
 /* ============================================================================
  * Flag Status Register bits (if supported)
  * ========================================================================== */
-#define MX25_FSR_P_FAIL             (1U << 4)
-#define MX25_FSR_E_FAIL             (1U << 5)
-#define MX25_FSR_READY              (1U << 7)
+#define MX25_FSR_P_FAIL             ((uint8_t)(1U << 5))
+#define MX25_FSR_E_FAIL             ((uint8_t)(1U << 6))
+
 
 
 /*
@@ -186,7 +186,7 @@
  * Geometry (defaults, override per part if needed)
  * ========================================================================== */
 #define MX25_FLASH_SIZE              (1048576L)    // 0x00100000  //1MB-8Mb total size (bytes)
-#define DEVICE_SIZE_8M    MX25_FLASH_SIZE
+#define DEVICE_SIZE_8M               MX25_FLASH_SIZE
 
 #define MX25_PAGE_SIZE              (256U)         //0x00100 //256b Page size (bits)
 #define MX25_SECTOR_SIZE            (4U  * 1024U)  //0x01000 //  4K Sector size(bytes)
