@@ -49,7 +49,7 @@ extern "C" {
 #include <string.h>
 #include "drv_name.h"
 
-typedef void * mikroe_spi_handle_t; ///< Created SPI handle type
+typedef void *mikroe_spi_handle_t; ///< Created SPI handle type
 
 typedef enum {
   SPI_MASTER_SUCCESS = 0, SPI_MASTER_ERROR = (-1)

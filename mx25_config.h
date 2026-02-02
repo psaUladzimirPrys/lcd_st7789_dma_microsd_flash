@@ -21,9 +21,9 @@
  * This file must be adapted to your hardware.
  */
 
-// -----------------------------------------------------------------------------
-//                       Includes
-// -----------------------------------------------------------------------------
+/* ============================================================================
+ *                       Includes
+ * ========================================================================== */
 #include "spidrv.h"
 #include "em_gpio.h"
 
@@ -50,7 +50,7 @@ extern "C" {
  *     .dummyTxValue    = 0xFF,
  *     .type            = spidrvMaster,
  *     .bitOrder        = spidrvBitOrderMsbFirst,
- *     .clockMode       = spidrvClockMode0,
+ *     .clockMode       = spidrvClockMode3,
  *     .csControl       = spidrvCsControlApplication,
  *     .slaveStartMode  = spidrvSlaveStartImmediate
  *   };
@@ -165,7 +165,7 @@ extern SPIDRV_HandleData_t mx25_spi_handle_data;
  */ 
 #ifndef MX25_DELAY_HOOK 
 //  #define MX25_DELAY_HOOK()  do {} while (0)
-#define MX25_DELAY_HOOK()  sl_sleeptimer_delay_millisecond(10)
+#define MX25_DELAY_HOOK()  sl_sleeptimer_delay_millisecond(1)
 //#define MX25_DELAY_HOOK()
 #endif
 

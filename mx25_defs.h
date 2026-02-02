@@ -115,6 +115,8 @@
 #define MX25_SR_BP0                ((uint8_t)(1U << 2))
 #define MX25_SR_BP1                ((uint8_t)(1U << 3))
 #define MX25_SR_BP2                ((uint8_t)(1U << 4))
+#define MX25_SR_BP3                ((uint8_t)(1U << 5))
+#define MX25_SR_QE                 ((uint8_t)(1U << 6)) /* QuadEnable */
 #define MX25_SR_SRWD               ((uint8_t)(1U << 7)) /* Write Protect Disable */
 
 /* ============================================================================
@@ -143,7 +145,6 @@
 #define    ElectronicID     0x14
 #define    RESID0           0xc214
 #define    RESID1           0x14c2
-#define    FlashSize        0x100000       // 1 MB
 #define    CE_period        15625000       // tCE /  ( CLK_PERIOD * Min_Cycle_Per_Inst *One_Loop_Inst)
 #define    tW               40000000       // 40ms
 #define    tDP              10000          // 10us

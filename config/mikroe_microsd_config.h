@@ -74,8 +74,6 @@ extern "C"
 
 // <<< sl:end pin_tool >>>
 
-//
-
 #ifdef __cplusplus
 }
 #endif

@@ -189,7 +189,7 @@ static sl_status_t flash_spi_init(flash_spi_handle_t spi_handle)
   }
 
   /* CS handled manually */
-  // spi_master_set_cs_mode(SPI_MASTER_CS_MODE_SW); //UP @TODO the func hasn't implemented
+  // spi_master_set_cs_mode(SPI_MASTER_CS_MODE_SW); @TODO the func hasn't implemented UP
   if (mx25_gpio_init(spi_handle) != SL_STATUS_OK) {
       return SL_STATUS_NOT_INITIALIZED;
   }
@@ -240,9 +240,9 @@ sl_status_t flash_storage_init(void)
   /* ===============================
    * RESET# (active low)
    * =============================== */
-  //  GPIO_PinModeSet(MX25_RESET_PORT, MX25_RESET_PIN, gpioModePushPull, 1);  // HIGH = normal operation
+  //  GPIO_PinModeSet(MX25_RST_PORT, MX25_RST_PIN, gpioModePushPull, 1);  // HIGH = normal operation
   if (digital_out_init(&sd_flash.wp_pin,
-                       hal_gpio_pin_name(MX25_WP_PORT, MX25_WP_PIN),
+                       hal_gpio_pin_name(MX25_RST_PORT, MX25_RST_PIN),
                        SL_GPIO_MODE_INPUT_PULL, 1) != DIGITAL_OUT_SUCCESS) {
     return SL_STATUS_NOT_INITIALIZED;
   }
@@ -266,11 +266,11 @@ sl_status_t flash_storage_init(void)
 
 // Testing SPI CLK MAX bitrate
 //  Set fast SPI speed
-//  if (SPI_MASTER_SUCCESS != spi_master_set_speed(&sd_flash.spi, MX25_SPI_MAX_FREQ)) { //UP @TODO the Testing this an issue
+//  if (SPI_MASTER_SUCCESS != spi_master_set_speed(&sd_flash.spi, MX25_SPI_MAX_FREQ)) {  @TODO the Testing this an issue It was been added by UP
 //    return SL_STATUS_TRANSMIT;
 //  }
 //   Attempt to re-detect SPI Flash at MAX SPI interface clock.
-//  st = mx25_detect_flash(&sd_flash.spi); //UP @TODO the Testing this an issue
+//  st = mx25_detect_flash(&sd_flash.spi); //UP @TODO the Testing this an issue It was been added by UP
 //  if (st != SL_STATUS_OK) {
 //    return st;
 //  }
@@ -327,10 +327,14 @@ sl_status_t flash_storage_write(uint32_t addr,
     return st;
   }
 
-   if (mx25_page_write(&sd_flash.spi, addr, buf, len) != F_RES_OK)
-   {
-      return SL_STATUS_FLASH_PROGRAM_FAILED;
-   }
+  if (mx25_ready_to_write_erase(&sd_flash.spi) != F_RES_OK) {
+    return SL_STATUS_FLASH_PROGRAM_FAILED;
+  }
+
+  if (mx25_page_write(&sd_flash.spi, addr, buf, len) != F_RES_OK)
+  {
+    return SL_STATUS_FLASH_PROGRAM_FAILED;
+  }
 
    return SL_STATUS_OK;
 }
@@ -346,13 +350,20 @@ sl_status_t flash_storage_erase_sector(uint32_t addr)
     return SL_STATUS_NOT_INITIALIZED;
   }
 
-  addr &= ~(MX25_SECTOR_SIZE - 1);
+  if (mx25_ready_to_write_erase(&sd_flash.spi) != F_RES_OK) {
+      return SL_STATUS_FLASH_ERASE_FAILED;
+  }
 
   if (addr >= sd_flash.size_bytes) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  return mx25_erase_sector(&sd_flash.spi, addr);
+  addr &= ~(MX25_SECTOR_SIZE - 1);
+  if (mx25_erase_sector(&sd_flash.spi, addr) != F_RES_OK) {
+    return SL_STATUS_FLASH_ERASE_FAILED;
+  }
+
+  return SL_STATUS_OK; 
 }
 
 sl_status_t flash_storage_erase_block64(uint32_t addr)
@@ -361,13 +372,20 @@ sl_status_t flash_storage_erase_block64(uint32_t addr)
     return SL_STATUS_NOT_INITIALIZED;
   }
 
-  addr &= ~(MX25_BLOCK64_SIZE - 1);
+  if (mx25_ready_to_write_erase(&sd_flash.spi) != F_RES_OK) {
+      return SL_STATUS_FLASH_ERASE_FAILED;
+  }
 
   if (addr >= sd_flash.size_bytes) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  return mx25_erase_block64(addr);
+  addr &= ~(MX25_BLOCK64_SIZE - 1);
+  if (mx25_erase_block64(&sd_flash.spi, addr) != F_RES_OK) {
+    return SL_STATUS_FLASH_ERASE_FAILED;
+  }
+
+  return SL_STATUS_OK; 
 }
 #endif
 
@@ -377,7 +395,15 @@ sl_status_t flash_storage_erase_chip(void)
     return SL_STATUS_NOT_INITIALIZED;
   }
 
-  return mx25_erase_chip(&sd_flash.spi);
+  if (mx25_ready_to_write_erase(&sd_flash.spi) != F_RES_OK) {
+    return SL_STATUS_FLASH_ERASE_FAILED;
+  }
+
+  if (mx25_erase_chip(&sd_flash.spi) != F_RES_OK) {
+    return SL_STATUS_FLASH_ERASE_FAILED;
+  }
+  
+  return SL_STATUS_OK;  
 }
 
 
