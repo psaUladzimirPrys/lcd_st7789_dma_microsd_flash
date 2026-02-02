@@ -46,7 +46,8 @@ typedef enum {
   F_RES_INVALID_ADDRESS,   // 8: Invalid flash address.
   F_RES_MISALIGNED_ADDRESS, //9: Misaligned flash word address.
   F_RES_WRITE_INHIBITED,    //10: Write Inhibit Error.
-  F_RES_ERASE_ERROR         //11: Erase Error.
+  F_RES_ERASE_ERROR,        //11: Erase Error.
+  F_RES_INVALID_ID          //12: Invalid Factory ID.
 
 } fresult_t;
 
@@ -72,7 +73,7 @@ typedef enum {
  * @return F_RES_OK  - success
  * @return F_RES_READ_ERROR - failure
  */
-  fresult_t mx25_init(spi_master_t *spi_handle);
+ fresult_t mx25_init(spi_master_t *spi_handle);
 
 /* ============================================================================
  * Identification
@@ -82,7 +83,7 @@ typedef enum {
  *
  * Must be called once after mx25_init().
  */
-sl_status_t mx25_detect_flash(spi_master_t *spi_handle);
+fresult_t mx25_detect_flash(spi_master_t *spi_handle);
 
 /* ============================================================================
  * Identification / geometry
@@ -103,10 +104,10 @@ uint32_t mx25_get_size(void);
  * @param[out] buf   Destination buffer
  * @param[in]  len   Number of bytes to read
  *
- * @return SL_STATUS_OK  - success
- * @return false - invalid parameters
+ * @return F_RES_OK  - success
+ * @return F_RES_READ_ERROR - invalid parameters
  */
-sl_status_t mx25_read(spi_master_t *spi_handle, uint32_t addr, uint8_t *buf, uint32_t len);
+fresult_t mx25_read(spi_master_t *spi_handle, uint32_t addr, uint8_t *buf, uint32_t len);
 
 
 /**

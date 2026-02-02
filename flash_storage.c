@@ -207,8 +207,7 @@ static sl_status_t flash_spi_init(flash_spi_handle_t spi_handle)
 sl_status_t flash_spi_getBitRate(uint32_t *bitRate)
 {
 
-  if (SPIDRV_GetBitrate(flash_spidrv_handle, bitRate) != ECODE_EMDRV_SPIDRV_OK)
-  {
+  if (SPIDRV_GetBitrate(flash_spidrv_handle, bitRate) != ECODE_EMDRV_SPIDRV_OK) {
      return SL_STATUS_FAIL;
   }
 
@@ -259,9 +258,8 @@ sl_status_t flash_storage_init(void)
     return SL_STATUS_NOT_INITIALIZED;
   }
 
-  st = mx25_detect_flash(&sd_flash.spi);
-  if (st != SL_STATUS_OK) {
-    return st;
+  if (mx25_detect_flash(&sd_flash.spi)!= F_RES_OK) {
+    return SL_STATUS_NOT_SUPPORTED;
   }
 
 // Testing SPI CLK MAX bitrate
@@ -270,9 +268,8 @@ sl_status_t flash_storage_init(void)
 //    return SL_STATUS_TRANSMIT;
 //  }
 //   Attempt to re-detect SPI Flash at MAX SPI interface clock.
-//  st = mx25_detect_flash(&sd_flash.spi); //UP @TODO the Testing this an issue It was been added by UP
-//  if (st != SL_STATUS_OK) {
-//    return st;
+//  if (mx25_detect_flash(&sd_flash.spi)!= F_RES_OK) {
+//    return SL_STATUS_NOT_SUPPORTED;
 //  }
 
 
@@ -306,8 +303,11 @@ sl_status_t flash_storage_read(uint32_t addr,
     return st;
   }
 
+  if (mx25_read(&sd_flash.spi, addr, buf, len) != F_RES_OK) {
+     return SL_STATUS_FAIL;
+  }
 
-  return mx25_read(&sd_flash.spi, addr, buf, len);
+  return SL_STATUS_OK;
 }
 
 sl_status_t flash_storage_write(uint32_t addr,
@@ -331,8 +331,7 @@ sl_status_t flash_storage_write(uint32_t addr,
     return SL_STATUS_FLASH_PROGRAM_FAILED;
   }
 
-  if (mx25_page_write(&sd_flash.spi, addr, buf, len) != F_RES_OK)
-  {
+  if (mx25_page_write(&sd_flash.spi, addr, buf, len) != F_RES_OK) {
     return SL_STATUS_FLASH_PROGRAM_FAILED;
   }
 

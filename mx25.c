@@ -63,9 +63,6 @@ void mx25_timer_proc(void);
  */
 static fresult_t mx25_select(spi_master_t *spi_handle)
 {
-  if (!spi_handle)   {
-     return F_RES_PARAM_ERROR;
-  }
 
   if (SPI_MASTER_SUCCESS != spi_master_control_cs(spi_handle, SPI_SLAVE_CHIP_SELECT_LOW)) {
       return F_RES_NOTRDY;
@@ -85,9 +82,6 @@ static fresult_t mx25_select(spi_master_t *spi_handle)
  */
 static fresult_t mx25_deselect(spi_master_t *spi_handle)
 {
-  if (!spi_handle)  {
-    return F_RES_PARAM_ERROR;
-  }
 
   if (SPI_MASTER_SUCCESS != spi_master_control_cs(spi_handle, SPI_SLAVE_CHIP_SELECT_HIGH)) {
     return F_RES_NOTRDY;
@@ -101,11 +95,6 @@ static fresult_t mx25_deselect(spi_master_t *spi_handle)
  ******************************************************************************/
 static fresult_t mx25_spi_tx(spi_master_t *spi_handle, const uint8_t *buff, uint32_t cnt)
 {
-
- if ( (!spi_handle) || (!buff) ) {
-    return F_RES_PARAM_ERROR;
- }
-
  if (SPI_MASTER_SUCCESS != spi_master_write(spi_handle, (uint8_t *)buff, cnt)) {
    return F_RES_WRITE_ERROR;
  }
@@ -117,10 +106,6 @@ static fresult_t mx25_spi_tx(spi_master_t *spi_handle, const uint8_t *buff, uint
  ******************************************************************************/
 static fresult_t mx25_spi_rx(spi_master_t *spi_handle, uint8_t *buff, uint32_t cnt)
 {
-  if ( (!spi_handle) || (!buff) ) {
-     return F_RES_PARAM_ERROR;
-  }
-
   if (SPI_MASTER_SUCCESS != spi_master_read(spi_handle, buff, cnt)) {
       return F_RES_READ_ERROR;
   }
@@ -133,9 +118,6 @@ static fresult_t mx25_spi_rx(spi_master_t *spi_handle, uint8_t *buff, uint32_t c
 ******************************************************************************/
 static fresult_t mx25_spi_trx(spi_master_t *spi_handle, const uint8_t *tx, uint32_t tx_len, uint8_t *rx, uint32_t rx_len)
 {
-  if ( (!spi_handle) || (!tx) || (!rx) ) {
-     return F_RES_PARAM_ERROR;
-  }
 
   if (SPI_MASTER_SUCCESS != spi_master_write_then_read(spi_handle, (uint8_t *)tx, tx_len, rx, rx_len)) {
     return F_RES_TRANSMIT_ERROR;
@@ -324,7 +306,7 @@ fresult_t mx25_init(spi_master_t *spi_handle)
   return f_res;
 }
 
-sl_status_t mx25_detect_flash(spi_master_t *spi_handle)
+fresult_t mx25_detect_flash(spi_master_t *spi_handle)
 {
   fresult_t f_res = F_RES_OK;
   uint8_t tx_cmd[4] = { MX25_CMD_RDID, MX25_DUMMY, MX25_DUMMY, MX25_DUMMY };
@@ -333,10 +315,7 @@ sl_status_t mx25_detect_flash(spi_master_t *spi_handle)
   mx25_select(spi_handle);
   f_res = mx25_spi_trx(spi_handle, tx_cmd, 1, rx, (sizeof(tx_cmd) - 1) );
   mx25_deselect(spi_handle);
-
-  if(f_res != F_RES_OK) {
-    return SL_STATUS_FAIL;
-  }
+  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
 
   Delay_30us();// tRES1/tRES2 = 30 µs max
 
@@ -347,7 +326,7 @@ sl_status_t mx25_detect_flash(spi_master_t *spi_handle)
   if (  (mx25_info.manufacturer_id != MX25_MANUFACTURER_ID)
      || (mx25_info.memory_type != ((MX25_DEV_ID_MX25R8035F & 0xff00) >> 8) ) 
      || (mx25_info.capacity_id !=  (MX25_DEV_ID_MX25R8035F & 0x00ff) ) ) {
-    return SL_STATUS_NOT_SUPPORTED;
+    return F_RES_INVALID_ID;
   }
 
   tx_cmd[0] = MX25_CMD_REMS;
@@ -357,20 +336,21 @@ sl_status_t mx25_detect_flash(spi_master_t *spi_handle)
 
   mx25_select(spi_handle);
   mx25_spi_tx(spi_handle, tx_cmd, sizeof(tx_cmd));
-  mx25_spi_rx(spi_handle, rx, 2);
+  f_res = mx25_spi_rx(spi_handle, rx, 2);
   mx25_deselect(spi_handle);
+  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
 
   mx25_info.device_id = (uint16_t)((uint16_t)rx[0] << 8) | (uint16_t)rx[1];
 
   if (   (mx25_info.manufacturer_id != MX25_MANUFACTURER_ID)
       || (mx25_info.device_id != RESID1) ) {
-    return SL_STATUS_NOT_SUPPORTED;
+    return F_RES_INVALID_ID;
   }
 
   mx25_info.size_bytes = mem_density_to_size(mx25_info.capacity_id);
   mx25_info.detected   = true;
 
-  return SL_STATUS_OK;
+  return F_RES_OK;
 }
 
 uint32_t mx25_get_size(void)
@@ -513,7 +493,7 @@ fresult_t mx25_erase_block64(spi_master_t *spi_handle, uint32_t addr)
  * Read / Write
  * ========================================================================== */
 
-sl_status_t mx25_read(spi_master_t *spi_handle, uint32_t addr, uint8_t *buf, uint32_t len)
+fresult_t mx25_read(spi_master_t *spi_handle, uint32_t addr, uint8_t *buf, uint32_t len)
 {
   fresult_t f_res = F_RES_OK;
 
@@ -529,9 +509,7 @@ sl_status_t mx25_read(spi_master_t *spi_handle, uint32_t addr, uint8_t *buf, uin
   f_res = mx25_spi_rx(spi_handle, buf, len);
   mx25_deselect(spi_handle);
 
-  return (f_res == F_RES_OK)
-         ? SL_STATUS_OK
-         : SL_STATUS_FAIL;
+  return f_res;
 }
 
 
