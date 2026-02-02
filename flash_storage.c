@@ -123,7 +123,7 @@ static sl_status_t validate_range(uint32_t addr, uint32_t len)
 static sl_status_t mx25_gpio_init(flash_spi_handle_t  handle)
 {
   sl_gpio_t pinport;
-  sl_status_t sl_status_code = SL_STATUS_OK;
+  sl_status_t sl_status = SL_STATUS_OK;
   SPIDRV_Handle_t handle_ptr = (SPIDRV_Handle_t)handle;
   
   /* The CS pin is driven by a input to the Flash.
@@ -140,11 +140,11 @@ static sl_status_t mx25_gpio_init(flash_spi_handle_t  handle)
         return SL_STATUS_FAIL;
     }
 
-    sl_status_code = sl_gpio_set_pin_mode(&pinport, SL_GPIO_MODE_PUSH_PULL, 1);
+    sl_status = sl_gpio_set_pin_mode(&pinport, SL_GPIO_MODE_PUSH_PULL, 1);
 
   }
 
-  return sl_status_code;
+  return sl_status;
 
 }
 
@@ -156,7 +156,7 @@ static sl_status_t mx25_gpio_init(flash_spi_handle_t  handle)
  ******************************************************************************/
 static sl_status_t flash_spi_init(flash_spi_handle_t spi_handle)
 {
-  sl_status_t sl_status_code = SL_STATUS_OK;
+  sl_status_t sl_status = SL_STATUS_OK;
   spi_master_config_t spi_cfg;
   uint32_t bitRate;
 
@@ -194,14 +194,14 @@ static sl_status_t flash_spi_init(flash_spi_handle_t spi_handle)
       return SL_STATUS_NOT_INITIALIZED;
   }
 
-  sl_status_code = flash_spi_getBitRate(&bitRate);
-  if (sl_status_code == SL_STATUS_OK ) {
+  sl_status = flash_spi_getBitRate(&bitRate);
+  if (sl_status == SL_STATUS_OK ) {
      app_log("Flash SPI bitrate=%luMHZ \r\n",bitRate);
   } else {
      app_log("Flash SPI bitrate ERROR\r\n");
   }
 
-  return sl_status_code;
+  return sl_status;
 }
 
 sl_status_t flash_spi_getBitRate(uint32_t *bitRate)
@@ -220,7 +220,7 @@ sl_status_t flash_spi_getBitRate(uint32_t *bitRate)
 
 sl_status_t flash_storage_init(void)
 {
-  sl_status_t st = SL_STATUS_OK;
+  sl_status_t sl_status = SL_STATUS_OK;
 
   sd_flash.initialized = false;
 
@@ -231,7 +231,7 @@ sl_status_t flash_storage_init(void)
   //GPIO_PinModeSet(MX25_WP_PORT, MX25_WP_PIN, gpioModePushPull, 1);  // HIGH = write enabled
   if (digital_out_init(&sd_flash.wp_pin,
                        hal_gpio_pin_name(MX25_WP_PORT, MX25_WP_PIN),
-                       SL_GPIO_MODE_INPUT_PULL, 1) != DIGITAL_OUT_SUCCESS) {
+                       SL_GPIO_MODE_PUSH_PULL, 1) != DIGITAL_OUT_SUCCESS) {
     return SL_STATUS_NOT_INITIALIZED;
   }
 #endif
@@ -240,18 +240,18 @@ sl_status_t flash_storage_init(void)
    * RESET# (active low)
    * =============================== */
   //  GPIO_PinModeSet(MX25_RST_PORT, MX25_RST_PIN, gpioModePushPull, 1);  // HIGH = normal operation
-  if (digital_out_init(&sd_flash.wp_pin,
+  if (digital_out_init(&sd_flash.rst_pin,
                        hal_gpio_pin_name(MX25_RST_PORT, MX25_RST_PIN),
-                       SL_GPIO_MODE_INPUT_PULL, 1) != DIGITAL_OUT_SUCCESS) {
+                       SL_GPIO_MODE_PUSH_PULL, 1) != DIGITAL_OUT_SUCCESS) {
     return SL_STATUS_NOT_INITIALIZED;
   }
 #endif
 
   app_flash_instance = flash_spidrv_handle;
 
-  st = flash_spi_init(app_flash_instance);
-  if (st != SL_STATUS_OK) {
-    return st;
+  sl_status = flash_spi_init(app_flash_instance);
+  if (sl_status != SL_STATUS_OK) {
+    return sl_status;
   }
 
   if (mx25_init(&sd_flash.spi) != F_RES_OK) {
@@ -278,7 +278,7 @@ sl_status_t flash_storage_init(void)
 
   app_log("Flash Macronix MX25R8035F init done\r\n");
 
-  return st;
+  return sl_status;
 }
 
 
@@ -298,9 +298,9 @@ sl_status_t flash_storage_read(uint32_t addr,
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  sl_status_t st = validate_range(addr, len);
-  if (st != SL_STATUS_OK) {
-    return st;
+  sl_status_t sl_status = validate_range(addr, len);
+  if (sl_status != SL_STATUS_OK) {
+    return sl_status;
   }
 
   if (mx25_read(&sd_flash.spi, addr, buf, len) != F_RES_OK) {
@@ -322,9 +322,9 @@ sl_status_t flash_storage_write(uint32_t addr,
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  sl_status_t st = validate_range(addr, len);
-  if (st != SL_STATUS_OK) {
-    return st;
+  sl_status_t sl_status = validate_range(addr, len);
+  if (sl_status != SL_STATUS_OK) {
+    return sl_status;
   }
 
   if (mx25_ready_to_write_erase(&sd_flash.spi) != F_RES_OK) {
@@ -364,6 +364,7 @@ sl_status_t flash_storage_erase_sector(uint32_t addr)
 
   return SL_STATUS_OK; 
 }
+#endif
 
 sl_status_t flash_storage_erase_block64(uint32_t addr)
 {
@@ -386,7 +387,7 @@ sl_status_t flash_storage_erase_block64(uint32_t addr)
 
   return SL_STATUS_OK; 
 }
-#endif
+
 
 sl_status_t flash_storage_erase_chip(void)
 {

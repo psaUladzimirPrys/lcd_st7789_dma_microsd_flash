@@ -4,10 +4,12 @@
  *  Created on: 15 Jan. 2026.
  *      Author: priss
 *******************************************************************************/
-#include <file_storage.h>
 #include <stdio.h>
 #include <string.h>
 #include "sl_sleeptimer.h"
+#include "file_storage.h"
+#include "flash_storage.h"
+
 
 /***************************************************************************//**
 *  File storage of SD card configuration section declaration global variables
@@ -22,20 +24,20 @@ static mikroe_spi_handle_t app_spi_instance = NULL;
 
 //static const char str[] = "Silabs SD Card I/O Example via SPI!\r\n";
 
-BYTE f_work[FF_MAX_SS]; // Work area (larger is better for processing time)
+static BYTE  F_work[FF_MAX_SS];         // Work file buffer area (larger is better for processing time)
 
-static FATFS FatFs;                   // FatFS object for mounting.
-static FIL File;                      // File object structure
+static FATFS FatFs;                     // FatFS object for mounting.
+static FIL   File;                      // File object structure
 
 //static BYTE work_buffer[FF_MAX_SS];   // Working buffer for operations (e.g., f_mkfs).
-static bool sd_mounted = false;       // Mounting flag.
+static bool sd_mounted = false;         // Mounting flag.
 
 
 
 sl_status_t fs_sd_time_init(void)
 {
 
-  sl_status_t sl_status_code = SL_STATUS_OK;
+  sl_status_t sl_status = SL_STATUS_OK;
 
 #if !FF_FS_NORTC && !FF_FS_READONLY
   sl_status_t sc;
@@ -53,7 +55,7 @@ sl_status_t fs_sd_time_init(void)
   app_assert_status(sc);
 
   sd_fatfs_time_data = get_fattime();
-  app_printf("\nCurrent time is %lu/%lu/%lu %2lu:%02lu:%02lu.\n\n",
+  app_log_info("\nCurrent time is %lu/%lu/%lu %2lu:%02lu:%02lu.\n\n",
              (sd_fatfs_time_data >> 25) + 1980,
              (sd_fatfs_time_data >> 21) & 0x0f,
              (sd_fatfs_time_data >> 16) & 0x1f,
@@ -61,25 +63,25 @@ sl_status_t fs_sd_time_init(void)
              (sd_fatfs_time_data >> 5) & 0x3f,
              (sd_fatfs_time_data << 1) & 0x1f);
 
-  sl_status_code = sc;
+  sl_status = sc;
 #endif
 
-  return sl_status_code;
+  return sl_status;
 }
 
 
 sl_status_t fs_sd_init(void)
 {
-  sl_status_t sl_status_code = SL_STATUS_OK;
-  FRESULT     ff_res_code;
-  sl_gpio_t pinport;
-  uint32_t bitRate;
+  sl_status_t sl_status = SL_STATUS_OK;
+  FRESULT     fs_res;
+  sl_gpio_t   pinport;
+  uint32_t    bitRate;
 
   sd_mounted = false;
 
   memset((void *)&FatFs, 0x00, sizeof(FATFS));
   memset((void *)&File, 0x00, sizeof(File));
-  memset((void *)&f_work[0], 0x00, sizeof(f_work));
+  memset((void *)&F_work[0], 0x00, sizeof(F_work));
 
 #if (defined(SLI_SI917))
   app_spi_instance = &gspi_instance;
@@ -88,11 +90,11 @@ sl_status_t fs_sd_init(void)
 #endif
 
   // Initialising SPI for SD (using MikroE config)
-  app_printf("Initializing SD card...\r\n");
-  sl_status_code = sd_card_spi_init(app_spi_instance);  // Assuming that app_spi_instance is a global object
-  if (sl_status_code != SL_STATUS_OK) {
-    app_printf("SD card SPI init failed: 0x%lx\r\n", sl_status_code);
-    return sl_status_code;
+  app_log_info("Initializing SD card...\r\n");
+  sl_status = sd_card_spi_init(app_spi_instance);  // Assuming that app_spi_instance is a global object
+  if (sl_status != SL_STATUS_OK) {
+    app_log_debug("SD card SPI init failed: 0x%lx\r\n", sl_status);
+    return sl_status;
   }
 
 
@@ -105,15 +107,15 @@ sl_status_t fs_sd_init(void)
 
   /* @ToDo must remove after pins validation  It was been added by UP*/
   if ((pinport.port != SL_GPIO_PORT_C) && (pinport.pin != 1)) {
-    app_printf("SD card SPI MISO port failed: 0x%lx\r\n", sl_status_code);
+    app_log_debug("SD card SPI MISO port failed: 0x%lx\r\n", sl_status);
     return SL_STATUS_FAIL;
   }
 
 
-  sl_status_code = sl_gpio_set_pin_mode(&pinport, SL_GPIO_MODE_INPUT_PULL, 1);
-  if (sl_status_code != SL_STATUS_OK) {
-    app_printf("SD card SPI MISO pin failed: 0x%lx\r\n", sl_status_code);
-    return sl_status_code;
+  sl_status = sl_gpio_set_pin_mode(&pinport, SL_GPIO_MODE_INPUT_PULL, 1);
+  if (sl_status != SL_STATUS_OK) {
+    app_log_debug("SD card SPI MISO pin failed: 0x%lx\r\n", sl_status);
+    return sl_status;
   }
 
   /* The CS pin is driven by a input to the SDcard.
@@ -127,38 +129,38 @@ sl_status_t fs_sd_init(void)
 
     /* @ToDo must remove after pins validation  It was been added by UP*/
     if ((pinport.port != SL_GPIO_PORT_B) && (pinport.pin != 0)) {
-       app_printf("SD card SPI CS port failed: 0x%lx\r\n", sl_status_code);
+        app_log_debug("SD card SPI CS port failed: 0x%lx\r\n", sl_status);
        return SL_STATUS_FAIL;
     }
 
-    sl_status_code = sl_gpio_set_pin_mode(&pinport, SL_GPIO_MODE_PUSH_PULL, 1);
-    if (sl_status_code != SL_STATUS_OK) {
-       app_printf("SD card SPI CS pin failed: 0x%lx\r\n", sl_status_code);
-       return sl_status_code;
+    sl_status = sl_gpio_set_pin_mode(&pinport, SL_GPIO_MODE_PUSH_PULL, 1);
+    if (sl_status != SL_STATUS_OK) {
+        app_log_debug("SD card SPI CS pin failed: 0x%lx\r\n", sl_status);
+       return sl_status;
     }
 
   }
 
   // Initialising the disk and mounting FatFS
   // Give a work area to the default drive
-  ff_res_code = f_mount(&FatFs, "", 1);  /* Mount the default drive */
-  if (ff_res_code != FR_OK) {
-    app_printf("Disk initialize or disk mount failed: %d\r\n", ff_res_code); // Failed to mount SD
+  fs_res = f_mount(&FatFs, "", 1);  /* Mount the default drive */
+  if (fs_res != FR_OK) {
+    app_log_debug("Disk initialize or disk mount failed: %d\r\n", fs_res); // Failed to mount SD
     return SL_STATUS_FAIL;
   }
 
   if ( SPIDRV_GetBitrate(sl_spidrv_mikroe_handle, &bitRate) == ECODE_EMDRV_SPIDRV_OK ) {
-      app_log("SD Card SPI bitrate=%luMHZ \r\n",bitRate);
+      app_log_debug("SD Card SPI bitrate=%luMHZ \r\n",bitRate);
    } else {
-      app_log("SD Card SPI bitrate ERROR\r\n");
+      app_log_debug("SD Card SPI bitrate ERROR\r\n");
    }
 
 
   sd_mounted = true;
-  app_printf("SD card initialized and mounted.\r\n");
+  app_log_info("SD card initialized and mounted.\r\n");
 
 
-  return sl_status_code;
+  return sl_status;
 }
 
 sl_status_t fs_sd_disk_volume_status(void)
@@ -166,26 +168,26 @@ sl_status_t fs_sd_disk_volume_status(void)
   static const char *fst[] = { "", "FAT12", "FAT16", "FAT32", "exFAT" };
   static char path[] = {""};
   FATFS *pfs;
-  FRESULT ff_res_code;
+  FRESULT fs_res;
   DWORD fre_clust;
 
 
   if (!sd_mounted) {
-      app_printf("SD card logical drive is not mounted.\r\n");
+      app_log_warning("SD card logical drive is not mounted.\r\n");
       return SL_STATUS_NOT_READY;
   }
 
   pfs = &FatFs;
 
   // Show logical drive status
-  ff_res_code = f_getfree(path, &fre_clust, &pfs);
-  if (ff_res_code != FR_OK) {
-      app_printf("Disk volume status failed: %d\r\n", ff_res_code);
+  fs_res = f_getfree(path, &fre_clust, &pfs);
+  if (fs_res != FR_OK) {
+      app_log_debug("Disk volume status failed: %d\r\n", fs_res);
       return SL_STATUS_FAIL;
   }
 
-  app_printf("-------------- Volume status --------------\r\n");
-  app_printf(("FAT type = %s\r\nBytes/Cluster = %lu\r\nNumber of FATs = %u\r\n"
+  app_log_info("-------------- Volume status --------------\r\n");
+  app_log_info(("FAT type = %s\r\nBytes/Cluster = %lu\r\nNumber of FATs = %u\r\n"
                "Root DIR entries = %u\r\nSectors/FAT = %lu\r\n"
                "Number of clusters = %lu\r\nVolume start (lba) = %lu\r\n"
                "FAT start (lba) = %lu\nDIR start (lba,clustor) = %lu\r\n"
@@ -211,7 +213,7 @@ sl_status_t fs_sd_disk_volume_status(void)
 sl_status_t fs_sd_write_file(const char *file_path, const void *data, uint32_t size)
 {
 
-  FRESULT ff_res_code;
+  FRESULT fs_res;
   UINT bytes_written;
 
   if ((file_path == NULL) || (data == NULL)) {
@@ -223,96 +225,173 @@ sl_status_t fs_sd_write_file(const char *file_path, const void *data, uint32_t s
   }
 
   // Open file to write
-  ff_res_code = f_open(&File, file_path, FA_WRITE | FA_CREATE_ALWAYS);
-
-  if (ff_res_code != FR_OK) {
-      app_printf("Error f_open() failed for %s: %d\r\n", file_path, ff_res_code);
+  fs_res = f_open(&File, file_path, FA_WRITE | FA_CREATE_ALWAYS);
+  if (fs_res != FR_OK) {
+      app_log_warning("Error f_open failed for %s: %d\r\n", file_path, fs_res);
       return SL_STATUS_FAIL;
   }
+
   // Write a data
-  ff_res_code = f_write(&File, data, size, &bytes_written);
-
-  if (ff_res_code != FR_OK || bytes_written != size) {
-    f_close(&File);
-    app_printf("Failed writing data to SD card! Data size = %lu\r\n", size);
-
+  fs_res = f_write(&File, data, size, &bytes_written);
+  if (fs_res != FR_OK || bytes_written != size) {
+    f_close(&File);//Always file must Closed
+    app_log_debug("Failed writing data to SD card! Data size = %lu\r\n", size);
     return SL_STATUS_FAIL;
   }
 
-  app_printf("Write a data to SD card success! Bytes writen = %d\r\n", bytes_written);
+  app_log_debug("Write to SD card OK! Bytes = %d\r\n", bytes_written);
 
-  ff_res_code = f_close(&File);  // Close file
-  app_assert_status(ff_res_code);
+  fs_res = f_close(&File);// Close file
+  if (fs_res != FR_OK) {
+    app_log_critical("Error critical f_close failed for %s : %d\r\n", file_path, fs_res);
+    app_assert_status(fs_res);
+    return SL_STATUS_FAIL;
+  }
 
   return SL_STATUS_OK;
 }
 
-sl_status_t fs_sd_read_file(const char *file_path, uint16_t *buffer, uint32_t buffer_size)
+sl_status_t fs_sd_read_file(const char *file_path, void *buffer, uint32_t buffer_size)
 {
   UINT bytes_read;
-  FRESULT ff_res_code;
+  FRESULT fs_res;
 
   if ((file_path == NULL) || (buffer == NULL) || (buffer_size == 0)) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
   if (!sd_mounted) {
-      return SL_STATUS_NOT_READY;
+    return SL_STATUS_NOT_READY;
   }
 
-  ff_res_code = f_open(&File, file_path, FA_READ | FA_OPEN_EXISTING);
-  if (ff_res_code != FR_OK) {
-    app_printf("Error f_open() failed for %s : %d\r\n", file_path, ff_res_code);
+  fs_res = f_open(&File, file_path, FA_READ | FA_OPEN_EXISTING);
+  if (fs_res != FR_OK) {
+    app_log_warning("Error f_open failed for %s : %d\r\n", file_path, fs_res);
     return SL_STATUS_FAIL;
   }
 
-  ff_res_code = f_read(&File, buffer, buffer_size, &bytes_read);
-  if (ff_res_code != FR_OK || bytes_read != buffer_size) {
-     app_printf("Error f_read() failed for %s : %d, read %u bytes\r\n", file_path, ff_res_code, bytes_read);
-     f_close(&File);
+  fs_res = f_read(&File, buffer, buffer_size, &bytes_read);
+  if (fs_res != FR_OK || bytes_read != buffer_size) {
+    app_log_debug("Error f_read failed for %s : %d, read %u bytes\r\n", file_path, fs_res, bytes_read);
+    f_close(&File); //Always file must Closed
 
-     return SL_STATUS_FAIL;
+    return SL_STATUS_FAIL;
   }
 
-  ff_res_code = f_close(&File); // Always close!
-  app_assert_status(ff_res_code);
-  app_printf("Read a data from SD card success! Bytes read = %d\r\n", bytes_read);
+  fs_res = f_close(&File);// Close file
+  if (fs_res != FR_OK) {
+    app_log_critical("Error critical f_close failed for %s : %d\r\n", file_path, fs_res);
+    app_assert_status(fs_res);
+    return SL_STATUS_FAIL;
+  }
+
+  app_log_debug("Read from SD card OK! Bytes = %d\r\n", bytes_read);
 
   return SL_STATUS_OK;
-
 }
 
-sl_status_t fs_sd_read_image(uint8_t index, uint16_t *buffer, uint32_t buffer_size)
+sl_status_t fs_sd_write_img_to_flash(uint32_t index, uint32_t flash_address)
 {
-  FRESULT res;
-  UINT bytes_read;
-  char filename[20];
+  uint32_t img_index;
+  char filename[20] = "";
+  sl_status_t sl_status = SL_STATUS_OK;
 
-  if ((buffer == NULL) || (buffer_size == 0)) {
+  if (!sd_mounted) {
+    app_log_error("SD not mounted\r\n");
+    return SL_STATUS_NOT_READY;
+  }
+
+   img_index = index;
+   //for (img_index = 0; img_index < index; img_index++ ) {
+   // Form the file name, for example "image0.bin" (assuming raw RGB565 files on SD)
+   sprintf(filename, "img%lu.bin", img_index);
+
+   sl_status = fs_sd_read_file_and_write_flash(filename, (void *)&F_work[0], FF_MAX_SS, flash_address);
+   if ( sl_status != SL_STATUS_OK) {
+        app_log_error("Write Error File %s to Flash: %lu \r\n", filename, sl_status);
+        return SL_STATUS_FAIL;
+     }
+  //}
+
+   app_log_info("Write file: %s OK to Flash from SD.\r\n", filename);
+
+  return SL_STATUS_OK;
+}
+
+sl_status_t fs_sd_read_file_and_write_flash(const char *path,
+                                                  void *buffer,
+                                              uint32_t buffer_size,
+                                              uint32_t flash_address )
+{
+  uint32_t current_address;
+  sl_status_t sl_status = SL_STATUS_OK;
+  FRESULT fs_res = FR_OK;
+  UINT bytes_read = 0;
+  uint32_t file_size;
+
+  if (buffer == NULL) {
+    app_log_error("Pointer to buffer is NULL\r\n");
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  // Form the file name, for example "image0.bin" (assuming raw RGB565 files on SD)
-  sprintf(filename, "img%d.bin", index);
+  if (buffer == 0 || buffer_size > FF_MAX_SS) {
+    app_log_error("Invalid size: %lu (must be >0 and <= FF_MAX_SS)\r\n", buffer_size);
+    return SL_STATUS_INVALID_PARAMETER;
+  }
 
-  res = f_open(&File, filename, FA_READ);
-  if (res != FR_OK) {
-    app_printf("Error f_open() failed for %s : %d\r\n", filename, res);
+  if (path == NULL) {
+    app_log_error("Invalid path\r\n");
+    return SL_STATUS_INVALID_PARAMETER;
+  }
+
+  fs_res = f_open(&File, path, FA_READ | FA_OPEN_EXISTING);
+  if (fs_res != FR_OK) {
+    app_log_warning("Error f_open failed for %s: %d\r\n", path, fs_res);
     return SL_STATUS_FAIL;
   }
 
-  // Reading into buffer (assuming file size = buffer_size)
-  res = f_read(&File, buffer, buffer_size, &bytes_read);
-  if (res != FR_OK || bytes_read != buffer_size) {
-    app_printf("Error f_read() failed for %s : %d, read %u bytes\r\n", filename, res, bytes_read);
-    f_close(&File);
+  current_address = flash_address;
+  sl_status = SL_STATUS_OK;
+  bytes_read = 0;
+  file_size = f_size(&File);
+
+  while ((file_size > 0 ) && (sl_status == SL_STATUS_OK)) {
+
+    fs_res = f_read(&File, buffer, buffer_size, &bytes_read);
+    if (fs_res != FR_OK) {
+      app_log_debug("Error f_read failed: %d\r\n", fs_res);
+      sl_status = SL_STATUS_FAIL;
+      break;
+    }
+
+    if (bytes_read == 0) {
+      //End read file
+      break;
+    }
+
+    // Write buffer with bytes_read to flash
+    sl_status = flash_storage_write(current_address, (const uint8_t *)buffer, bytes_read);
+    if (sl_status != SL_STATUS_OK) {
+      app_log_error("flash_storage_write failed at addr %lu: %lu\r\n", current_address, sl_status);
+      break;
+    }
+
+    file_size -= bytes_read;
+    current_address += bytes_read;
+  }
+
+  //Always Close file
+  fs_res = f_close(&File);
+  if (fs_res != FR_OK) {
+    app_log_debug("Error f_close failed for %s: %d\r\n", path, fs_res);
     return SL_STATUS_FAIL;
   }
 
-  f_close(&File);
-  app_printf("Read image %s from SD.\r\n", filename);
+  if (sl_status == SL_STATUS_OK) {
+    app_log_info("File %s successfully read and written to flash starting at %lu\r\n", path, flash_address);
+  }
 
-  return SL_STATUS_OK;
+  return sl_status;
 }
 
 // Unmount SDCARD
@@ -335,7 +414,7 @@ sl_status_t fs_sd_deinit(void)
 sl_status_t fs_sd_get_file_size(const char *file_path,  uint32_t *file_size)
 {
 
-  FRESULT ff_res_code;
+  FRESULT fs_res;
 
   if ((file_path == NULL) || (file_size == NULL)) {
     return SL_STATUS_INVALID_PARAMETER;
@@ -345,73 +424,83 @@ sl_status_t fs_sd_get_file_size(const char *file_path,  uint32_t *file_size)
     return SL_STATUS_NOT_READY;
   }
 
-  ff_res_code = f_open(&File, file_path, FA_READ | FA_OPEN_EXISTING);
-  if (ff_res_code != FR_OK) {
-    app_printf("Error f_open failed for %s : %d\r\n", file_path, ff_res_code);
+  fs_res = f_open(&File, file_path, FA_READ | FA_OPEN_EXISTING);
+  if (fs_res != FR_OK) {
+    app_log_warning("Error f_open failed for %s : %d\r\n", file_path, fs_res);
     return SL_STATUS_FAIL;
   }
 
   *file_size = f_size(&File);
 
-  ff_res_code = f_close(&File); // Always close!
-  app_assert_status(ff_res_code);
-  app_printf("File size read success: %lu bytes\r\n", (unsigned long)*file_size);
+  fs_res = f_close(&File); // Always close!
+  if (fs_res != FR_OK) {
+    app_log_critical("Error critical  for %s : %d\r\n", file_path, fs_res);
+    app_assert_status(fs_res);
+    return SL_STATUS_FAIL;
+  }
+
+  uint32_t size = *file_size;
+  app_log_debug("File size read OK: %lu bytes\r\n", size);
 
   return SL_STATUS_OK;
 }
 
 sl_status_t fs_sd_append_to_file(const char   *file_path,
-                                 const uint8_t *data,
-                                 uint32_t       data_size)
+                                 const void   *data,
+                                 uint32_t      data_size)
 {
-  FRESULT ff_res;
+  FRESULT fs_res;
   UINT bytes_written;
 
   /* === Argument validation === */
   if ((file_path == NULL) || (data == NULL) || (data_size == 0)) {
     return SL_STATUS_INVALID_PARAMETER;
   }
-  //app_assert(file_path != NULL);
-  //app_assert(data != NULL);
-  //app_assert(data_size > 0);
 
   if (!sd_mounted) {
     return SL_STATUS_NOT_READY;
   }
 
   /* Open existing file for write */
-  ff_res = f_open(&File, file_path, FA_WRITE | FA_OPEN_EXISTING);
-  if (ff_res != FR_OK) {
-    app_printf("File doesn't exist to f_open() failed for %s : %d\r\n",
-               file_path, ff_res);
+  fs_res = f_open(&File, file_path, FA_WRITE | FA_OPEN_EXISTING);
+  if (fs_res != FR_OK) {
+    app_log_warning("File doesn't exist to f_open failed for %s : %d\r\n", file_path, fs_res);
     return SL_STATUS_FAIL;
   }
 
   /* Move file pointer to end */
-  ff_res = f_lseek(&File, f_size(&File));
-  if (ff_res != FR_OK) {
-    app_printf("Error f_lseek() failed for %s : %d\r\n", file_path, ff_res);
+  fs_res = f_lseek(&File, f_size(&File));
+  if (fs_res != FR_OK) {
+    app_log_debug("Error f_lseek failed for %s : %d\r\n", file_path, fs_res);
     f_close(&File);
     return SL_STATUS_FAIL;
   }
 
   /* Write data */
-  ff_res = f_write(&File, data, data_size, &bytes_written);
-  if ((ff_res != FR_OK) || (bytes_written != data_size)) {
-    app_printf("Error f_write() failed for %s : %d, written=%uBytes\r\n", file_path
-               ,ff_res, bytes_written);
+  fs_res = f_write(&File, data, data_size, &bytes_written);
+  if ((fs_res != FR_OK) || (bytes_written != data_size)) {
+    app_log_debug("Error f_write failed for %s : %d, written=%uBytes\r\n", file_path, fs_res, bytes_written);
     f_close(&File);
     return SL_STATUS_FAIL;
   }
 
   /* Flush cached data to the medium */
-  ff_res = f_sync(&File);
-  app_assert_status(ff_res);
+  fs_res = f_sync(&File);
+  if (fs_res != FR_OK) {
+    app_log_critical("Error critical f_sync failed for %s : %d\r\n", file_path, fs_res);
+    app_assert_status(fs_res);
+    return SL_STATUS_FAIL;
 
-  ff_res = f_close(&File);
-  app_assert_status(ff_res);
+  }
 
-  app_printf("Append success: %lu bytes written\r\n", (unsigned long)bytes_written);
+  fs_res = f_close(&File);
+  if (fs_res != FR_OK) {
+    app_log_critical("Error critical f_close failed for %s : %d\r\n", file_path, fs_res);
+    app_assert_status(fs_res);
+    return SL_STATUS_FAIL;
+  }
+
+  app_log_debug("Append success: %lu bytes\r\n", (unsigned long)bytes_written);
 
   return SL_STATUS_OK;
 }

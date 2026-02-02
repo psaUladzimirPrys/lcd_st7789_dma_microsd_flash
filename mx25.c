@@ -63,7 +63,6 @@ void mx25_timer_proc(void);
  */
 static fresult_t mx25_select(spi_master_t *spi_handle)
 {
-
   if (SPI_MASTER_SUCCESS != spi_master_control_cs(spi_handle, SPI_SLAVE_CHIP_SELECT_LOW)) {
       return F_RES_NOTRDY;
   }
@@ -82,7 +81,6 @@ static fresult_t mx25_select(spi_master_t *spi_handle)
  */
 static fresult_t mx25_deselect(spi_master_t *spi_handle)
 {
-
   if (SPI_MASTER_SUCCESS != spi_master_control_cs(spi_handle, SPI_SLAVE_CHIP_SELECT_HIGH)) {
     return F_RES_NOTRDY;
   }
@@ -118,7 +116,6 @@ static fresult_t mx25_spi_rx(spi_master_t *spi_handle, uint8_t *buff, uint32_t c
 ******************************************************************************/
 static fresult_t mx25_spi_trx(spi_master_t *spi_handle, const uint8_t *tx, uint32_t tx_len, uint8_t *rx, uint32_t rx_len)
 {
-
   if (SPI_MASTER_SUCCESS != spi_master_write_then_read(spi_handle, (uint8_t *)tx, tx_len, rx, rx_len)) {
     return F_RES_TRANSMIT_ERROR;
   }
@@ -169,31 +166,31 @@ void mx25_timer_proc(void)
  */
 static fresult_t mx25_write_enable(spi_master_t *spi_handle)
 {
-  fresult_t f_res = F_RES_OK;
+  fresult_t fl_res = F_RES_OK;
   uint8_t cmd = MX25_CMD_WREN;
   uint8_t status_reg  = 0xFF;
 
 
   mx25_select(spi_handle);
-  f_res = mx25_spi_tx(spi_handle, &cmd, 1);
+  fl_res = mx25_spi_tx(spi_handle, &cmd, 1);
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   // Wait tWR (5 us) minimum before checking status
   //sl_udelay_wait(10);  // 10 us for safety /* @ToDo The time must been measured between  set CS# - > clear CS#  by oscilloscope.  It was been added by UP*/
 
   cmd = MX25_CMD_RDSR;
   mx25_select(spi_handle);
-  f_res = mx25_spi_trx(spi_handle, &cmd, 1, &status_reg, 1);
+  fl_res = mx25_spi_trx(spi_handle, &cmd, 1, &status_reg, 1);
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
   
   // Verify WEL bit is set (bit 1)
   if ((status_reg& MX25_SR_WEL) != MX25_SR_WEL) {
     return F_RES_WRITE_INHIBITED;
   }
 
-  return f_res;
+  return fl_res;
 
 }
 
@@ -201,13 +198,13 @@ static uint8_t mx25_read_status(spi_master_t *spi_handle)
 {
   uint8_t cmd = MX25_CMD_RDSR;
   uint8_t status_reg  = 0;
-  fresult_t f_res = F_RES_OK;
+  fresult_t fl_res = F_RES_OK;
 
   mx25_select(spi_handle);
-  f_res = mx25_spi_trx(spi_handle, &cmd, 1, &status_reg, 1);
+  fl_res = mx25_spi_trx(spi_handle, &cmd, 1, &status_reg, 1);
   mx25_deselect(spi_handle);
 
-  if (f_res != F_RES_OK)  {
+  if (fl_res != F_RES_OK)  {
     app_assert_status(SL_STATUS_FAIL);
   }
 
@@ -224,15 +221,15 @@ static uint8_t mx25_read_status(spi_master_t *spi_handle)
  */
 static uint8_t mx25_read_security(spi_master_t *spi_handle)
 {
-  fresult_t f_res = F_RES_OK;
+  fresult_t fl_res = F_RES_OK;
   uint8_t cmd = MX25_CMD_RDSCUR;
   uint8_t status_reg  = 0;
 
   mx25_select(spi_handle);
-  f_res = mx25_spi_trx(spi_handle, &cmd, 1, &status_reg, 1);
+  fl_res = mx25_spi_trx(spi_handle, &cmd, 1, &status_reg, 1);
   mx25_deselect(spi_handle);
 
-  if (f_res != F_RES_OK)  {
+  if (fl_res != F_RES_OK)  {
     app_assert_status(SL_STATUS_FAIL);
   }
 
@@ -279,7 +276,7 @@ static uint32_t mem_density_to_size(uint8_t mem_density)
 
 fresult_t mx25_init(spi_master_t *spi_handle)
 {
-  fresult_t f_res = F_RES_OK;
+  fresult_t fl_res = F_RES_OK;
   bool timer_is_running = false;
 
   /* Make sure the mx_25_timeout_timer_handle timer is initialized only once */
@@ -300,22 +297,22 @@ fresult_t mx25_init(spi_master_t *spi_handle)
   mx25_deselect(spi_handle);
 
   /* Wake up from deep power down (safe even if not in DP) */
-  f_res = mx25_wake_up(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  fl_res = mx25_wake_up(spi_handle);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
-  return f_res;
+  return fl_res;
 }
 
 fresult_t mx25_detect_flash(spi_master_t *spi_handle)
 {
-  fresult_t f_res = F_RES_OK;
-  uint8_t tx_cmd[4] = { MX25_CMD_RDID, MX25_DUMMY, MX25_DUMMY, MX25_DUMMY };
+  fresult_t fl_res = F_RES_OK;
+  uint8_t tx_cmd[4] = { MX25_CMD_RDID, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE };
   uint8_t rx[4] = { 0 };
 
   mx25_select(spi_handle);
-  f_res = mx25_spi_trx(spi_handle, tx_cmd, 1, rx, (sizeof(tx_cmd) - 1) );
+  fl_res = mx25_spi_trx(spi_handle, tx_cmd, 1, rx, (sizeof(tx_cmd) - 1) );
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   Delay_30us();// tRES1/tRES2 = 30 µs max
 
@@ -330,15 +327,14 @@ fresult_t mx25_detect_flash(spi_master_t *spi_handle)
   }
 
   tx_cmd[0] = MX25_CMD_REMS;
-  tx_cmd[1] = MX25_DUMMY;
-  tx_cmd[2] = MX25_DUMMY;
+  tx_cmd[1] = MX25_DUMMY_BYTE;
+  tx_cmd[2] = MX25_DUMMY_BYTE;
   tx_cmd[3] = 0x1;
 
   mx25_select(spi_handle);
-  mx25_spi_tx(spi_handle, tx_cmd, sizeof(tx_cmd));
-  f_res = mx25_spi_rx(spi_handle, rx, 2);
+  fl_res = mx25_spi_trx(spi_handle, tx_cmd, sizeof(tx_cmd), rx, 2 );
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   mx25_info.device_id = (uint16_t)((uint16_t)rx[0] << 8) | (uint16_t)rx[1];
 
@@ -370,18 +366,18 @@ uint32_t mx25_get_size(void)
  */
 fresult_t  mx25_ready_to_write_erase(spi_master_t *spi_handle)
 {
-  fresult_t f_res = F_RES_OK;
+  fresult_t fl_res = F_RES_OK;
 
   // 1. Wait for device to be ready (WIP = 0)
-  f_res = mx25_wait_ready(spi_handle, 100);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  fl_res = mx25_wait_ready(spi_handle, 100);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   // 2. Read current Status Register and Check if already unlocked (BP[3:0] = 0000)
   if( (mx25_read_status(spi_handle) & (MX25_SR_BP0 |MX25_SR_BP1 | MX25_SR_BP2 | MX25_SR_BP3)) != 0 ) { // Bits 5-2 are BP[3:0]
-      f_res = F_RES_WPROTECT_ERROR;
+      fl_res = F_RES_WPROTECT_ERROR;
   }
 
-  return f_res;
+  return fl_res;
 }
 /* ============================================================================
  * Erase
@@ -390,7 +386,7 @@ fresult_t  mx25_ready_to_write_erase(spi_master_t *spi_handle)
 fresult_t mx25_erase_chip(spi_master_t *spi_handle)
 {
   uint8_t cmd = MX25_CMD_CE;
-  fresult_t f_res = F_RES_OK;
+  fresult_t fl_res = F_RES_OK;
 
   // Check flash is busy or not
   if( mx25_read_status(spi_handle) & MX25_SR_WIP ) {
@@ -398,32 +394,31 @@ fresult_t mx25_erase_chip(spi_master_t *spi_handle)
   }
 
   // Check Write Enable Latch is set
-  f_res = mx25_write_enable(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  fl_res = mx25_write_enable(spi_handle);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   mx25_select(spi_handle);
-  f_res = mx25_spi_tx(spi_handle, &cmd, 1);
+  fl_res = mx25_spi_tx(spi_handle, &cmd, 1);
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
-  f_res = mx25_wait_ready(spi_handle, 16000);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  fl_res = mx25_wait_ready(spi_handle, 16000);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   //Read Erase Fail Flag bit.
-  if ( (mx25_read_security(spi_handle) & MX25_FSR_E_FAIL) ==  MX25_FSR_E_FAIL)
-  {
+  if ( (mx25_read_security(spi_handle) & MX25_FSR_E_FAIL) ==  MX25_FSR_E_FAIL) {
     return F_RES_ERASE_ERROR;
   }
 
-  return f_res;
+  return fl_res;
 }
 
 
 fresult_t mx25_erase_sector(spi_master_t *spi_handle, uint32_t addr)
 {
 
-  fresult_t f_res = F_RES_OK;
-  uint8_t tx_cmd[4] = { MX25_CMD_SE, MX25_DUMMY, MX25_DUMMY, MX25_DUMMY};
+  fresult_t fl_res = F_RES_OK;
+  uint8_t tx_cmd[4] = { MX25_CMD_SE, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE};
 
   /* Align to 4K sector */
   addr &= ~(MX25_SECTOR_SIZE - 1);
@@ -438,30 +433,29 @@ fresult_t mx25_erase_sector(spi_master_t *spi_handle, uint32_t addr)
   }
 
   // Check Write Enable Latch is set
-  f_res = mx25_write_enable(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  fl_res = mx25_write_enable(spi_handle);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   mx25_select(spi_handle);
-  f_res = mx25_spi_tx(spi_handle, tx_cmd, sizeof(tx_cmd));
+  fl_res = mx25_spi_tx(spi_handle, tx_cmd, sizeof(tx_cmd));
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
-  f_res = mx25_wait_ready(spi_handle, 100);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  fl_res = mx25_wait_ready(spi_handle, 100);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   //Read Erase Fail Flag bit.
-  if ( (mx25_read_security(spi_handle) & MX25_FSR_E_FAIL) ==  MX25_FSR_E_FAIL)
-  {
+  if ( (mx25_read_security(spi_handle) & MX25_FSR_E_FAIL) ==  MX25_FSR_E_FAIL) {
     return F_RES_ERASE_ERROR;
   }
 
-  return f_res;
+  return fl_res;
 }
 
 fresult_t mx25_erase_block64(spi_master_t *spi_handle, uint32_t addr)
 {
-  fresult_t f_res = F_RES_OK;
-  uint8_t tx_cmd[4] = { MX25_CMD_BE64, MX25_DUMMY, MX25_DUMMY, MX25_DUMMY};
+  fresult_t fl_res = F_RES_OK;
+  uint8_t tx_cmd[4] = { MX25_CMD_BE64, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE};
 
 
   addr &= ~(MX25_BLOCK64_SIZE - 1);
@@ -470,23 +464,23 @@ fresult_t mx25_erase_block64(spi_master_t *spi_handle, uint32_t addr)
   tx_cmd[3] = (uint8_t)(addr);
 
   // Check Write Enable Latch is set
-  f_res = mx25_write_enable(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  fl_res = mx25_write_enable(spi_handle);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   mx25_select(spi_handle);
-  f_res = mx25_spi_tx(spi_handle, tx_cmd, sizeof(tx_cmd));
+  fl_res = mx25_spi_tx(spi_handle, tx_cmd, sizeof(tx_cmd));
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
-  f_res = mx25_wait_ready(spi_handle, 1000);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  fl_res = mx25_wait_ready(spi_handle, 1000);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   //Read Erase Fail Flag bit.
   if ( (mx25_read_security(spi_handle) & MX25_FSR_E_FAIL) ==  MX25_FSR_E_FAIL) {
     return F_RES_ERASE_ERROR;
   }
   
-  return f_res;
+  return fl_res;
 }
 
 /* ============================================================================
@@ -495,7 +489,7 @@ fresult_t mx25_erase_block64(spi_master_t *spi_handle, uint32_t addr)
 
 fresult_t mx25_read(spi_master_t *spi_handle, uint32_t addr, uint8_t *buf, uint32_t len)
 {
-  fresult_t f_res = F_RES_OK;
+  fresult_t fl_res = F_RES_OK;
 
   uint8_t tx_cmd[4] = {
     MX25_CMD_READ,
@@ -506,20 +500,20 @@ fresult_t mx25_read(spi_master_t *spi_handle, uint32_t addr, uint8_t *buf, uint3
 
   mx25_select(spi_handle);
   mx25_spi_tx(spi_handle, tx_cmd, sizeof(tx_cmd));
-  f_res = mx25_spi_rx(spi_handle, buf, len);
+  fl_res = mx25_spi_rx(spi_handle, buf, len);
   mx25_deselect(spi_handle);
 
-  return f_res;
+  return fl_res;
 }
 
 
 fresult_t mx25_page_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t *buf, uint32_t len)
 {
-   fresult_t f_res = F_RES_OK;
+   fresult_t fl_res = F_RES_OK;
    uint32_t page_offset = 0;
    uint32_t chunk = 0;
 
-   uint8_t tx_cmd[4] = { MX25_CMD_PP, MX25_DUMMY, MX25_DUMMY, MX25_DUMMY };
+   uint8_t tx_cmd[4] = { MX25_CMD_PP, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE };
 
 
    // Check flash is busy or not
@@ -536,8 +530,8 @@ fresult_t mx25_page_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t
     }
 
     // Check Write Enable Latch is set
-    f_res = mx25_write_enable(spi_handle);
-    MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+    fl_res = mx25_write_enable(spi_handle);
+    MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
 
     tx_cmd[1] = (uint8_t)((addr >> 16) & 0xFF);
@@ -549,8 +543,8 @@ fresult_t mx25_page_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t
     mx25_spi_tx(spi_handle, buf, chunk);
     mx25_deselect(spi_handle);
 
-    f_res = mx25_wait_ready(spi_handle, 10);
-    MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+    fl_res = mx25_wait_ready(spi_handle, 10);
+    MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
     //Read Program Fail Flag bit.
     if ( (mx25_read_security(spi_handle) & MX25_FSR_P_FAIL) ==  MX25_FSR_P_FAIL) {
@@ -562,7 +556,7 @@ fresult_t mx25_page_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t
     len  -= chunk;
   }
 
-  return f_res;
+  return fl_res;
 }
 
 
@@ -572,15 +566,15 @@ fresult_t mx25_page_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t
 
 fresult_t mx25_power_down(spi_master_t *spi_handle)
 {
-  fresult_t f_res = F_RES_OK;
+  fresult_t fl_res = F_RES_OK;
   uint8_t cmd = MX25_CMD_DP;
 
   mx25_select(spi_handle);
-  f_res = mx25_spi_tx(spi_handle, &cmd, 1);
+  fl_res = mx25_spi_tx(spi_handle, &cmd, 1);
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
-  return f_res;
+  return fl_res;
 }
 
 /*
@@ -598,15 +592,15 @@ fresult_t mx25_power_down(spi_master_t *spi_handle)
  */
 fresult_t mx25_wake_up(spi_master_t *spi_handle)
 {
-  fresult_t   f_res = F_RES_OK;
-  uint8_t tx_cmd[4] = { MX25_CMD_RDID, MX25_DUMMY, MX25_DUMMY, MX25_DUMMY};
+  fresult_t   fl_res = F_RES_OK;
+  uint8_t tx_cmd[4] = { MX25_CMD_RDID, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE};
   uint8_t     rx[4] = { 0 };
 
 
   mx25_select(spi_handle);
-  f_res = mx25_spi_trx(spi_handle, tx_cmd, sizeof(tx_cmd), rx, (sizeof(rx) - 1));
+  fl_res = mx25_spi_trx(spi_handle, tx_cmd, sizeof(tx_cmd), rx, (sizeof(rx) - 1));
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   Delay_30us(); // Wait required recovery time tRES1/tRES2 = 30 us max
 
@@ -614,10 +608,10 @@ fresult_t mx25_wake_up(spi_master_t *spi_handle)
   if (   (rx[0] !=  MX25_MANUFACTURER_ID)
       || (rx[1] !=  ((uint8_t)((MX25_DEV_ID_MX25R8035F & 0xFF00) >>8)))
       || (rx[2] !=  ((uint8_t)( MX25_DEV_ID_MX25R8035F & 0xFF       ))) ) {
-    f_res = F_RES_READ_ERROR;
+    fl_res = F_RES_READ_ERROR;
   }
 
-  return f_res;
+  return fl_res;
 }
 
 /*
@@ -638,7 +632,7 @@ fresult_t mx25_wake_up(spi_master_t *spi_handle)
  */
 fresult_t  mx25_reset(spi_master_t *spi_handle)
 {
-  fresult_t  f_res = F_RES_OK;
+  fresult_t  fl_res = F_RES_OK;
   uint8_t cmd = MX25_CMD_RSTEN;
 
   // Check if flash is currently busy with an operation
@@ -649,9 +643,9 @@ fresult_t  mx25_reset(spi_master_t *spi_handle)
 
   // 1. Send Reset Enable command (0x66) - required before RST command
   mx25_select(spi_handle);
-  f_res = mx25_spi_tx(spi_handle, &cmd, 1);
+  fl_res = mx25_spi_tx(spi_handle, &cmd, 1);
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
 
   // 2. Brief delay between commands (CS# must deassert properly)
   Delay_6us();  /* @ToDo The time must been measured between  set CS# - > clear CS#  by oscilloscope.  It was been added by UP*/
@@ -659,16 +653,16 @@ fresult_t  mx25_reset(spi_master_t *spi_handle)
   // 3. Send Reset command (0x99) - actual reset execution
   cmd = MX25_CMD_RST;
   mx25_select(spi_handle);
-  f_res = mx25_spi_tx(spi_handle, &cmd, 1);
+  fl_res = mx25_spi_tx(spi_handle, &cmd, 1);
   mx25_deselect(spi_handle);
-  MX25_VERIFY_SUCCESS_OR_RETURN(f_res);
+  MX25_VERIFY_SUCCESS_OR_RETURN(fl_res);
   
   // 4. Wait for mandatory minimum recovery time tREADY2 (30 us)
   Delay_30us(); /* @ToDo The time must been measured between  set CS# - > clear CS#  by oscilloscope.  It was been added by UP*/
   
   // 5. Wait for device to become ready with timeout
-  f_res = mx25_wait_ready(spi_handle, 10);
+  fl_res = mx25_wait_ready(spi_handle, 10);
   
-  return f_res;
+  return fl_res;
  
 }

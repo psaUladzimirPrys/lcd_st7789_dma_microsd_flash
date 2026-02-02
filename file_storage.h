@@ -46,16 +46,25 @@ sl_status_t fs_sd_time_init(void);
 
 sl_status_t fs_sd_disk_volume_status(void);
 
-sl_status_t fs_sd_write_file(const char *path, const void *data, uint32_t size);
+sl_status_t fs_sd_write_file(const char *path,
+                             const void *data,
+                                uint32_t size);
 
-sl_status_t fs_sd_read_file(const char *file_path, uint16_t *buffer, uint32_t buffer_size);
+sl_status_t fs_sd_read_file(const char *file_path,
+                             void *buffer,
+                              uint32_t buffer_size);
 
-sl_status_t fs_sd_read_image(uint8_t index, uint16_t *buffer, uint32_t buffer_size);
+sl_status_t fs_sd_read_file_and_write_flash(const char *path,
+                                                  void *buffer,
+                                              uint32_t buffer_size,
+                                              uint32_t flash_address);
+
+sl_status_t fs_sd_write_img_to_flash(uint32_t index, uint32_t flash_address);
 
 sl_status_t fs_sd_get_file_size(const char *file_path,  uint32_t *file_size);
 
 sl_status_t fs_sd_append_to_file(const char   *file_path,
-                                 const uint8_t *data,
-                                 uint32_t       data_size);
+                                 const void   *data,
+                                 uint32_t      data_size);
 
 #endif /* FILE_STORAGE_H_ */

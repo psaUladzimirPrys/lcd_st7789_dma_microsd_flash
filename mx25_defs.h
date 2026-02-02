@@ -39,7 +39,7 @@
 */
 //#define    NON_SYNCHRONOUS_IO
 
-#define MX25_DUMMY     0x00  //dummy MUST be 0x00, in "read manufacturer"
+#define MX25_DUMMY_BYTE     0x00  //dummy MUST be 0x00, in "read manufacturer"
 
 /* ============================================================================
  * JEDEC IDs (most common MX25 parts)

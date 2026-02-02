@@ -47,10 +47,10 @@
 
 
 #define TEST_DISPLAY
-//#define TEST_SD
+#define TEST_SD
 #define TEST_FLASH
 
-//#define TEST_FLASH_ERASE_PROG
+#define TEST_FLASH_ERASE_PROG
 
 
 
@@ -77,8 +77,9 @@ void get_clocks_info(void)
 void app_init(void)
 {
   sl_status_t sl_status_code = SL_STATUS_OK;
+  uint32_t address;
 
-#ifdef TEST_SD
+#if defined(TEST_SD)
   const char filepath[] = "HELLO.TXT";
   const char test_str[] = "Initialize application.";
   uint32_t f_size;
@@ -114,7 +115,7 @@ void app_init(void)
 
   app_printf("File %s, size = %lu\r\n",filepath, f_size);
 
-  if (fs_sd_append_to_file(filepath, (const uint8_t *)&test_str[0], sizeof(test_str)) != SL_STATUS_OK) {
+  if (fs_sd_append_to_file(filepath, (const void *)&test_str[0], sizeof(test_str)) != SL_STATUS_OK) {
       app_log("Append to file: Failed\r\n");
       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
@@ -128,7 +129,7 @@ void app_init(void)
        app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 
-#ifdef TEST_FLASH_ERASE_PROG
+#ifdef TEST_FLASH_ERASE_PROG_TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   sl_status_code = flash_storage_erase_chip();
   if (sl_status_code != SL_STATUS_OK) {
        app_log("Erase Flash Chip is Failed: %lu\r\n",sl_status_code);
@@ -177,6 +178,22 @@ void app_init(void)
 
 #endif
 
+#if defined(TEST_SD) && defined(TEST_FLASH) && defined(TEST_FLASH_ERASE_PROG)
+
+  address = 0x080000;
+  sl_status_code = flash_storage_erase_block64(address);
+  if (sl_status_code != SL_STATUS_OK) {
+       app_log("Erase addr=0x%lx Flash 64k is Failed: %lu\r\n", address, sl_status_code);
+       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+  sl_status_code = fs_sd_write_img_to_flash(0, address);
+  if (sl_status_code != SL_STATUS_OK) {
+       app_log("Write to addr=0x%lx Flash is Failed: %lu\r\n", address, sl_status_code);
+       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+#endif
 
 }
 
