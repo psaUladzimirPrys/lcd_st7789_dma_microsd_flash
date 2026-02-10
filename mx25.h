@@ -196,6 +196,8 @@ fresult_t mx25_wake_up(spi_master_t *spi_handle);
  */
 fresult_t  mx25_reset(spi_master_t *spi_handle);
 
+fresult_t mx25_enable_hpf_mode(spi_master_t *spi_handle);
+
 #ifdef __cplusplus
 }
 #endif

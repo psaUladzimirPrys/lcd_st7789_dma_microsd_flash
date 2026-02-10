@@ -39,6 +39,7 @@
 // -----------------------------------------------------------------------------
 //                       Includes
 // -----------------------------------------------------------------------------
+#include "app_log.h"
 #include "sl_status.h"
 #include "sl_sleeptimer.h"
 #include "sl_component_catalog.h"
@@ -71,6 +72,7 @@ static void *flush_area_callback_arg = NULL;
 static uint8_t *pColorSwap = NULL;
 
 static uint16_t dma_buffer[MIPI_DBI_SPI_4WIRE_DMA_BUFFER_SIZE_MAX / 2];
+static uint8_t  test_buffer[MIPI_DBI_SPI_4WIRE_DMA_BUFFER_SIZE_MAX];
 
 static struct mipi_dbi_device mipi_dbi_device;
 
@@ -748,7 +750,7 @@ sl_status_t adafruit_st7789_draw_rgb_bitmap_from_flash(int16_t x,
                                             int16_t y,
                                             int16_t w,
                                             int16_t h,
-                                            uint32_t flash_address)
+                                            uint32_t flash_address, bool set_BE)
 {
 
   int16_t x2;
@@ -807,11 +809,19 @@ sl_status_t adafruit_st7789_draw_rgb_bitmap_from_flash(int16_t x,
         size = pixel_cnt - n;
       }
 
-      flash_storage_read(flash_address, (uint8_t *)&dma_buffer[0], (size * 2));
+      
+
+      status = flash_storage_read(flash_address, (uint8_t *)&dma_buffer[0], (size * 2));
+      if (SL_STATUS_OK != status) {
+        break;
+      }
 
 
-      for (i = 0; i < size; i++) {
-        dma_buffer[i] = ((uint16_t)(dma_buffer[i] & 0xff00) >> 8) | ((uint16_t)(dma_buffer[i] & 0xff) << 8);
+      if (!set_BE)
+      {
+        for (i = 0; i < size; i++) {
+          dma_buffer[i] = ((uint16_t)(dma_buffer[i] & 0xff00) >> 8) | ((uint16_t)(dma_buffer[i] & 0xff) << 8);
+        }
       }
 
       // mipi_dbi_device.api->select(&mipi_dbi_device);

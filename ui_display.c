@@ -25,7 +25,7 @@
  *******************************   DEFINES   ***********************************
  ******************************************************************************/
 
-#define APP_TIMER_SMALL        500
+#define APP_TIMER_SMALL        300
 #define APP_TIMER_MEDIUM       2000
 #define APP_TIMER_LARGE        4000
 
@@ -114,7 +114,7 @@ void disp_init(void)
   }
 
 
-  error = adafruit_st7789_set_rotation(adafruit_st7789_rotation_none);//(adafruit_st7789_rotation_90);
+  error = adafruit_st7789_set_rotation(adafruit_st7789_rotation_90);
   if (error != SL_STATUS_OK) {
      // Failed to init st7789, handle error
      app_log("Send rotation90 Command is Failed: %lu\r\n",error);
@@ -236,39 +236,7 @@ void disp_process_action(void)
         app_log("glib_enable_display --> true\r\n");
         break;
       case 14:
-        adafruit_st7789_draw_rgb_bitmap(0, 0, (uint16_t *)&gImage_cat_image[0], 135, 240);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 0\r\n");
-        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
-                                                APP_TIMER_LARGE,
-                                                app_sleeptimer_callback,
-                                                NULL,
-                                                0,
-                                                0);
-        app_log("Start sleep timer %dms\r\n", APP_TIMER_LARGE);
-        break;
-      case 15:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[0]);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 0\r\n");
-        break;
-      case 16:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[1]);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 1\r\n");
-        break;
-      case 17:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240,  img_address[2]);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 2\r\n");
-        break;
-      case 18:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[3]);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 3\r\n");
-        break;
-      case 19:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[4]);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 4\r\n");
-        break;
-      case 20:
         glib_fill(&g_context, ST7789_BLACK);
-
         glib_draw_circle(&g_context, 25, 25, 25, ST7789_MAGENTA);
         glib_fill_circle(&g_context, 90, 25, 25, ST7789_BLUE);
         glib_draw_triangle(&g_context, 80, 60, 130, 60, 130, 90, ST7789_YELLOW);
@@ -279,12 +247,68 @@ void disp_process_action(void)
         app_log("glib_draw_triangle, glib_fill_triangle\r\n");
         app_log("glib_draw_round_rect, glib_fill_rect\r\n");
         break;
+      case 15:
+        adafruit_st7789_draw_rgb_bitmap(0, 0, (uint16_t *)&gImage_cat_image[0], 135, 240);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 0\r\n");
+        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
+                                                APP_TIMER_LARGE,
+                                                app_sleeptimer_callback,
+                                                NULL,
+                                                0,
+                                                0);
+        app_log("Start sleep timer %dms\r\n", APP_TIMER_LARGE);
+        break;
+      case 16:
+        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[0], false);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 0\r\n");
+        break;
+      case 17:
+        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[1], false);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 1\r\n");
+        break;
+      case 18:
+        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240,  img_address[2], false);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 2\r\n");
+        break;
+      case 19:
+        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[3], false);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 3\r\n");
+        break;
+      case 20:
+        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[4], false);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 4\r\n");
+        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
+                                                APP_TIMER_SMALL,
+                                                app_sleeptimer_callback,
+                                                NULL,
+                                                0,
+                                                0);
+        app_log("Start sleep timer %dms\r\n", APP_TIMER_SMALL);
+        glib_fill(&g_context, ST7789_WHITE);
+        break;
+///////////////////////////////////////////////////////////////////////////////////////
+      case 21:
+        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 111, 99, 99, (0x080000), true);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 5\r\n");
+        break;
+      case 22:
+        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 111, 99, 99, (0x080000 + 19602), true);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 6\r\n");
+        break;
+      case 23:
+        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 111, 99, 99, (0x080000 + 19602 + 19602), true);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 7\r\n");
+        break;
+      case 24:
+        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 111, 99, 99, (0x080000 + 19602 + 19602 + 19602), true);
+        app_log("adafruit_st7789_draw_rgb_bitmap idx = 8\r\n");
+        break;
       default:
         break;
     }
 
-    if (demo_index++ > 19) {
-      demo_index = 14;
+    if (++demo_index > 24) {
+      demo_index = 21;
     }
   }
 }

@@ -152,6 +152,13 @@ extern SPIDRV_HandleData_t mx25_spi_handle_data;
 #define MX25_CFG_PARAM_CHECK   1
 
 /*
+ *Enable this parameter changes the internal implementation  fresult_t mx25_wait_ready(spi_master_t *spi_handle, uint16_t op_timeout)
+ *of the bit-setting loop wait function from while(cond) { delay() } to  do { ..delay().. } while (....)
+ *
+*/
+#define MX25_WAIT_DO_STATUS_WHILE_READY
+
+/*
  * Busy-wait delay hook (optional)
  * Useful for RTOS yield or low-power wait
  *

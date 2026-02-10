@@ -93,7 +93,7 @@ sl_status_t fs_sd_init(void)
   app_log_info("Initializing SD card...\r\n");
   sl_status = sd_card_spi_init(app_spi_instance);  // Assuming that app_spi_instance is a global object
   if (sl_status != SL_STATUS_OK) {
-    app_log_debug("SD card SPI init failed: 0x%lx\r\n", sl_status);
+    app_log_debug("SD card SPI init failed: %lu\r\n", sl_status);
     return sl_status;
   }
 
@@ -107,14 +107,14 @@ sl_status_t fs_sd_init(void)
 
   /* @ToDo must remove after pins validation  It was been added by UP*/
   if ((pinport.port != SL_GPIO_PORT_C) && (pinport.pin != 1)) {
-    app_log_debug("SD card SPI MISO port failed: 0x%lx\r\n", sl_status);
+    app_log_debug("SD card SPI MISO port failed: %lu\r\n", sl_status);
     return SL_STATUS_FAIL;
   }
 
 
   sl_status = sl_gpio_set_pin_mode(&pinport, SL_GPIO_MODE_INPUT_PULL, 1);
   if (sl_status != SL_STATUS_OK) {
-    app_log_debug("SD card SPI MISO pin failed: 0x%lx\r\n", sl_status);
+    app_log_debug("SD card SPI MISO pin failed: %lu\r\n", sl_status);
     return sl_status;
   }
 
@@ -129,13 +129,13 @@ sl_status_t fs_sd_init(void)
 
     /* @ToDo must remove after pins validation  It was been added by UP*/
     if ((pinport.port != SL_GPIO_PORT_B) && (pinport.pin != 0)) {
-        app_log_debug("SD card SPI CS port failed: 0x%lx\r\n", sl_status);
+        app_log_debug("SD card SPI CS port failed: %lu\r\n", sl_status);
        return SL_STATUS_FAIL;
     }
 
     sl_status = sl_gpio_set_pin_mode(&pinport, SL_GPIO_MODE_PUSH_PULL, 1);
     if (sl_status != SL_STATUS_OK) {
-        app_log_debug("SD card SPI CS pin failed: 0x%lx\r\n", sl_status);
+        app_log_debug("SD card SPI CS pin failed: %lu\r\n", sl_status);
        return sl_status;
     }
 
@@ -290,10 +290,10 @@ sl_status_t fs_sd_read_file(const char *file_path, void *buffer, uint32_t buffer
   return SL_STATUS_OK;
 }
 
-sl_status_t fs_sd_write_img_to_flash(uint32_t index, uint32_t flash_address)
+sl_status_t fs_sd_write_img_to_flash(const char *path, uint32_t flash_address)
 {
-  uint32_t img_index;
-  char filename[20] = "";
+
+
   sl_status_t sl_status = SL_STATUS_OK;
 
   if (!sd_mounted) {
@@ -301,19 +301,12 @@ sl_status_t fs_sd_write_img_to_flash(uint32_t index, uint32_t flash_address)
     return SL_STATUS_NOT_READY;
   }
 
-   img_index = index;
-   //for (img_index = 0; img_index < index; img_index++ ) {
-   // Form the file name, for example "image0.bin" (assuming raw RGB565 files on SD)
-   sprintf(filename, "img%lu.bin", img_index);
-
-   sl_status = fs_sd_read_file_and_write_flash(filename, (void *)&F_work[0], FF_MAX_SS, flash_address);
+   sl_status = fs_sd_read_file_and_write_flash(path, (void *)&F_work[0], FF_MAX_SS, flash_address);
    if ( sl_status != SL_STATUS_OK) {
-        app_log_error("Write Error File %s to Flash: %lu \r\n", filename, sl_status);
+        app_log_error("Write Error File %s to Flash: %lu \r\n", path, sl_status);
         return SL_STATUS_FAIL;
      }
-  //}
-
-   app_log_info("Write file: %s OK to Flash from SD.\r\n", filename);
+  app_log_info("Write file: %s OK to Flash from SD.\r\n", path);
 
   return SL_STATUS_OK;
 }
@@ -372,7 +365,7 @@ sl_status_t fs_sd_read_file_and_write_flash(const char *path,
     // Write buffer with bytes_read to flash
     sl_status = flash_storage_write(current_address, (const uint8_t *)buffer, bytes_read);
     if (sl_status != SL_STATUS_OK) {
-      app_log_error("flash_storage_write failed at addr %lu: %lu\r\n", current_address, sl_status);
+      app_log_error("Flash write failed at addr = 0x%lx: %lu\r\n", current_address, sl_status);
       break;
     }
 
@@ -388,7 +381,7 @@ sl_status_t fs_sd_read_file_and_write_flash(const char *path,
   }
 
   if (sl_status == SL_STATUS_OK) {
-    app_log_info("File %s successfully read and written to flash starting at %lu\r\n", path, flash_address);
+    app_log_info("File %s success R/W to flash at addr = 0x%lx\r\n", path, flash_address);
   }
 
   return sl_status;
@@ -479,7 +472,7 @@ sl_status_t fs_sd_append_to_file(const char   *file_path,
   /* Write data */
   fs_res = f_write(&File, data, data_size, &bytes_written);
   if ((fs_res != FR_OK) || (bytes_written != data_size)) {
-    app_log_debug("Error f_write failed for %s : %d, written=%uBytes\r\n", file_path, fs_res, bytes_written);
+    app_log_debug("Error f_write failed for %s : %d written %u Bytes\r\n", file_path, fs_res, bytes_written);
     f_close(&File);
     return SL_STATUS_FAIL;
   }

@@ -76,6 +76,10 @@ sl_status_t flash_storage_erase_chip(void);
 
 sl_status_t flash_spi_getBitRate(uint32_t *bitRate);
 
+sl_status_t flash_storage_wakeup_chip(void);
+
+sl_status_t  flash_storage_enable_hpf_mode(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -59,7 +59,7 @@ sl_status_t fs_sd_read_file_and_write_flash(const char *path,
                                               uint32_t buffer_size,
                                               uint32_t flash_address);
 
-sl_status_t fs_sd_write_img_to_flash(uint32_t index, uint32_t flash_address);
+sl_status_t fs_sd_write_img_to_flash(const char *path, uint32_t flash_address);
 
 sl_status_t fs_sd_get_file_size(const char *file_path,  uint32_t *file_size);
 

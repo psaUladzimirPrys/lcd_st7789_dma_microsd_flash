@@ -54,6 +54,20 @@
 
 
 
+#if defined(TEST_FLASH) && defined(TEST_FLASH_ERASE_PROG)
+
+#define IMAGE_COUNT (sizeof(image_files)/sizeof(image_files[0]))
+
+static const char *image_files[] = {
+       "U1.raw"
+      ,"U2.raw"
+      ,"U3.raw"
+      ,"U4.raw"
+      //,"image2.bmp"
+  };
+#define IMG_FILE_U1_RAW_SIZE 19602
+
+#endif
 void get_clocks_info(void)
 {
   
@@ -77,15 +91,26 @@ void get_clocks_info(void)
 void app_init(void)
 {
   sl_status_t sl_status_code = SL_STATUS_OK;
-  uint32_t address;
 
+
+#if defined(TEST_SD) && defined(TEST_FLASH) && defined(TEST_FLASH_ERASE_PROG)
+  uint32_t address;
+  uint32_t img_index;
+  //uint32_t image_index = 0;
+  char sd_card_file_path[20] = "";
+#endif
+
+#if defined(TEST_FLASH)
+  uint32_t bitRate = 0;
+#endif
 #if defined(TEST_SD)
   const char filepath[] = "HELLO.TXT";
-  const char test_str[] = "Initialize application.";
+        char test_str[] = "Initialize application.";
   uint32_t f_size;
-
 #endif
+
   //uint32_t f_req;
+  CMU_ClockDivSet(cmuClock_PCLK, 2U);
 
   get_clocks_info();
 
@@ -97,27 +122,28 @@ void app_init(void)
 
 #ifdef TEST_SD
   // Initialize file storage of SD card
-  if (fs_sd_init() != SL_STATUS_OK) {
-     // Failed to init SD card, handle error
-      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  sl_status_code = fs_sd_init();
+  if (sl_status_code != SL_STATUS_OK) {
+    // Failed to init SD card, handle error
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 
   if ( fs_sd_disk_volume_status() != SL_STATUS_OK) {
-        // Failed to init SD card, handle error
-         app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-    }
+    // Failed to init SD card, handle error
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
 
   //sl_sleeptimer_delay_millisecond(10);
   if (fs_sd_get_file_size(filepath, &f_size) != SL_STATUS_OK) {
-       app_log("Getting size of file: Failed\r\n");
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Getting size of file: %s Failed\r\n", filepath);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 
   app_printf("File %s, size = %lu\r\n",filepath, f_size);
 
   if (fs_sd_append_to_file(filepath, (const void *)&test_str[0], sizeof(test_str)) != SL_STATUS_OK) {
-      app_log("Append to file: Failed\r\n");
-      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Append to file: Failed\r\n");
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 #endif
 
@@ -125,73 +151,238 @@ void app_init(void)
   // Initialize FLASH interface
   sl_status_code = flash_storage_init();
   if (sl_status_code != SL_STATUS_OK) {
-       app_log("Init Flash is Failed: %lu\r\n",sl_status_code);
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Init Flash is Failed: %lu\r\n",sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 
-#ifdef TEST_FLASH_ERASE_PROG_TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  sl_status_code =  flash_storage_enable_hpf_mode();
+  if (sl_status_code != SL_STATUS_OK) {
+    app_log("HPF Flash mode is Failed: %lu\r\n",sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+  //CMU_ClockDivSet(cmuClock_PCLK, 1U);
+  get_clocks_info();
+  sl_status_code = flash_spi_getBitRate(&bitRate);
+  if (sl_status_code == SL_STATUS_OK ) {
+     app_log("Flash SPI bitrate=%luMHZ \r\n",bitRate);
+  } else {
+     app_log("Flash SPI bitrate ERROR\r\n");
+  }
+
+#ifdef TEST_FLASH_ERASE_PROG
   sl_status_code = flash_storage_erase_chip();
   if (sl_status_code != SL_STATUS_OK) {
-       app_log("Erase Flash Chip is Failed: %lu\r\n",sl_status_code);
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Erase Flash Chip is Failed: %lu\r\n",sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
   app_printf("Erase Flash Chip : Done\r\n");
 
-  sl_status_code =  flash_storage_write(FLASH_ADDR_IMAGE_CAT_IMAGE, gImage_cat_image, sizeof(gImage_cat_image));
+  sl_status_code =  flash_storage_write( FLASH_ADDR_IMAGE_CAT_IMAGE, gImage_cat_image, sizeof(gImage_cat_image));
   if (sl_status_code != SL_STATUS_OK) {
-       app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
   app_log("Write to Flash Chip at addr = %u is Done\r\n",FLASH_ADDR_IMAGE_CAT_IMAGE);
 
   sl_status_code =  flash_storage_write( FLASH_ADDR_BIRD_IMAGE, gImage_bird_image, sizeof(gImage_bird_image));
   if (sl_status_code != SL_STATUS_OK) {
-       app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
   app_log("Write to Flash Chip at addr = %u is Done\r\n",FLASH_ADDR_BIRD_IMAGE);
 
-  sl_status_code =  flash_storage_write(FLASH_ADDR_CUTE_IMAGE, gImage_cute_image,  sizeof(gImage_cute_image));
+  sl_status_code =  flash_storage_write( FLASH_ADDR_CUTE_IMAGE, gImage_cute_image,  sizeof(gImage_cute_image));
   if (sl_status_code != SL_STATUS_OK) {
-       app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
   app_log("Write to Flash Chip at addr = %u is Done\r\n",FLASH_ADDR_CUTE_IMAGE);
 
-  sl_status_code =  flash_storage_write(FLASH_ADDR_CACTUS_PLANTS, gImage_cactus_plants, sizeof(gImage_cactus_plants));
+  sl_status_code =  flash_storage_write( FLASH_ADDR_CACTUS_PLANTS, gImage_cactus_plants, sizeof(gImage_cactus_plants));
   if (sl_status_code != SL_STATUS_OK) {
-       app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
   app_log("Write to Flash Chip at addr = %u is Done\r\n",FLASH_ADDR_CACTUS_PLANTS);
 
   sl_status_code =  flash_storage_write( FLASH_ADDR_NATURE_IMAGE, gImage_nature_image, sizeof(gImage_nature_image));
   if (sl_status_code != SL_STATUS_OK) {
-       app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Write to Flash is Failed: %lu\r\n",sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
   app_log("Write to Flash Chip at addr = %u is Done\r\n",FLASH_ADDR_NATURE_IMAGE);
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      address = FLASH_ADDR_CACTUS_PLANTS+34;
+      sl_status_code = flash_storage_read(address,
+                                          (uint8_t *)&test_str[0],
+                                          sizeof(test_str));
+
+      if (sl_status_code != SL_STATUS_OK) {
+        app_log("Error Read addr=0x%lx test_str[] Err: %lu\r\n", address, sl_status_code);
+        app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+      if (memcmp((uint8_t *)&gImage_cactus_plants[34] ,(uint8_t *)&test_str[0],sizeof(test_str)) !=0) {
+          app_log("gImage_cactus_plants Check memory Error\r\n");
+          app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      address = FLASH_ADDR_IMAGE_CAT_IMAGE+55;
+      sl_status_code = flash_storage_read(address,
+                                          (uint8_t *)&test_str[0],
+                                          sizeof(test_str));
+
+      if (sl_status_code != SL_STATUS_OK) {
+        app_log("Error Read addr=0x%lx test_str[] Err: %lu\r\n", address, sl_status_code);
+        app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+      if (memcmp((uint8_t *)&gImage_cat_image[55] ,(uint8_t *)&test_str[0],sizeof(test_str)) !=0) {
+          app_log("gImage_cat_image Check memory Error\r\n");
+          app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      address = FLASH_ADDR_BIRD_IMAGE+87;
+      sl_status_code = flash_storage_read(address,
+                                          (uint8_t *)&test_str[0],
+                                          sizeof(test_str));
+
+      if (sl_status_code != SL_STATUS_OK) {
+        app_log("Error Read addr=0x%lx test_str[] Err: %lu\r\n", address, sl_status_code);
+        app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+      if (memcmp((uint8_t *)&gImage_bird_image[87] ,(uint8_t *)&test_str[0],sizeof(test_str)) !=0) {
+          app_log("gImage_bird_image Check memory Error\r\n");
+          app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      address = FLASH_ADDR_CUTE_IMAGE+46;
+      sl_status_code = flash_storage_read(address,
+                                          (uint8_t *)&test_str[0],
+                                          sizeof(test_str));
+
+      if (sl_status_code != SL_STATUS_OK) {
+        app_log("Error Read addr=0x%lx test_str[] Err: %lu\r\n", address, sl_status_code);
+        app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+      if (memcmp((uint8_t *)&gImage_cute_image[46] ,(uint8_t *)&test_str[0],sizeof(test_str)) !=0) {
+          app_log("gImage_cute_image Check memory Error\r\n");
+          app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      address = FLASH_ADDR_NATURE_IMAGE+100;
+      sl_status_code = flash_storage_read(address,
+                                          (uint8_t *)&test_str[0],
+                                          sizeof(test_str));
+
+      if (sl_status_code != SL_STATUS_OK) {
+        app_log("Error Read addr=0x%lx test_str[] Err: %lu\r\n", address, sl_status_code);
+        app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+      if (memcmp((uint8_t *)&gImage_nature_image[100] ,(uint8_t *)&test_str[0],sizeof(test_str)) !=0) {
+          app_log("gImage_nature_image Check memory Error\r\n");
+          app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #endif
 
-  app_log("Flash Chip in use = %u Bytes\r\n",(FLASH_ADDR_NATURE_IMAGE  + 64808));
+  app_log("Flash Chip in use = %u Bytes\r\n", (FLASH_ADDR_NATURE_IMAGE  + 64808));
 
 #endif
+
+
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if defined(TEST_SD) && defined(TEST_FLASH) && defined(TEST_FLASH_ERASE_PROG)
 
   address = 0x080000;
   sl_status_code = flash_storage_erase_block64(address);
   if (sl_status_code != SL_STATUS_OK) {
-       app_log("Erase addr=0x%lx Flash 64k is Failed: %lu\r\n", address, sl_status_code);
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Erase addr=0x%lx Flash 64k is Failed: %lu\r\n", address, sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+  app_log("Erase addr=0x%lx Flash 64k is Done: %lu\r\n", address, sl_status_code);
+
+  address = 0x080000 + (MX25_BLOCK64_SIZE - 1);
+  sl_status_code = flash_storage_erase_block64(address);
+  if (sl_status_code != SL_STATUS_OK) {
+    app_log("Erase addr=0x%lx Flash 64k is Failed: %lu\r\n", address, sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+  app_log("Erase addr=0x%lx Flash 64k is Done: %lu\r\n", address, sl_status_code);
+
+
+#if 0
+  sl_status_code = flash_storage_write(address,
+                                       (uint8_t *)&test_str[0],
+                                        sizeof(test_str));
+  if (sl_status_code != SL_STATUS_OK) {
+    app_log("Error Write to addr=0x%lx test_str[] Err : %lu\r\n", address, sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+#endif
+
+#if 1
+
+ address = 0x080000;
+ for ( img_index = 0; img_index < IMAGE_COUNT; img_index++ ) {
+  // Form the file name, for example "image0.bin" (assuming raw RGB565 files on SD)
+   snprintf(sd_card_file_path, sizeof(sd_card_file_path) ,"%s", image_files[img_index]);
+
+    sl_status_code = fs_sd_write_img_to_flash(sd_card_file_path, address);
+    if (sl_status_code != SL_STATUS_OK) {
+      app_log("Write to addr=0x%lx Flash is Failed: %lu\r\n", address, sl_status_code);
+      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+     }
+
+    f_size = 0;
+    if (fs_sd_get_file_size(sd_card_file_path, &f_size) != SL_STATUS_OK) {
+      app_log("Getting size of file: %s Failed\r\n", sd_card_file_path);
+      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    }
+
+    address += f_size;
+  } 
+#endif
+
+  address = 0x080000;
+  sl_status_code = flash_storage_read(address,
+                                      (uint8_t *)&test_str[0],
+                                      sizeof(test_str));
+
+  if (sl_status_code != SL_STATUS_OK) {
+    app_log("Error Read addr=0x%lx test_str[] Err: %lu\r\n", address, sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 
-  sl_status_code = fs_sd_write_img_to_flash(0, address);
+
+  address = 0x080000 + IMG_FILE_U1_RAW_SIZE;
+  sl_status_code = flash_storage_read(address,
+                                      (uint8_t *)&test_str[0],
+                                      sizeof(test_str));
+
   if (sl_status_code != SL_STATUS_OK) {
-       app_log("Write to addr=0x%lx Flash is Failed: %lu\r\n", address, sl_status_code);
-       app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    app_log("Error Read addr=0x%lx test_str[] Err: %lu\r\n", address, sl_status_code);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
+
 
 #endif
 
@@ -237,6 +428,8 @@ void app_process_action(void)
 
   cli_app_process_action();
 
+  /* @ToDo Workaround to prevent reading corrupted data  It was been added by UP*/
+  flash_storage_wakeup_chip(); /*This is the worst way to solve the issue*/
 
 #ifdef TEST_DISPLAY
   disp_process_action();
@@ -246,13 +439,13 @@ void app_process_action(void)
 
 #ifdef TEST_SD
   if (get_time((char *)&test_str[0]) != SL_STATUS_OK) {
-     // Failed to get time, handle error
-      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    // Failed to get time, handle error
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 
   if (fs_sd_append_to_file("HELLO.TXT", test_str, 27) != SL_STATUS_OK) {
-     // Failed to init SD card, handle error
-      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    // Failed to init SD card, handle error
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 #endif
   sl_sleeptimer_delay_millisecond(100);

@@ -87,28 +87,24 @@ static sl_status_t validate_range(uint32_t addr, uint32_t len)
 {
   uint32_t end_addr;
 
-  if (!sd_flash.initialized) {
-    return SL_STATUS_NOT_INITIALIZED;
-  }
-  
   if (len == 0) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
  /* addr must be inside flash */
   if ( addr >= sd_flash.size_bytes ) {
-    return SL_STATUS_INVALID_PARAMETER;  // out of range
+    return SL_STATUS_INVALID_RANGE;  // out of range
   }
 
   /* check overflow of addr + len */
   end_addr = addr + len;
   if (end_addr < addr) {
-    return SL_STATUS_INVALID_PARAMETER;   // uint32_t overflow
+    return SL_STATUS_INVALID_RANGE;   // uint32_t overflow
   }
 
   /* end must not exceed flash size */
   if (end_addr > sd_flash.size_bytes) {
-    return SL_STATUS_INVALID_PARAMETER;
+    return SL_STATUS_INVALID_RANGE;
   }
 
   return SL_STATUS_OK;
@@ -189,7 +185,7 @@ static sl_status_t flash_spi_init(flash_spi_handle_t spi_handle)
   }
 
   /* CS handled manually */
-  // spi_master_set_cs_mode(SPI_MASTER_CS_MODE_SW); @TODO the func hasn't implemented UP
+  // spi_master_set_cs_mode(SPI_MASTER_CS_MODE_SW); @TODO the func hasn't implemented yet UP
   if (mx25_gpio_init(spi_handle) != SL_STATUS_OK) {
       return SL_STATUS_NOT_INITIALIZED;
   }
@@ -285,120 +281,217 @@ sl_status_t flash_storage_init(void)
 /* ============================================================================
  * Read / Write
  * ========================================================================== */
-
+/*
+ * Function:        flash_storage_read
+ * Arguments:       uint32_t addr - Starting address in flash memory (0x000000 to 0x0FFFFF for 1MB)
+ *                  uint8_t *buf - Pointer to buffer where read data will be stored
+ *                  uint32_t len - Number of bytes to read (max limited by flash size)
+ * Description:     Reads data from MX25R8035F flash memory through the storage abstraction layer.
+ *                  This function performs safety checks including initialization state,
+ *                  buffer validity, and address range validation. It then calls the low-level
+ *                  mx25_read function to perform the actual SPI transaction. The function
+ *                  supports reading any contiguous block within the 8Mb (1MB) address space.
+ *
+ * Return Message:  sl_status_t
+ *                  - SL_STATUS_OK: Read operation completed successfully
+ *                  - SL_STATUS_NOT_INITIALIZED: Flash storage not initialized (call flash_storage_init first)
+ *                  - SL_STATUS_INVALID_PARAMETER: Null buffer pointer provided
+ *                  - SL_STATUS_INVALID_RANGE: Address/length exceeds flash memory boundaries
+ *                  - SL_STATUS_FAIL: Low-level read operation failed (SPI communication error)
+ */
 sl_status_t flash_storage_read(uint32_t addr,
                                uint8_t *buf,
                                uint32_t len)
 {
+  /* Check if flash storage driver has been properly initialized */
   if (!sd_flash.initialized) {
     return SL_STATUS_NOT_INITIALIZED;
   }
-
+  /* Validate that caller provided a valid buffer pointer */
   if (!buf) {
     return SL_STATUS_INVALID_PARAMETER;
   }
-
+  /* Ensure the requested address range is within flash memory boundaries */
   sl_status_t sl_status = validate_range(addr, len);
   if (sl_status != SL_STATUS_OK) {
     return sl_status;
   }
-
+  /* Perform the actual read operation through the MX25 driver */
   if (mx25_read(&sd_flash.spi, addr, buf, len) != F_RES_OK) {
-     return SL_STATUS_FAIL;
+     return SL_STATUS_FAIL;/* Low-level read failed - could indicate SPI communication error */
   }
 
   return SL_STATUS_OK;
 }
 
+/*
+ * Function:        flash_storage_write
+ * Arguments:       uint32_t addr - Starting address in flash memory (0 to FLASH_SIZE-1)
+ *                  const uint8_t *buf - Pointer to data buffer to write
+ *                  uint32_t len - Number of bytes to write (1 to maximum flash capacity)
+ * Description:     Writes data to MX25R8035F flash memory storage. This high-level
+ *                  function validates the storage system state, address range, and
+ *                  device readiness before delegating to the low-level page write
+ *                  function. It provides abstraction for the flash storage layer
+ *                  with proper error handling and status reporting.
+ *
+ * Return Message: sl_status_t
+ *                  - SL_STATUS_OK: Data successfully written to flash
+ *                  - SL_STATUS_NOT_INITIALIZED: Flash storage not initialized
+ *                  - SL_STATUS_INVALID_PARAMETER: Null buffer pointer
+ *                  - SL_STATUS_INVALID_RANGE: Address/length outside valid range
+ *                  - SL_STATUS_FLASH_PROGRAM_FAILED: Device not ready or write error
+ */
 sl_status_t flash_storage_write(uint32_t addr,
                                 const uint8_t *buf,
                                 uint32_t len)
 {
+  /* Check if flash storage system has been properly initialized */
   if (!sd_flash.initialized) {
     return SL_STATUS_NOT_INITIALIZED;
   }
-
+  /* Validate input buffer pointer is not NULL */
   if (!buf) {
     return SL_STATUS_INVALID_PARAMETER;
   }
-
+  /* Ensure address and length are within valid flash memory boundaries */
   sl_status_t sl_status = validate_range(addr, len);
   if (sl_status != SL_STATUS_OK) {
     return sl_status;
   }
-
+  /* Verify flash device is ready for write/erase operations (WIP=0, WEL can be set) */
   if (mx25_ready_to_write_erase(&sd_flash.spi) != F_RES_OK) {
     return SL_STATUS_FLASH_PROGRAM_FAILED;
   }
-
+  /* Execute the actual page write operation to flash memory */
   if (mx25_page_write(&sd_flash.spi, addr, buf, len) != F_RES_OK) {
     return SL_STATUS_FLASH_PROGRAM_FAILED;
   }
-
+  /* Write operation completed successfully */
    return SL_STATUS_OK;
 }
 
-#if 0
 /* ============================================================================
  * Erase
  * ========================================================================== */
-
+/*
+ * Function:        flash_storage_erase_sector
+ * Arguments:       uint32_t addr - Any address within the 4KB sector to erase
+ * Description:     Erases a 4KB sector in MX25R8035F flash memory. This high-level
+ *                  function validates system initialization, device readiness,
+ *                  and address alignment before delegating to low-level erase
+ *                  function. The address is automatically aligned to sector
+ *                  boundary (4KB). Sector erase operation sets all bits in the
+ *                  sector to 1 (0xFF).
+ *
+ * Return Message: sl_status_t
+ *                  - SL_STATUS_OK: Sector successfully erased
+ *                  - SL_STATUS_NOT_INITIALIZED: Flash storage not initialized
+ *                  - SL_STATUS_INVALID_PARAMETER: Address outside flash memory range
+ *                  - SL_STATUS_FLASH_ERASE_FAILED: Device not ready or erase error
+ */
 sl_status_t flash_storage_erase_sector(uint32_t addr)
-{
+{/* Verify flash storage system has been properly initialized */
   if (!sd_flash.initialized) {
     return SL_STATUS_NOT_INITIALIZED;
   }
-
+  /* Check if flash device is ready for write/erase operations (WIP=0) */
   if (mx25_ready_to_write_erase(&sd_flash.spi) != F_RES_OK) {
       return SL_STATUS_FLASH_ERASE_FAILED;
   }
-
+  /* Validate address is within flash memory boundaries */
   if (addr >= sd_flash.size_bytes) {
     return SL_STATUS_INVALID_PARAMETER;
   }
-
+  /* Align address to 4KB sector boundary (clear lower 12 bits) */
   addr &= ~(MX25_SECTOR_SIZE - 1);
+
+  /* Execute low-level sector erase operation */
   if (mx25_erase_sector(&sd_flash.spi, addr) != F_RES_OK) {
     return SL_STATUS_FLASH_ERASE_FAILED;
   }
 
-  return SL_STATUS_OK; 
+  return SL_STATUS_OK;  /* Sector erase completed successfully */
 }
-#endif
 
+/*
+ * Function:        flash_storage_erase_block64
+ * Arguments:       uint32_t addr - Address within the 64KB block to erase
+ * Description:     Erases a 64KB block in the MX25R8035F flash memory. This high-level
+ *                  function validates system initialization, device readiness, and
+ *                  address alignment before performing the erase operation. It ensures
+ *                  the address is aligned to the 64KB block boundary (lower 16 bits = 0)
+ *                  and delegates to the low-level block erase function.
+ *
+ * Return Message: sl_status_t
+ *                  - SL_STATUS_OK: Block successfully erased
+ *                  - SL_STATUS_NOT_INITIALIZED: Flash storage not initialized
+ *                  - SL_STATUS_FLASH_ERASE_FAILED: Device not ready or erase failed
+ *                  - SL_STATUS_INVALID_PARAMETER: Address beyond flash capacity
+ *
+ * Note: 64KB block erase operation takes 0.43-2.1s typical (with high voltage)
+ *       or 0.48-3.0s maximum in normal High Performance Mode.
+ */
 sl_status_t flash_storage_erase_block64(uint32_t addr)
 {
+  /* Verify flash storage system has been properly initialized */
   if (!sd_flash.initialized) {
     return SL_STATUS_NOT_INITIALIZED;
   }
 
+  /* Check if flash device is ready for erase operation (WIP=0, protection not active) */
   if (mx25_ready_to_write_erase(&sd_flash.spi) != F_RES_OK) {
       return SL_STATUS_FLASH_ERASE_FAILED;
   }
 
+  /* Validate that address is within flash memory boundaries */
   if (addr >= sd_flash.size_bytes) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
+  /* Align address to 64KB block boundary (mask lower 16 bits to 0) */
   addr &= ~(MX25_BLOCK64_SIZE - 1);
+
+  /* Execute the 64KB block erase operation */
   if (mx25_erase_block64(&sd_flash.spi, addr) != F_RES_OK) {
     return SL_STATUS_FLASH_ERASE_FAILED;
   }
 
-  return SL_STATUS_OK; 
+  return SL_STATUS_OK; /* Execute the 64KB block erase operation */
 }
 
-
+/*
+ * Function:        flash_storage_erase_chip
+ * Arguments:       None
+ * Description:     Erases the entire MX25R8035F flash memory device (1MB). This
+ *                  high-level function performs a Chip Erase operation which sets
+ *                  all memory bits to 1 (0xFF). It verifies that the storage system
+ *                  is initialized and the device is ready before executing the erase.
+ *                  WARNING: This operation is destructive and irreversible - all
+ *                  data will be permanently erased. Operation takes 35-120 seconds.
+ *
+ * Return Message: sl_status_t
+ *                  - SL_STATUS_OK: Chip erase completed successfully
+ *                  - SL_STATUS_NOT_INITIALIZED: Flash storage not initialized
+ *                  - SL_STATUS_FLASH_ERASE_FAILED: Device not ready or erase error
+ *
+ * Note: Chip Erase will only execute if all Block Protect (BP3-BP0) bits are 0.
+ *       If protected areas exist, the command will be ignored without error flag.
+ */
 sl_status_t flash_storage_erase_chip(void)
 {
+  /* Verify flash storage system has been properly initialized */
   if (!sd_flash.initialized) {
     return SL_STATUS_NOT_INITIALIZED;
   }
 
+  /* Check if flash device is ready for write/erase operations */
+  /* This verifies WIP=0 and ensures no other operations are in progress */
   if (mx25_ready_to_write_erase(&sd_flash.spi) != F_RES_OK) {
     return SL_STATUS_FLASH_ERASE_FAILED;
   }
 
+  /* Execute the Chip Erase command sequence */
   if (mx25_erase_chip(&sd_flash.spi) != F_RES_OK) {
     return SL_STATUS_FLASH_ERASE_FAILED;
   }
@@ -406,4 +499,71 @@ sl_status_t flash_storage_erase_chip(void)
   return SL_STATUS_OK;  
 }
 
+/*
+ * Function:        flash_storage_wakeup_chip
+ * Arguments:       void
+ * Description:     Wakes up the MX25R8035F flash memory from low-power mode.
+ *                  This function checks if the storage system is initialized,
+ *                  then sends a wake-up command to exit power-down mode.
+ *                  The wake-up process ensures the device is ready for
+ *                  subsequent read/write operations. It should be called
+ *                  before accessing flash after entering power-saving modes.
+ *
+ * Return Message: sl_status_t
+ *                  - SL_STATUS_OK: Chip successfully woken up
+ *                  - SL_STATUS_NOT_INITIALIZED: Flash storage not initialized
+ *                  - SL_STATUS_FAIL: Wake-up command or identification failed
+ */
+sl_status_t flash_storage_wakeup_chip(void)
+{
+  /* Verify flash storage system initialization state */
+  if (!sd_flash.initialized) {
+    return SL_STATUS_NOT_INITIALIZED;
+  }
+  /* Execute low-level wake-up sequence and verify device response */
+  if (mx25_wake_up(&sd_flash.spi) != F_RES_OK) {
+      return SL_STATUS_FAIL;
+  }
+  /* Chip successfully awakened and ready for operations */
+  return SL_STATUS_OK;
+}
 
+/*
+ * Function:        flash_storage_enable_hpf_mode
+ * Arguments:       void
+ * Description:     Enables High Performance Mode in the flash storage system.
+ *                  This function serves as a bridge between the high-level storage
+ *                  API and the low-level flash driver. It checks if the flash storage
+ *                  system has been properly initialized before attempting to change
+ *                  the device's performance mode. The actual mode switching is
+ *                  delegated to the MX25R8035F-specific driver function.
+ *
+ * Return Message: sl_status_t
+ *                  - SL_STATUS_OK: High Performance Mode successfully enabled or
+ *                    already active
+ *                  - SL_STATUS_NOT_INITIALIZED: Flash storage system not initialized
+ *                  - SL_STATUS_FAIL: Low-level driver failed to enable the mode
+ *
+ * Note: This is a wrapper function that ensures proper system state before
+ *       executing device-specific operations. The mode change affects power
+ *       consumption and SPI communication speed (up to 108 MHz in High
+ *       Performance Mode vs 33 MHz in Ultra Low Power Mode).
+ */
+sl_status_t  flash_storage_enable_hpf_mode(void)
+{
+
+  /* Verify that the flash storage system has been properly initialized */
+  /* The 'sd_flash' structure should have been initialized via flash_storage_init() */
+  if (!sd_flash.initialized) {
+    return SL_STATUS_NOT_INITIALIZED;
+  }
+
+  /* Delegate the actual mode change to the MX25R8035F-specific driver */
+  /* This function handles the complete sequence: read config, modify bit, write back */
+  if (mx25_enable_hpf_mode(&sd_flash.spi) != F_RES_OK) {
+      return SL_STATUS_FAIL;
+  }
+
+  return SL_STATUS_OK;
+
+}

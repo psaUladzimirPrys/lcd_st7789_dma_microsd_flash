@@ -125,6 +125,92 @@
 #define MX25_FSR_P_FAIL             ((uint8_t)(1U << 5))
 #define MX25_FSR_E_FAIL             ((uint8_t)(1U << 6))
 
+/* ============================================================================
+ * Block Protection level macros (compatible with SR bits)
+ * ========================================================================== */
+#define MX25_BP_LEVEL_NONE          ((uint8_t)0x00)  /* No protection */
+#define MX25_BP_LEVEL_1             ((uint8_t)(MX25_SR_BP0))
+#define MX25_BP_LEVEL_2             ((uint8_t)(MX25_SR_BP1))
+#define MX25_BP_LEVEL_3             ((uint8_t)(MX25_SR_BP0 | MX25_SR_BP1))
+#define MX25_BP_LEVEL_4             ((uint8_t)(MX25_SR_BP2))
+#define MX25_BP_LEVEL_5             ((uint8_t)(MX25_SR_BP0 | MX25_SR_BP2))
+#define MX25_BP_LEVEL_6             ((uint8_t)(MX25_SR_BP1 | MX25_SR_BP2))
+#define MX25_BP_LEVEL_7             ((uint8_t)(MX25_SR_BP0 | MX25_SR_BP1 | MX25_SR_BP2))
+#define MX25_BP_LEVEL_8             ((uint8_t)(MX25_SR_BP3))
+#define MX25_BP_LEVEL_9             ((uint8_t)(MX25_SR_BP0 | MX25_SR_BP3))
+#define MX25_BP_LEVEL_10            ((uint8_t)(MX25_SR_BP1 | MX25_SR_BP3))
+#define MX25_BP_LEVEL_11            ((uint8_t)(MX25_SR_BP0 | MX25_SR_BP1 | MX25_SR_BP3))
+#define MX25_BP_LEVEL_12            ((uint8_t)(MX25_SR_BP2 | MX25_SR_BP3))
+#define MX25_BP_LEVEL_13            ((uint8_t)(MX25_SR_BP0 | MX25_SR_BP2 | MX25_SR_BP3))
+#define MX25_BP_LEVEL_14            ((uint8_t)(MX25_SR_BP1 | MX25_SR_BP2 | MX25_SR_BP3))
+#define MX25_BP_LEVEL_FULL          ((uint8_t)(MX25_SR_BP0 | MX25_SR_BP1 | MX25_SR_BP2 | MX25_SR_BP3))
+
+/* Helper to extract BP level from SR1 */
+#define MX25_GET_BP_LEVEL(sr1)      ((uint8_t)(((sr1) & (MX25_SR_BP3 | MX25_SR_BP2 | MX25_SR_BP1 | MX25_SR_BP0)) >> 2))
+
+
+/* ============================================================================
+ * Configuration Register 1 (CR1) bits
+ * ========================================================================== */
+
+/* Dummy Cycle bits (DC1-DC0) for 2READ/4READ modes */
+#define MX25_CR1_DC0                ((uint8_t)(1U << 4)) /* Dummy Cycle bit 0 */
+#define MX25_CR1_DC1                ((uint8_t)(1U << 5)) /* Dummy Cycle bit 1 */
+#define MX25_CR1_DC_MASK            ((uint8_t)(MX25_CR1_DC1 | MX25_CR1_DC0))
+
+/* Top/Bottom protection selection */
+#define MX25_CR1_TB                 ((uint8_t)(1U << 3)) /* 0=Top, 1=Bottom */
+
+/* Reserved bits */
+#define MX25_CR1_RESERVED2          ((uint8_t)(1U << 2))
+#define MX25_CR1_RESERVED1          ((uint8_t)(1U << 1))
+#define MX25_CR1_RESERVED0          ((uint8_t)(1U << 0))
+#define MX25_CR1_RESERVED6          ((uint8_t)(1U << 6))
+#define MX25_CR1_RESERVED7          ((uint8_t)(1U << 7))
+
+/* Dummy Cycle values for 2READ mode */
+#define MX25_CR1_DC_2READ_0         ((uint8_t)0x00)  /* 0 dummy cycles */
+#define MX25_CR1_DC_2READ_4         ((uint8_t)0x01)  /* 4 dummy cycles */
+#define MX25_CR1_DC_2READ_8         ((uint8_t)0x02)  /* 8 dummy cycles */
+#define MX25_CR1_DC_2READ_18        ((uint8_t)0x03)  /* 18 dummy cycles */
+
+/* Dummy Cycle values for 4READ mode */
+#define MX25_CR1_DC_4READ_0         ((uint8_t)0x00)  /* 0 dummy cycles */
+#define MX25_CR1_DC_4READ_6         ((uint8_t)0x01)  /* 6 dummy cycles */
+#define MX25_CR1_DC_4READ_10        ((uint8_t)0x02)  /* 10 dummy cycles */
+
+/* Helper macros for DC bits manipulation */
+#define MX25_CR1_GET_DC(reg)        ((uint8_t)(((reg) & MX25_CR1_DC_MASK) >> 4))
+#define MX25_CR1_SET_DC(dc)         ((uint8_t)(((dc) & 0x03) << 4))
+#define MX25_CR1_GET_TB(reg)        ((uint8_t)(((reg) & MX25_CR1_TB) >> 3))
+
+/* ============================================================================
+ * Configuration Register 2 (CR2) bits
+ * ========================================================================== */
+
+/* Low Power / High Performance switch */
+#define MX25_CR2_LH_SWITCH          ((uint8_t)(1U << 1)) /* 0=Ultra Low Power, 1=High Performance */
+
+/* Reserved bits */
+#define MX25_CR2_RESERVED0          ((uint8_t)(1U << 0))
+#define MX25_CR2_RESERVED2          ((uint8_t)(1U << 2))
+#define MX25_CR2_RESERVED3          ((uint8_t)(1U << 3))
+#define MX25_CR2_RESERVED4          ((uint8_t)(1U << 4))
+#define MX25_CR2_RESERVED5          ((uint8_t)(1U << 5))
+#define MX25_CR2_RESERVED6          ((uint8_t)(1U << 6))
+#define MX25_CR2_RESERVED7          ((uint8_t)(1U << 7))
+
+/* Mode definitions */
+#define MX25_CR2_MODE_ULTRA_LOW     ((uint8_t)0x00)  /* Ultra Low Power Mode */
+#define MX25_CR2_MODE_HIGH_PERF     ((uint8_t)MX25_CR2_LH_SWITCH)  /* High Performance Mode */
+
+/* Helper macros */
+#define MX25_CR2_GET_MODE(reg)      ((uint8_t)((reg) & MX25_CR2_LH_SWITCH))
+#define MX25_CR2_IS_HIGH_PERF(reg)  (((reg) & MX25_CR2_LH_SWITCH) != 0)
+
+
+/* Helper to initialize registers with defaults */
+#define MX25_CONFIG_REGS_DEFAULT    {0x00, 0x00, MX25_CR2_MODE_ULTRA_LOW}
 
 
 /*
