@@ -21,17 +21,12 @@ static mikroe_spi_handle_t app_spi_instance = NULL;
   static DWORD sd_fatfs_time_data;
 #endif
 
-
-//static const char str[] = "Silabs SD Card I/O Example via SPI!\r\n";
-
 static BYTE  F_work[FF_MAX_SS];         // Work file buffer area (larger is better for processing time)
-
 static FATFS FatFs;                     // FatFS object for mounting.
 static FIL   File;                      // File object structure
 
 //static BYTE work_buffer[FF_MAX_SS];   // Working buffer for operations (e.g., f_mkfs).
 static bool sd_mounted = false;         // Mounting flag.
-
 
 
 sl_status_t fs_sd_time_init(void)
@@ -293,7 +288,6 @@ sl_status_t fs_sd_read_file(const char *file_path, void *buffer, uint32_t buffer
 sl_status_t fs_sd_write_img_to_flash(const char *path, uint32_t flash_address)
 {
 
-
   sl_status_t sl_status = SL_STATUS_OK;
 
   if (!sd_mounted) {
@@ -302,10 +296,11 @@ sl_status_t fs_sd_write_img_to_flash(const char *path, uint32_t flash_address)
   }
 
    sl_status = fs_sd_read_file_and_write_flash(path, (void *)&F_work[0], FF_MAX_SS, flash_address);
-   if ( sl_status != SL_STATUS_OK) {
+  if ( sl_status != SL_STATUS_OK ) {
         app_log_error("Write Error File %s to Flash: %lu \r\n", path, sl_status);
         return SL_STATUS_FAIL;
-     }
+  }
+
   app_log_info("Write file: %s OK to Flash from SD.\r\n", path);
 
   return SL_STATUS_OK;
@@ -386,6 +381,7 @@ sl_status_t fs_sd_read_file_and_write_flash(const char *path,
 
   return sl_status;
 }
+
 
 // Unmount SDCARD
 sl_status_t fs_sd_deinit(void)

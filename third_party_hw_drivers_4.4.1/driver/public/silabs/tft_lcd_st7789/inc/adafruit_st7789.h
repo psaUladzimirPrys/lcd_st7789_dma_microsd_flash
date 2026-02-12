@@ -281,6 +281,19 @@ sl_status_t adafruit_st7789_fill_screen(uint16_t color);
 
 /***************************************************************************//**
  * @brief
+ *  Fill the rectangle with one color.
+ *
+ * @param[in] color
+ *  16-bit pixel color in '565' RGB format.
+ *
+ * @return
+ *  SL_STATUS_OK if there are no errors.
+ *  SL_STATUS_FAIL if the process is failed.
+ ******************************************************************************/
+sl_status_t adafruit_st7789_fill_rectangle(int16_t x, int16_t y, int16_t w,int16_t h, uint16_t color);
+
+/***************************************************************************//**
+ * @brief
  *  Draw a 16-bit image (565 RGB) at the specified (x,y) position.
  *
  * @param[in] x

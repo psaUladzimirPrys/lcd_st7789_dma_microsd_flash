@@ -47,7 +47,14 @@ typedef struct {
 static mx25_info_t mx25_info = { 0 };
 static volatile uint16_t mx25_timeout_timer; // 100Hz decrement timer
 static sl_sleeptimer_timer_handle_t mx_25_timeout_timer_handle;
+/* TEST WORKAROUND: Buffer for read-back verification (added by UP) */
+/* WARNING: This verification doubles operation time and wears flash */
+uint8_t test_data_buf[MX25_PAGE_SIZE]; /* @ToDo This line of code for test  It was been added by UP*/
+
+
+
 static void mx25_timer_callback(sl_sleeptimer_timer_handle_t *handle, void *data);
+
 void mx25_timer_proc(void);
 /* ============================================================================
  * Local helpers
@@ -659,10 +666,6 @@ fresult_t mx25_page_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t
    uint8_t tx_cmd[4] = { MX25_CMD_PP, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE, MX25_DUMMY_BYTE };/* Page Program command buffer: [CMD, ADDR_MSB, ADDR_MID, ADDR_LSB] */
    uint32_t page_offset = 0;
    uint32_t chunk = 0;
-
-   /* TEST WORKAROUND: Buffer for read-back verification (added by UP) */
-      /* WARNING: This verification doubles operation time and wears flash */
-   uint8_t test_data_buf[MX25_PAGE_SIZE]; /* @ToDo This line of code for test  It was been added by UP*/
 
 
    /* Check if flash is currently busy with another operation (WIP=1) */

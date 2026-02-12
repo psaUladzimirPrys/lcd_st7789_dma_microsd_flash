@@ -111,7 +111,7 @@
 // <i> PCLK branch is derived from HCLK. This clock drives the APB bus interface.
 // <d> SL_CLOCK_MANAGER_PCLK_DIV_MIN
 #ifndef SL_CLOCK_MANAGER_PCLK_DIVIDER
-#define SL_CLOCK_MANAGER_PCLK_DIVIDER    CMU_SYSCLKCTRL_PCLKPRESC_DIV1
+#define SL_CLOCK_MANAGER_PCLK_DIVIDER    CMU_SYSCLKCTRL_PCLKPRESC_DIV2
 #endif
 
 // </h>

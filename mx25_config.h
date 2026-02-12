@@ -171,8 +171,8 @@ extern SPIDRV_HandleData_t mx25_spi_handle_data;
  * #define MX25_DELAY_HOOK()  __NOP()
  */ 
 #ifndef MX25_DELAY_HOOK 
-//  #define MX25_DELAY_HOOK()  do {} while (0)
-#define MX25_DELAY_HOOK()  sl_sleeptimer_delay_millisecond(1)
+ #define MX25_DELAY_HOOK()  do {} while (0)
+//#define MX25_DELAY_HOOK()  sl_sleeptimer_delay_millisecond(10)
 //#define MX25_DELAY_HOOK()
 #endif
 

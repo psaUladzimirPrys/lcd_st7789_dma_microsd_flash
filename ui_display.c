@@ -18,6 +18,7 @@
 #include "app_assert.h"
 #include "sl_sleeptimer.h"
 #include "ui_display.h"
+#include "img_storage.h"
 
 
 
@@ -27,7 +28,7 @@
 
 #define APP_TIMER_SMALL        300
 #define APP_TIMER_MEDIUM       2000
-#define APP_TIMER_LARGE        4000
+#define APP_TIMER_LARGE        7000
 
 
 
@@ -60,16 +61,6 @@ static volatile bool app_timer_expire = false;
 static sl_sleeptimer_timer_handle_t app_sleep_timer;
 static void app_sleeptimer_callback(sl_sleeptimer_timer_handle_t *timer,
                                     void *data);
-
-
-const uint32_t img_address[5] = {
-    FLASH_ADDR_IMAGE_CAT_IMAGE,
-    FLASH_ADDR_BIRD_IMAGE,
-    FLASH_ADDR_CUTE_IMAGE,
-    FLASH_ADDR_CACTUS_PLANTS,
-    FLASH_ADDR_NATURE_IMAGE
-};
-
 
 static inline uint32_t micros_start() __attribute__((always_inline));
 
@@ -134,12 +125,18 @@ void disp_init(void)
                                           0);
   app_log("Start sleep timer %dms\r\n", APP_TIMER_SMALL);
 
+  glib_enable_display(false);
+  app_log("glib_enable_display --> false\r\n");
+
   g_context.textsize_x = 2;
   g_context.textsize_y = 2;
   g_context.wrap = false;
 
-  glib_set_color(&g_context, ST7789_WHITE, ST7789_ORANGE);
-  glib_fill(&g_context, ST7789_ORANGE);
+
+  glib_set_color(&g_context, ST7789_WHITE, ST7789_BLACK);
+  glib_fill(&g_context, ST7789_WHITE);
+
+
 }
 
 /***************************************************************************//**
@@ -147,109 +144,21 @@ void disp_init(void)
  ******************************************************************************/
 void disp_process_action(void)
 {
-  uint32_t start,usecFlush;
+
   if (app_timer_expire) {
     app_timer_expire = false;
 
     switch (demo_index) {
       case 0:
-        glib_fill(&g_context, ST7789_WHITE);
-        app_log("glib_fill --> WHITE color\r\n");
-        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
-                                                APP_TIMER_SMALL,
-                                                app_sleeptimer_callback,
-                                                NULL,
-                                                0,
-                                                0);
-        app_log("Start sleep timer %dms\r\n", APP_TIMER_SMALL);
-        break;
-      case 1:
-        app_log("glib_fill --> RED color\r\n");
-        start = micros_start();
-        glib_fill(&g_context, ST7789_RED);
-        usecFlush = (uint32_t)sl_sleeptimer_get_tick_count() - start;
-        app_log("flush (Canvas only) %lums\r\n", usecFlush);
-        break;
-      case 2:
-        glib_fill(&g_context, ST7789_GREEN);
-        app_log("glib_fill --> GREEN color\r\n");
-        break;
-      case 3:
-        glib_fill(&g_context, ST7789_BLUE);
-        app_log("glib_fill --> BLUE color\r\n");
-        break;
-      case 4:
-        glib_fill(&g_context, ST7789_CYAN);
-        app_log("glib_fill --> CYAN color\r\n");
-        break;
-      case 5:
-        glib_fill(&g_context, ST7789_MAGENTA);
-        app_log("glib_fill --> MAGENTA color\r\n");
-        break;
-      case 6:
-        glib_fill(&g_context, ST7789_YELLOW);
-        app_log("glib_fill --> YELLOW color\r\n");
-        break;
-      case 7:
-        glib_fill(&g_context, ST7789_ORANGE);
-        app_log("glib_fill --> ORANGE color\r\n");
-        break;
-      case 8:
-        glib_fill(&g_context, ST7789_BLACK);
-        app_log("glib_fill --> BLACK color\r\n");
-        break;
-      case 9:
+        //Draw LOGO
+        adafruit_st7789_draw_rgb_bitmap_from_flash(111, 37,
+                                                   img_storage_desc[IMG_ID_UNION3_OUT].width,
+                                                   img_storage_desc[IMG_ID_UNION3_OUT].height,
+                                                   img_storage_desc[IMG_ID_UNION3_OUT].storage_address,
+                                                   true);
 
-        glib_set_color(&g_context, ST7789_GREEN, ST7789_BLACK);
-        glib_draw_string(&g_context, "HELLO WORLD", 0, 0);
-        glib_set_color(&g_context, ST7789_RED, ST7789_BLACK);
-        glib_draw_string(&g_context, "Adafruit", 0, 25);
-        glib_set_color(&g_context, ST7789_YELLOW, ST7789_BLACK);
-        glib_draw_string(&g_context, "Eduard - Happy NewYear", 0, 50);
 
-        app_log("glib_draw_string --> HELLO WORLD\r\n");
-        app_log("glib_draw_string --> Adafruit\r\n");
-        app_log("glib_draw_string --> 1.14\" TFT\r\n");
 
-        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
-                                                APP_TIMER_MEDIUM,
-                                                app_sleeptimer_callback,
-                                                NULL,
-                                                0,
-                                                0);
-        app_log("Start sleep timer %dms\r\n", APP_TIMER_MEDIUM);
-        break;
-      case 10:
-        glib_set_invert_color();
-        app_log("glib_set_invert_color --> true\r\n");
-        break;
-      case 11:
-        glib_set_normal_color();
-        app_log("glib_set_invert_color --> false\r\n");
-        break;
-      case 12:
-        glib_enable_display(false);
-        app_log("glib_enable_display --> false\r\n");
-        break;
-      case 13:
-        glib_enable_display(true);
-        app_log("glib_enable_display --> true\r\n");
-        break;
-      case 14:
-        glib_fill(&g_context, ST7789_BLACK);
-        glib_draw_circle(&g_context, 25, 25, 25, ST7789_MAGENTA);
-        glib_fill_circle(&g_context, 90, 25, 25, ST7789_BLUE);
-        glib_draw_triangle(&g_context, 80, 60, 130, 60, 130, 90, ST7789_YELLOW);
-        glib_fill_triangle(&g_context, 0, 60, 80, 80, 45, 116, ST7789_ORANGE);
-        glib_draw_round_rect(&g_context, 0, 125, 50, 65, 10, ST7789_CYAN);
-        glib_fill_rect(&g_context, 70, 125, 50, 65, ST7789_GREEN);
-        app_log("glib_draw_circle, glib_fill_circle\r\n");
-        app_log("glib_draw_triangle, glib_fill_triangle\r\n");
-        app_log("glib_draw_round_rect, glib_fill_rect\r\n");
-        break;
-      case 15:
-        adafruit_st7789_draw_rgb_bitmap(0, 0, (uint16_t *)&gImage_cat_image[0], 135, 240);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 0\r\n");
         sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
                                                 APP_TIMER_LARGE,
                                                 app_sleeptimer_callback,
@@ -257,59 +166,457 @@ void disp_process_action(void)
                                                 0,
                                                 0);
         app_log("Start sleep timer %dms\r\n", APP_TIMER_LARGE);
+        glib_enable_display(true);
+        app_log("glib_enable_display --> true\r\n");
+        demo_index++;
         break;
-      case 16:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[0], false);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 0\r\n");
-        break;
-      case 17:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[1], false);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 1\r\n");
-        break;
-      case 18:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240,  img_address[2], false);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 2\r\n");
-        break;
-      case 19:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[3], false);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 3\r\n");
-        break;
-      case 20:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(0, 0, 135, 240, img_address[4], false);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 4\r\n");
+      case 1:
+        glib_fill(&g_context, ST7789_WHITE);
+        app_log("glib_fill --> WHITE color\r\n");
+        //Draw LOGO
+        adafruit_st7789_draw_rgb_bitmap_from_flash(111, 37,
+                                                   img_storage_desc[IMG_ID_UNION3_OUT].width,
+                                                   img_storage_desc[IMG_ID_UNION3_OUT].height,
+                                                   img_storage_desc[IMG_ID_UNION3_OUT].storage_address,
+                                                   true);
+
+
+
         sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
-                                                APP_TIMER_SMALL,
+                                                APP_TIMER_LARGE,
                                                 app_sleeptimer_callback,
                                                 NULL,
                                                 0,
                                                 0);
-        app_log("Start sleep timer %dms\r\n", APP_TIMER_SMALL);
+        app_log("Start sleep timer %dms\r\n", APP_TIMER_LARGE);
+
+
+        break;
+
+      case 2:
         glib_fill(&g_context, ST7789_WHITE);
+        adafruit_st7789_fill_rectangle(0, 0, 320, 44, 0xF79E);
+
+        //battery 100
+        adafruit_st7789_draw_rgb_bitmap_from_flash(22, 10,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_BATTERY_100].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_BATTERY_100].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_BATTERY_100].storage_address,
+                                                   true);
+
+        adafruit_st7789_fill_rectangle(0, 137, 320, 35, 0xCE79);
+
+        //Waiting to connect
+        adafruit_st7789_draw_rgb_bitmap_from_flash(34, 73,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_7].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_7].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_7].storage_address,
+                                                   true);
+        // PERF CHECK
+        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_14].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_14].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_14].storage_address,
+                                                   true);
+        // .
+        adafruit_st7789_draw_rgb_bitmap_from_flash(19,  151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].storage_address,
+                                                   true);
+        //PARAMS
+        adafruit_st7789_draw_rgb_bitmap_from_flash(216, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].storage_address,
+                                                   true);
+        // ...
+        adafruit_st7789_draw_rgb_bitmap_from_flash(170, 151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].storage_address,
+                                                   true);
+
+        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
+                                                APP_TIMER_LARGE,
+                                                app_sleeptimer_callback,
+                                                NULL,
+                                                0,
+                                                0);
+
+        app_log("Menu = 1\r\n");
         break;
-///////////////////////////////////////////////////////////////////////////////////////
-      case 21:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 111, 99, 99, (0x080000), true);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 5\r\n");
+
+      case 3:
+        //glib_fill(&g_context, ST7789_WHITE);
+        adafruit_st7789_fill_rectangle(0, 0, 320, 44, 0xF79E);
+
+        //battery 50
+        adafruit_st7789_draw_rgb_bitmap_from_flash(22, 10,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_8].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_8].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_8].storage_address,
+                                                   true);
+        //link
+        adafruit_st7789_draw_rgb_bitmap_from_flash(63, 9,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].storage_address,
+                                                   true);
+        //Sync
+        adafruit_st7789_draw_rgb_bitmap_from_flash(92, 9,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].storage_address,
+                                                   true);
+
+        //CLEAR BEFORE DRAW
+        adafruit_st7789_fill_rectangle(34, 73,
+                                       img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_7].width,
+                                       img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_7].height,
+                                       ST7789_WHITE);
+
+        //PertCheck required
+        adafruit_st7789_draw_rgb_bitmap_from_flash(34, 73,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT4_6].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT4_6].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT4_6].storage_address,
+                                                   true);
+
+        adafruit_st7789_fill_rectangle(0, 137, 320, 35, 0xCE79);
+
+        // START
+        adafruit_st7789_draw_rgb_bitmap_from_flash(45, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_13].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_13].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_13].storage_address,
+                                                   true);
+        // .
+        adafruit_st7789_draw_rgb_bitmap_from_flash(19,  151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].storage_address,
+                                                   true);
+        //PARAMS
+        adafruit_st7789_draw_rgb_bitmap_from_flash(216, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].storage_address,
+                                                   true);
+        // ...
+        adafruit_st7789_draw_rgb_bitmap_from_flash(170, 151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].storage_address,
+                                                   true);
+        app_log("Menu = 2\r\n");
         break;
-      case 22:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 111, 99, 99, (0x080000 + 19602), true);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 6\r\n");
+      case 4:
+        adafruit_st7789_fill_rectangle(0, 0, 320, 44, 0xF79E);
+
+        //battery 30
+        adafruit_st7789_draw_rgb_bitmap_from_flash(22, 10,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_8].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_8].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_8].storage_address,
+                                                   true);
+        //link
+        adafruit_st7789_draw_rgb_bitmap_from_flash(63, 9,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].storage_address,
+                                                   true);
+        //Sync
+        adafruit_st7789_draw_rgb_bitmap_from_flash(92, 9,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].storage_address,
+                                                   true);
+
+        //CLEAR BEFORE DRAW
+        adafruit_st7789_fill_rectangle(34, 73,
+                                       img_storage_desc[IMG_ID_PROPERTY_1_VARIANT4_6].width,
+                                       img_storage_desc[IMG_ID_PROPERTY_1_VARIANT4_6].height,
+                                       ST7789_WHITE);
+
+        //Waiting for TIP ID
+        adafruit_st7789_draw_rgb_bitmap_from_flash(34, 73,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_7].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_7].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_7].storage_address,
+                                                   true);
+
+        adafruit_st7789_fill_rectangle(0, 137, 320, 35, 0xCE79);
+
+        // PERF CHECK
+        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_14].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_14].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_14].storage_address,
+                                                   true);
+        // .
+        adafruit_st7789_draw_rgb_bitmap_from_flash(19,  151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].storage_address,
+                                                   true);
+        //PARAMS
+        adafruit_st7789_draw_rgb_bitmap_from_flash(216, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].storage_address,
+                                                   true);
+        // ...
+        adafruit_st7789_draw_rgb_bitmap_from_flash(170, 151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].storage_address,
+                                                   true);
+
+        app_log("Menu = 3\r\n");
         break;
-      case 23:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 111, 99, 99, (0x080000 + 19602 + 19602), true);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 7\r\n");
+      case 5:
+        adafruit_st7789_fill_rectangle(0, 0, 320, 44, 0xF79E);
+
+        //battery 30
+        adafruit_st7789_draw_rgb_bitmap_from_flash(22, 10,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_8].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_8].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_8].storage_address,
+                                                   true);
+        //link
+        adafruit_st7789_draw_rgb_bitmap_from_flash(63, 9,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].storage_address,
+                                                   true);
+        //Sync
+        adafruit_st7789_draw_rgb_bitmap_from_flash(92, 9,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].storage_address,
+                                                   true);
+        //Patient
+        adafruit_st7789_draw_rgb_bitmap_from_flash(217, 9,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_PATIENT].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_PATIENT].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_PATIENT].storage_address,
+                                                   true);
+
+        //CLEAR BEFORE DRAW
+        adafruit_st7789_fill_rectangle(34, 73,
+                                       img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_7].width,
+                                       img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_7].height,
+                                       ST7789_WHITE);
+
+        //Validating
+        adafruit_st7789_draw_rgb_bitmap_from_flash(85, 73,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT5_6].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT5_6].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT5_6].storage_address,
+                                                   true);
+
+        adafruit_st7789_fill_rectangle(0, 137, 320, 35, 0xCE79);
+
+        //CANCEL
+        adafruit_st7789_draw_rgb_bitmap_from_flash(216, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_11].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_11].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_11].storage_address,
+                                                   true);
+        // -
+        adafruit_st7789_draw_rgb_bitmap_from_flash(170, 151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_RECTANGLE_201].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_RECTANGLE_201].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_RECTANGLE_201].storage_address,
+                                                   true);
+        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
+                                                APP_TIMER_MEDIUM,
+                                                app_sleeptimer_callback,
+                                                NULL,
+                                                0,
+                                                0);
+
+        app_log("Menu = 4\r\n");
         break;
-      case 24:
-        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 111, 99, 99, (0x080000 + 19602 + 19602 + 19602), true);
-        app_log("adafruit_st7789_draw_rgb_bitmap idx = 8\r\n");
+      case 6:
+        //Indicator
+        //RED LINE
+        adafruit_st7789_fill_rectangle(0, 89, 320, 48, 0xFE79);
+        //TIP ID INVALID
+        adafruit_st7789_draw_rgb_bitmap_from_flash(69, 98,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2].storage_address,
+                                                   true);
+
+        //Bottom line
+        adafruit_st7789_fill_rectangle(0, 137, 320, 35, 0xCE79);
+
+        //CLOSE
+        adafruit_st7789_draw_rgb_bitmap_from_flash(216, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_10].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_10].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_10].storage_address,
+                                                   true);
+
+        // .
+        adafruit_st7789_draw_rgb_bitmap_from_flash(195,  151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].storage_address,
+                                                   true);
+
+        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
+                                                APP_TIMER_LARGE,
+                                                app_sleeptimer_callback,
+                                                NULL,
+                                                0,
+                                                0);
+
+        app_log("Menu = 4 Indicator: TIP ID INVALID\r\n");
         break;
-      default:
+      case 7:
+        adafruit_st7789_fill_rectangle(0, 0, 320, 44, 0xF79E);
+
+        //battery 30
+        adafruit_st7789_draw_rgb_bitmap_from_flash(22, 10,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_8].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_8].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_8].storage_address,
+                                                   true);
+        //link
+        adafruit_st7789_draw_rgb_bitmap_from_flash(63, 9,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_LINK].storage_address,
+                                                   true);
+        //Sync
+        adafruit_st7789_draw_rgb_bitmap_from_flash(92, 9,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ARROW_PATH].storage_address,
+                                                   true);
+
+        //CLEAR BEFORE DRAW
+        adafruit_st7789_fill_rectangle(0, 73,320, 48+16,
+                                       ST7789_WHITE);
+
+        //Waiting for TIP ID
+        adafruit_st7789_draw_rgb_bitmap_from_flash(34, 73,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_7].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_7].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT2_7].storage_address,
+                                                   true);
+
+
+
+        adafruit_st7789_fill_rectangle(0, 137, 320, 35, 0xCE79);
+
+        // PERF CHECK
+        adafruit_st7789_draw_rgb_bitmap_from_flash(37, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_14].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_14].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_14].storage_address,
+                                                   true);
+        // .
+        adafruit_st7789_draw_rgb_bitmap_from_flash(19,  151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_ELLIPSE_15].storage_address,
+                                                   true);
+        //PARAMS
+        adafruit_st7789_draw_rgb_bitmap_from_flash(216, 143,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].storage_address,
+                                                   true);
+        // ...
+        adafruit_st7789_draw_rgb_bitmap_from_flash(170, 151,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].storage_address,
+                                                   true);
+        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
+                                                APP_TIMER_MEDIUM,
+                                                app_sleeptimer_callback,
+                                                NULL,
+                                                0,
+                                                0);
+
+        app_log("Menu = 3\r\n");
+        break;
+      case 8:
+
+        //battery 0
+        adafruit_st7789_draw_rgb_bitmap_from_flash(22, 10,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT4_7].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT4_7].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT4_7].storage_address,
+                                                   true);
+
+        //Indicator
+        //BEIGE LINE
+        adafruit_st7789_fill_rectangle(0, 89, 320, 48, 0xFF39);
+        //Charge THE BATTERY
+        adafruit_st7789_draw_rgb_bitmap_from_flash(19, 98,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3].width,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3].height,
+                                                   img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3].storage_address,
+                                                   true);
+        sl_sleeptimer_restart_periodic_timer_ms(&app_sleep_timer,
+                                                APP_TIMER_LARGE,
+                                                app_sleeptimer_callback,
+                                                NULL,
+                                                0,
+                                                0);
+        app_log("Menu = 3 Indicator: CHARGE THE BATTERY\r\n");
+        break;
+      case 9:
+      adafruit_st7789_fill_rectangle(0, 0, 320, 44, 0xF79E);
+
+      //battery -0
+      adafruit_st7789_draw_rgb_bitmap_from_flash(22, 10,
+                                                 img_storage_desc[IMG_ID_PROPERTY_1_VARIANT6_7].width,
+                                                 img_storage_desc[IMG_ID_PROPERTY_1_VARIANT6_7].height,
+                                                 img_storage_desc[IMG_ID_PROPERTY_1_VARIANT6_7].storage_address,
+                                                 true);
+
+      adafruit_st7789_fill_rectangle(0, 44, 320, 93, ST7789_WHITE);
+
+
+      adafruit_st7789_fill_rectangle(0, 137, 320, 35, 0xCE79);
+      //Charge the battery
+      adafruit_st7789_draw_rgb_bitmap_from_flash(40, 75,
+                                                 img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_7].width,
+                                                 img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_7].height,
+                                                 img_storage_desc[IMG_ID_PROPERTY_1_VARIANT3_7].storage_address,
+                                                 true);
+
+      //PARAMS
+     adafruit_st7789_draw_rgb_bitmap_from_flash(216, 143,
+                                                img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].width,
+                                                img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].height,
+                                                img_storage_desc[IMG_ID_PROPERTY_1_DEFAULT_15].storage_address,
+                                                true);
+     // ...
+     adafruit_st7789_draw_rgb_bitmap_from_flash(170, 151,
+                                                img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].width,
+                                                img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].height,
+                                                img_storage_desc[IMG_ID_PROPERTY_1_FRAME_53].storage_address,
+                                                true);
+     app_log("Menu = 5\r\n");
+      break;
+     default:
         break;
     }
 
-    if (++demo_index > 24) {
-      demo_index = 21;
+    demo_index++;
+
+    if(demo_index > 9) {
+      demo_index = 1;
     }
+
   }
 }
 

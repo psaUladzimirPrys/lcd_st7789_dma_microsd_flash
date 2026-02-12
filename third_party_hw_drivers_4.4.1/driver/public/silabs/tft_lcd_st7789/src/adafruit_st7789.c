@@ -72,7 +72,6 @@ static void *flush_area_callback_arg = NULL;
 static uint8_t *pColorSwap = NULL;
 
 static uint16_t dma_buffer[MIPI_DBI_SPI_4WIRE_DMA_BUFFER_SIZE_MAX / 2];
-static uint8_t  test_buffer[MIPI_DBI_SPI_4WIRE_DMA_BUFFER_SIZE_MAX];
 
 static struct mipi_dbi_device mipi_dbi_device;
 
@@ -607,6 +606,22 @@ sl_status_t adafruit_st7789_fill_screen(uint16_t color)
 }
 
 /**************************************************************************//**
+ * Fill the rectangle completely with one color.
+ *****************************************************************************/
+sl_status_t adafruit_st7789_fill_rectangle(int16_t x,
+                                        int16_t y,
+                                        int16_t w,
+                                        int16_t h,
+                                        uint16_t color)
+{
+  return fill_rect(x,
+                   y,
+                   w,
+                   h,
+                   color);
+}
+
+/**************************************************************************//**
  * Draw a 16-bit image (565 RGB) at the specified (x,y) position.
  *****************************************************************************/
 sl_status_t adafruit_st7789_draw_rgb_bitmap(int16_t x,
@@ -750,7 +765,8 @@ sl_status_t adafruit_st7789_draw_rgb_bitmap_from_flash(int16_t x,
                                             int16_t y,
                                             int16_t w,
                                             int16_t h,
-                                            uint32_t flash_address, bool set_BE)
+                                            uint32_t flash_address,
+                                            bool set_BE)
 {
 
   int16_t x2;
@@ -808,14 +824,11 @@ sl_status_t adafruit_st7789_draw_rgb_bitmap_from_flash(int16_t x,
       } else {
         size = pixel_cnt - n;
       }
-
       
-
       status = flash_storage_read(flash_address, (uint8_t *)&dma_buffer[0], (size * 2));
       if (SL_STATUS_OK != status) {
         break;
       }
-
 
       if (!set_BE)
       {
