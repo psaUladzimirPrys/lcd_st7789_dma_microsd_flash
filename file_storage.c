@@ -29,6 +29,160 @@ static FIL   File;                      // File object structure
 static bool sd_mounted = false;         // Mounting flag.
 
 
+#define FS_LOG_RING_BUFFER_SIZE   1024
+#define FS_LOG_FLUSH_THRESHOLD     256
+#define FS_LOG_FILE_PATH          "log.txt"
+
+
+
+static uint8_t fs_log_ring_buffer[FS_LOG_RING_BUFFER_SIZE];
+static volatile uint16_t fs_log_ring_head = 0;
+static volatile uint16_t fs_log_ring_tail = 0;
+static volatile uint16_t fs_log_ring_used = 0;
+
+static inline uint16_t fs_log_rb_free(void)
+{
+  return FS_LOG_RING_BUFFER_SIZE - fs_log_ring_used;
+}
+
+
+/*
+ * Function:    fs_sd_log_init
+ * Arguments:   void
+ * Description:
+ *   Initializes the log ring buffer, SD card and checks log file.
+ *
+ * Return Message: void
+ */
+void fs_sd_log_init(void)
+{
+  sl_status_t sl_status_code = SL_STATUS_OK;
+  const char filepath[] = FS_LOG_FILE_PATH;
+  uint32_t f_size;
+
+  fs_log_ring_head = 0;
+  fs_log_ring_tail = 0;
+  fs_log_ring_used = 0;
+
+  // Initialize file storage of SD card
+  sl_status_code = fs_sd_init();
+  if (sl_status_code != SL_STATUS_OK) {
+    // Failed to init SD card, handle error
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+  sl_status_code = fs_sd_time_init();
+  if (sl_status_code != SL_STATUS_OK) {
+     // Failed to init time, handle error
+     app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+  if ( fs_sd_disk_volume_status() != SL_STATUS_OK) {
+    // Failed to init SD card, handle error
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+  if (fs_sd_get_file_size(filepath, &f_size) != SL_STATUS_OK) {
+    app_log("Getting size of file: %s Failed\r\n", filepath);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+  app_printf("File %s, size = %lu\r\n",filepath, f_size);
+
+}
+
+/*
+ * Function:    fs_sd_log_write
+ * Arguments:   const char *str
+ * Description:
+ *   Writes a string to the ring buffer for later flushing to SD card.
+ *
+ * Return Message: void
+ */
+void fs_sd_log_write(const char *str)
+{
+  uint16_t len;
+
+  if (str == NULL) {
+    return;
+  }
+
+  if (!sd_mounted) {
+      app_log_warning("SD card logical drive is not mounted.\r\n");
+      return;
+  }
+
+  len = strlen(str);
+
+  /* Drop data if buffer overflow */
+  if (len > fs_log_rb_free()) {
+    return;
+  }
+
+  for (uint16_t i = 0; i < len; i++) {
+      fs_log_ring_buffer[fs_log_ring_head++] = (uint8_t)str[i];
+    if (fs_log_ring_head >= FS_LOG_RING_BUFFER_SIZE) {
+        fs_log_ring_head = 0;
+    }
+  }
+
+  fs_log_ring_used += len;
+}
+
+/*
+ * Function:    fs_sd_log_flush_task
+ * Arguments:   void
+ * Description:
+ *   Periodic task that flushes accumulated logs to the SD card file.
+ *
+ * Return Message: void
+ */
+void fs_sd_log_flush_task(void)
+{
+  uint8_t temp_buf[FS_LOG_FLUSH_THRESHOLD];
+  uint16_t chunk;
+
+
+
+  if (fs_log_ring_used < FS_LOG_FLUSH_THRESHOLD) {
+    return;
+  }
+
+  chunk = (fs_log_ring_used > FS_LOG_FLUSH_THRESHOLD)
+          ? FS_LOG_FLUSH_THRESHOLD
+          : fs_log_ring_used;
+
+  for (uint16_t i = 0; i < chunk; i++) {
+    temp_buf[i] = fs_log_ring_buffer[fs_log_ring_tail++];
+    if (fs_log_ring_tail >= FS_LOG_RING_BUFFER_SIZE) {
+        fs_log_ring_tail = 0;
+    }
+  }
+
+  fs_log_ring_used -= chunk;
+
+  if (!sd_mounted) {
+      app_log_warning("SD card logical drive is not mounted.\r\n");
+      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      return;
+  }
+
+  if (fs_sd_append_to_file(FS_LOG_FILE_PATH, temp_buf, chunk) != SL_STATUS_OK) {
+    app_log("Append to file: Failed\r\n");
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+}
+
+/*
+ * Function:    fs_sd_time_init
+ * Arguments:   void
+ * Description:
+ *   Initializes system time for FatFS (used by get_fattime()).
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: Time initialized successfully
+ */
 sl_status_t fs_sd_time_init(void)
 {
 
@@ -64,7 +218,15 @@ sl_status_t fs_sd_time_init(void)
   return sl_status;
 }
 
-
+/*
+ * Function:    fs_sd_init
+ * Arguments:   void
+ * Description:
+ *   Initializes SPI interface, configures MISO/CS pins and mounts FatFS.
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: SD card initialized and mounted successfully
+ */
 sl_status_t fs_sd_init(void)
 {
   sl_status_t sl_status = SL_STATUS_OK;
@@ -158,6 +320,15 @@ sl_status_t fs_sd_init(void)
   return sl_status;
 }
 
+/*
+ * Function:    fs_sd_disk_volume_status
+ * Arguments:   void
+ * Description:
+ *   Prints detailed information about the FatFS volume.
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: Volume status printed successfully
+ */
 sl_status_t fs_sd_disk_volume_status(void)
 {
   static const char *fst[] = { "", "FAT12", "FAT16", "FAT32", "exFAT" };
@@ -204,7 +375,15 @@ sl_status_t fs_sd_disk_volume_status(void)
   return SL_STATUS_OK;
 }
 
-
+/*
+ * Function:    fs_sd_write_file
+ * Arguments:   const char *file_path, const void *data, uint32_t size
+ * Description:
+ *   Creates or overwrites a file and writes data to it.
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: File written successfully
+ */
 sl_status_t fs_sd_write_file(const char *file_path, const void *data, uint32_t size)
 {
 
@@ -246,6 +425,15 @@ sl_status_t fs_sd_write_file(const char *file_path, const void *data, uint32_t s
   return SL_STATUS_OK;
 }
 
+/*
+ * Function:    fs_sd_read_file
+ * Arguments:   const char *file_path, void *buffer, uint32_t buffer_size
+ * Description:
+ *   Reads entire file into the provided buffer.
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: File read successfully
+ */
 sl_status_t fs_sd_read_file(const char *file_path, void *buffer, uint32_t buffer_size)
 {
   UINT bytes_read;
@@ -285,6 +473,15 @@ sl_status_t fs_sd_read_file(const char *file_path, void *buffer, uint32_t buffer
   return SL_STATUS_OK;
 }
 
+/*
+ * Function:    fs_sd_write_img_to_flash
+ * Arguments:   const char *path, uint32_t flash_address
+ * Description:
+ *   Writes image file from SD card to external flash memory.
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: Image successfully written to flash
+ */
 sl_status_t fs_sd_write_img_to_flash(const char *path, uint32_t flash_address)
 {
 
@@ -306,6 +503,18 @@ sl_status_t fs_sd_write_img_to_flash(const char *path, uint32_t flash_address)
   return SL_STATUS_OK;
 }
 
+/*
+ * Function:    fs_sd_read_file_and_write_flash
+ * Arguments:   const char *path, uint32_t flash_address, uint32_t chunk_size
+ * Description:
+ *   Reads the file from SD card in chunks of chunk_size bytes using internal
+ *   static buffer work_buffer[], and writes each chunk to flash memory
+ *   starting at flash_address. Address is automatically incremented after
+ *   each successful write.
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: Read operation completed successfully
+ */
 sl_status_t fs_sd_read_file_and_write_flash(const char *path,
                                                   void *buffer,
                                               uint32_t buffer_size,
@@ -383,7 +592,15 @@ sl_status_t fs_sd_read_file_and_write_flash(const char *path,
 }
 
 
-// Unmount SDCARD
+/*
+ * Function:    fs_sd_deinit
+ * Arguments:   void
+ * Description:
+ *   Unmounts the SD card.
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: SD card unmounted successfully
+ */
 sl_status_t fs_sd_deinit(void)
 {
   if (!sd_mounted) {
@@ -400,6 +617,15 @@ sl_status_t fs_sd_deinit(void)
   return SL_STATUS_OK;
 }
 
+/*
+ * Function:    fs_sd_get_file_size
+ * Arguments:   const char *file_path, uint32_t *file_size
+ * Description:
+ *   Returns the size of the file in bytes.
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: File size obtained successfully
+ */
 sl_status_t fs_sd_get_file_size(const char *file_path,  uint32_t *file_size)
 {
 
@@ -434,6 +660,15 @@ sl_status_t fs_sd_get_file_size(const char *file_path,  uint32_t *file_size)
   return SL_STATUS_OK;
 }
 
+/*
+ * Function:    fs_sd_append_to_file
+ * Arguments:   const char *file_path, const void *data, uint32_t data_size
+ * Description:
+ *   Appends data to the end of an existing file.
+ *
+ * Return Message: sl_status_t
+ *   - SL_STATUS_OK: Data appended successfully
+ */
 sl_status_t fs_sd_append_to_file(const char   *file_path,
                                  const void   *data,
                                  uint32_t      data_size)

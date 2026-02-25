@@ -30,7 +30,9 @@ static sl_gspi_instance_t gspi_instance = SL_GSPI_MASTER;
 #define app_printf(...) app_log(__VA_ARGS__)
 #endif
 
-
+#define FS_LOG_INFO(msg)   log_write("[INFO] " msg "\r\n")
+#define FS_LOG_WARN(msg)   log_write("[WARN] " msg "\r\n")
+#define FS_LOG_ERR(msg)    log_write("[ERR ] " msg "\r\n")
 /*******************************************************************************
  **************************   GLOBAL FUNCTIONS   *******************************
  ******************************************************************************/
@@ -66,5 +68,11 @@ sl_status_t fs_sd_get_file_size(const char *file_path,  uint32_t *file_size);
 sl_status_t fs_sd_append_to_file(const char   *file_path,
                                  const void   *data,
                                  uint32_t      data_size);
+
+void fs_sd_log_init(void);
+
+void fs_sd_log_write(const char *str);
+
+void fs_sd_log_flush_task(void);
 
 #endif /* FILE_STORAGE_H_ */

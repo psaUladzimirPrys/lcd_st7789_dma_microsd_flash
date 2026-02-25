@@ -1,0 +1,316 @@
+/*
+ * auim_api.h
+ *
+ *  Created on: 20 февр. 2026 г.
+ *      Author: priss
+ */
+
+#ifndef UI_INC_AUIM_API_H_
+#define UI_INC_AUIM_API_H_
+
+/*=======================================================================*/
+/*        I N C L U D E S                                                */
+/*=======================================================================*/
+
+/*=======================================================================*/
+/*        В С Е    Д Л Я     И Н Д И К А Т О Р О В                       */
+/*=======================================================================*/
+#define AUIM_NO_ATTRIBUTES  0
+/*************************************************************************
+Массив последовательности кодов для индиаторов типа мьют
+перечисление для этого массива необходимое для индиации
+**************************************************************************/
+enum auim_SignIndicator_enum
+  {
+   AUIM_MUTE_ON_SIGN_INDICATOR
+  ,AUIM_MUTE_OFF_SIGN_INDICATOR
+//Все добавления Выше этой строки
+  ,AUIM_MAX_SIGN_INDICATOR
+  ,AUIM_NONE_SIGN_INDICATOR
+  };
+
+
+/*=======================================================================*/
+/*        П Р Е Р Е Ч И С Л Е Н И Я                          */
+/*=======================================================================*/
+enum colour_index_enum
+{
+  AUIM_MAIN_MENU_COLOUR
+ ,AUIM_MAIN_MENU_FIELD_COLOUR
+ ,AUIM_SOUND_MENU_COLOUR
+ ,AUIM_TEXNO_MENU_COLOUR
+ ,AUIM_TVSETUP_MENU_COLOUR
+ ,AUIM_PICTURE_MENU_COLOUR
+ ,AUIM_PROGRAMME_TUNING_MENU_COLOUR
+ ,AUIM_OVERVIEW_MENU_COLOUR
+ ,AUIM_OVERVIEW_EDIT_MENU_COLOUR
+ ,AUIM_MUTE_INDICATOR_COLOUR
+ ,AUIM_INDICATOR_COLOUR
+ ,AUIM_DUNAMIC_INDICATOR_COLOUR_PROGRAMM_NUMBER
+ ,AUIM_FLASH_INDICATOR_COLOUR
+ ,AUIM_FLASH_INDICATOR_COLOUR_RED
+ ,AUIM_MENU_FIELD_COLOUR
+ ,AUIM_TIME_INDICATOR_COLOUR
+ ,AUIM_TIME_HILIGHTE_INDICATOR_COLOUR
+ ,AUIM_BLANK_INDICATOR_COLOUR
+ ,AUIM_BLANK_SOUND_MENU_INDICATOR_COLOUR
+ ,AUIM_BLANK_PICTURE_MENU_INDICATOR_COLOUR
+ ,AUIM_BLANK_PROGRAMME_TUNING_MENU_INDICATOR_COLOUR
+ ,AUIM_PP_INDICATOR_COLOUR
+ ,AUIM_BLANK_TVSETUP_MENU_COLOUR
+};
+
+enum indicator_index_enum
+{
+
+   AUIM_INDEX_BATTERY_INDICATOR = 0
+  ,AUIM_INDEX_BLE_INDICATOR
+  ,AUIM_INDEX_SYNC_INDICATOR
+
+ ,AUIM_MAX_OSD_INDICATORS
+};
+
+/* Индексы в функцию fuim_ValidityFunction() и в структуру поля типа fuimFieldStruct
+*/
+enum valididy_function_tables_ids
+{
+  AUIM_MENU_VALIDITY_FUNCTION      = 0
+ ,AUIM_FIELD_VALIDITY_FUNCTION
+ ,AUIM_FIELD_SPACER_VALIDITY_FUNCTION
+ ,AUIM_FIELD_SEPARATOR_VALIDITY_FUNCTION
+ ,AUIM_FIELD_TINT_VALIDITY_FUNCTION
+ ,AUIM_FIELD_HUE_VALIDITY_FUNCTION
+ ,AUIM_FIELD_PICTURE_STORE_VALIDITY_FUNCTION
+ ,AUIM_FIELD_SOUND_STORE_VALIDITY_FUNCTION
+ ,AUIM_FIELD_EDIT_DELETE_VALIDITY_FUNCTION
+ ,AUIM_FIELD_TUNE_STORE_VALIDITY_FUNCTION
+ ,AUIM_FIELD_MANUAL_TUNE_WSB_VALIDITY_FUNCTION
+ ,AUIM_FIELD_TEXNO_MENU_RESET_VALIDITY_FUNCTION
+ ,AUIM_MENU_PROGRAMME_TUNING_VALIDITY_FUNCTION
+ ,AUIM_MENU_OVERVIEW_VALIDITY_FUNCTION
+ ,AUIM_FIELD_EDIT_VALIDITY_FUNCTION
+ ,AUIM_MENU_TIMER_PROG_NUMBER_VALIDITY_FUNCTION
+ ,AUIM_INDICATOR_NUMBER_PROGRAMM_VALIDITY_FUNCTION
+ ,AUIM_INDICATOR_NAME_PROGRAMM_VALIDITY_FUNCTION
+
+
+};
+
+
+/*=========================================================================*/
+/* @enum action_handler_function_tables_ids | This enumeration contains  */
+/*       the ID's of all action functions that can be called by UIMS.    */
+/*       Action handler functions are defined in the ...DialogKeys       */
+/*       arrays. See fuim_ActionHandler for more information             */
+
+enum action_handler_function_tables_ids
+{
+    AUIM_NO_ACTION_FUNCTION
+   ,AUIM_DISPLAY_CONFIG_MENU
+
+
+   ,AUIM_DISPLAY_MAIN_MENU
+   ,AUIM_DISPLAY_SOUND_MENU
+   ,AUIM_ACTION_ENABLE_SOUND_STORE_FUNCTION
+   ,AUIM_ACTION_DISABLE_SOUND_STORE_FUNCTION
+   ,AUIM_DISPLAY_PICTURE_MENU
+   ,AUIM_ACTION_ENABLE_PICTURE_STORE_FUNCTION
+   ,AUIM_ACTION_DISABLE_PICTURE_STORE_FUNCTION
+
+   ,AUIM_DISPLAY_PROGRAMME_TUNING_MENU
+   ,AUIM_DISPLAY_AUTO_SEARCH_MENU
+//   ,AUIM_START_DISPLAY_AUTO_SEARCH_MENU
+   ,AUIM_DISPLAY_MANUAL_SEARCH_MENU
+   ,AUIM_DISPLAY_OVERVIEW_MENU
+   ,AUIM_DISPLAY_TIMERS_MENU
+   ,AUIM_DISPLAY_EDIT_MENU
+   ,AUIM_ACTION_ENABLE_EDIT_DELETE_FUNCTION
+   ,AUIM_ACTION_DISABLE_EDIT_DELETE_FUNCTION
+   ,AUIM_ACTION_SET_EDIT_SWAP_FUNCTION
+
+   ,AUIM_DISPLAY_FEATURES_MENU //Отображаем поля техноменю
+   ,AUIM_DISPLAY_TEXNO_MENU
+   ,AUIM_DISPLAY_GEOMETRY_TEXNO_MENU
+   ,AUIM_DISPLAY_ADJUSTMENT_TEXNO_MENU
+   ,AUIM_DISPLAY_OPTIONS_TEXNO_MENU
+   ,AUIM_DISPLAY_TUNER_TEXNO_MENU
+
+
+   ,AUIM_HIDE_MAIN_MENU
+   ,AUIM_HIDE_SOUND_MENU
+   ,AUIM_HIDE_PICTURE_MENU
+   ,AUIM_HIDE_PROGRAMME_TUNING_MENU
+   ,AUIM_HIDE_OVERVIEW_MENU
+   ,AUIM_HIDE_TIMERS_MENU
+   ,AUIM_HIDE_FEATURES_MENU
+   ,AUIM_HIDE_AUTO_SEARCH_MENU
+
+
+/////////////////////////////////////////////////////////- Ручной поиск
+   ,AUIM_HIDE_MANUAL_SEARCH_MENU
+   ,AUIM_ACTION_HIDE_MANUAL_SEARCH_MENU
+
+   ,AUIM_ACTION_START_STOP_PROCESS_MANUAL_SEARCH_MENU
+   ,AUIM_ACTION_CONTROL_PROCESS_MANUAL_SEARCH_MENU
+   ,AUIM_ACTION_RESET_SEARCH_HIDE_MANUAL_SEARCH_MENU
+   ,AUIM_ACTION_DISABLE_MANUAL_TUNE_STORE_FUNCTION
+   ,AUIM_ACTION_ENABLE_MANUAL_TUNE_STORE_FUNCTION
+   ,AUIM_HIDE_EDIT_MENU
+   ,AUIM_ACTION_HIDE_EDIT_MENU
+
+
+///////////////////////////////////-ИНДИКАТОРЫ
+   ,AUIM_INDICATOR_DISPLAY_MAIN_MENU
+
+/* ,AUIM_HIDE_SOUND_INDICATOR
+   ,AUIM_HIDE_BRIGHTNESS_INDICATOR
+   ,AUIM_HIDE_SATURATION_INDICATOR
+   ,AUIM_HIDE_MAIN_MENU_INDICATOR*/
+
+
+};
+
+enum transformer_function_tables_ids
+{
+  AUIM_NO_CHANGE_FUNCTION
+
+////////////////////////////////////----------------- Звук
+,AUIM_CHANGE_MAIN_VOLUME
+,AUIM_CHANGE_AVL
+
+/////////////////////////////////////----------------- Изображенине
+,AUIM_CHANGE_BRIGHTNESS
+,AUIM_CHANGE_CONTRAST
+,AUIM_CHANGE_SATURATION
+,AUIM_CHANGE_SHARPNESS
+,AUIM_CHANGE_TINT
+,AUIM_CHANGE_HUE
+
+///////////////////-Ручной поиск
+,AUIM_CHANGE_SEARCH
+,AUIM_CHANGE_BAND
+,AUIM_CHANGE_MANUAL_SEACH_PROG_NUMBER_STORE
+,AUIM_SET_MANUAL_SEACH_PROG_NUMBER_STORE
+,AUIM_CHANGE_COLOR_SYSTEM
+,AUIM_CHANGE_FINE_TUNING
+,AUIM_CHANGE_AFC
+,AUIM_CHANGE_GAIN_WSB
+/////////////////////////Edit - меню
+,AUIM_CHANGE_EDIT_PROG_NUMBER_STORE
+,AUIM_CHANGE_EDIT_SWAP_PROG_NUMBER
+,AUIM_SET_EDIT_PROG_NUMBER_STORE
+,AUIM_SET_EDIT_SWAP_PROG_NUMBER
+,AUIM_CHANGE_EDIT_PROG_STATE
+,AUIM_SET_EDIT_PROG_NAME_STRING
+/////////////////// Конфигурация ТВ
+,AUIM_CHANGE_LANGUAGE
+,AUIM_CHANGE_START_POWER_ON
+,AUIM_CHANGE_DISPLAY_TEMPORARY_PROGNUMBER
+,AUIM_CHANGE_AV_SOURSE
+,AUIM_CHANGE_LOCK
+,AUIM_CHANGE_BLACKSTERTCH
+,AUIM_CHANGE_BLUESTRETCH
+,AUIM_CHANGE_OSD_CONTRAST
+,AUIM_CHANGE_OSD_TONE
+
+
+////////////////////////////////////////Меню время
+
+,AUIM_SET_RTS_TIME
+,AUIM_SET_TIME_ON
+,AUIM_SET_TIME_OFF
+
+,AUIM_CHANGE_ON_PROG_NUMBER
+,AUIM_SET_ON_PROG_NUMBER
+
+///////////////////////////Для индикатора получение строки с надписью меню и мигающими курсорами
+
+};
+
+enum observer_function_tables_ids
+{
+ AUIM_NO_GET_FUNCTION = 0
+
+ ,AUIM_GET_BATTERY_INDICATOR
+ ,AUIM_GET_BLE_INDICATOR
+ ,AUIM_GET_SYNC_INDICATOR
+
+
+ ,AUIM_GET_MUTE_INDICATOR
+
+
+////////////////////////////////////--------------Звук
+,AUIM_GET_MAIN_VOLUME
+,AUIM_GET_AVL
+,AUIM_GET_SOUND_STORE_FUNCTION
+/////////////////////////////////////------------Изоражение
+,AUIM_GET_BRIGHTNESS
+,AUIM_GET_CONTRAST
+,AUIM_GET_SATURATION
+,AUIM_GET_SHARPNESS
+,AUIM_GET_TINT
+,AUIM_GET_HUE
+,AUIM_GET_PICTURE_STORE_FUNCTION
+,AUIM_GET_PP_INDICATOR
+
+,AUIM_GET_INDICATOR_PROGRAM_NR
+,AUIM_GET_INDICATOR_PROGRAM_STORE
+,AUIM_GET_INDICATOR_SOURCE_STRING
+,AUIM_GET_OVERVIEW_PROGRAM_NR
+,AUIM_GET_OVERVIEW_SOURCE_STRING
+,AUIM_GET_OVERVIEW_PROG_STATE_STRING
+
+/////////////////////-Автоматический поиск
+,AUIM_GET_AUTOSEARCH
+,AUIM_GET_PROG_AUTOSEARCH_NEW
+,AUIM_GET_PROG_AUTOSEARCH_ALL
+
+/////////////////////-Ручной поиск
+,AUIM_GET_SEARCH
+,AUIM_GET_BAND
+,AUIM_GET_MANUAL_SEACH_PROG_NUMBER_STORE
+,AUIM_GET_COLOR_SYSTEM
+,AUIM_GET_FINE_TUNING
+,AUIM_GET_AFC
+,AUIM_GET_GAIN_WSB
+,AUIM_GET_TUNE_STORE_FUNCTION
+
+/////////////////////////Edit - меню
+,AUIM_GET_EDIT_PROG_NUMBER_STORE
+,AUIM_GET_EDIT_SWAP_PROG_NUMBER
+,AUIM_GET_EDIT_PROG_STATE
+,AUIM_GET_EDIT_PROG_NAME_STRING
+,AUIM_GET_EDIT_DELETE_FUNCTION
+//////////////////////////////////////// Конфигурация ТВ
+,AUIM_GET_LANGUAGE
+,AUIM_GET_START_POWER_ON
+,AUIM_GET_DISPLAY_TEMPORARY_PROGNUMBER
+,AUIM_GET_AV_SOURSE
+,AUIM_GET_LOCK
+,AUIM_GET_BLACKSTERTCH
+,AUIM_GET_BLUESTRETCH
+,AUIM_GET_OSD_CONTRAST
+,AUIM_GET_OSD_TONE
+
+,AUIM_GET_OVERVIEW_FIXED_TOP_STRING_FUNCTION //Обзор
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////  Полчение времени  Меню время ///////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+,AUIM_GET_STAND_BY_TIME
+,AUIM_GET_STRING_RTS_TIME
+,AUIM_GET_RTS_TIME
+
+,AUIM_GET_TIME_ON
+,AUIM_GET_TIME_OFF
+,AUIM_GET_ON_PROG_NUMBER
+,AUIM_GET_SLEEP_TIME
+};
+
+/*=======================================================================*/
+/*        G L O B A L   F U N C T I O N   P R O T O T Y P E S            */
+/*=======================================================================*/
+
+
+
+#endif /* UI_INC_AUIM_API_H_ */

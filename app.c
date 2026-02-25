@@ -118,37 +118,17 @@ void app_init(void)
   cli_app_init();
 
 #ifdef TEST_DISPLAY
+  // Initialize DISPLAY interface
   disp_init();
 #endif
 
 #ifdef TEST_SD
   // Initialize file storage of SD card
-  sl_status_code = fs_sd_init();
-  if (sl_status_code != SL_STATUS_OK) {
-    // Failed to init SD card, handle error
-    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-  }
-
-  if ( fs_sd_disk_volume_status() != SL_STATUS_OK) {
-    // Failed to init SD card, handle error
-    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-  }
-
-  if (fs_sd_get_file_size(filepath, &f_size) != SL_STATUS_OK) {
-    app_log("Getting size of file: %s Failed\r\n", filepath);
-    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-  }
-
-  app_printf("File %s, size = %lu\r\n",filepath, f_size);
-
-  if (fs_sd_append_to_file(filepath, (const void *)&test_str[0], sizeof(test_str)) != SL_STATUS_OK) {
-    app_log("Append to file: Failed\r\n");
-    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-  }
+  fs_sd_log_init();
+  FS_LOG_INFO((const char *)&test_str[0]);
 #endif
 
 #ifdef TEST_FLASH
-
   // Initialize FLASH interface
   sl_status_code = flash_storage_init();
   if (sl_status_code != SL_STATUS_OK) {
@@ -195,12 +175,11 @@ void app_init(void)
     app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 
-#endif //TEST_FLASH_ERASE_PROG
+#endif //endif TEST_FLASH_ERASE_PROG
 
-#endif //TEST_FLASH
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#endif //endif TEST_FLASH
+
+ ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if defined(TEST_SD) && defined(TEST_FLASH) && defined(TEST_FLASH_ERASE_PROG_TEST)
 
   address = 0x080000;
@@ -214,7 +193,8 @@ void app_init(void)
 #if 1
  address = 0x080000;
  for ( img_index = 0; img_index < IMAGE_COUNT; img_index++ ) {
-  // Form the file name, for example "image0.bin" (assuming raw RGB565 files on SD)
+
+   // Form the file name, for example "image0.bin" (assuming raw RGB565 files on SD)
    snprintf(sd_card_file_path, sizeof(sd_card_file_path) ,"%s", image_files[img_index]);
 
     sl_status_code = fs_sd_write_img_to_flash(sd_card_file_path, address);
@@ -234,10 +214,6 @@ void app_init(void)
 #endif
 
 #endif
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 }
 
@@ -281,8 +257,10 @@ void app_process_action(void)
 
   cli_app_process_action();
 
+#ifdef TEST_FLASH
   /* @ToDo Workaround to prevent reading corrupted data  It was been added by UP*/
   flash_storage_wakeup_chip(); /*This is the worst way to solve the issue*/
+#endif
 
 #ifdef TEST_DISPLAY
   disp_process_action();
@@ -291,17 +269,10 @@ void app_process_action(void)
   sl_sleeptimer_delay_millisecond(1);
 
 #ifdef TEST_SD
-  if (get_time((char *)&test_str[0]) != SL_STATUS_OK) {
-    // Failed to get time, handle error
-    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-  }
-
-  if (fs_sd_append_to_file("HELLO.TXT", test_str, 27) != SL_STATUS_OK) {
-    // Failed to init SD card, handle error
-    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-  }
+  fs_sd_log_flush_task();
 #endif
-  sl_sleeptimer_delay_millisecond(100);
+
+  sl_sleeptimer_delay_millisecond(10);
 
 
 }

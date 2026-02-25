@@ -62,9 +62,10 @@ static sl_sleeptimer_timer_handle_t app_sleep_timer;
 static void app_sleeptimer_callback(sl_sleeptimer_timer_handle_t *timer,
                                     void *data);
 
-static inline uint32_t micros_start() __attribute__((always_inline));
+#if 0
+static inline uint32_t micros_start(void) __attribute__((always_inline));
 
-static inline uint32_t micros_start()
+static inline uint32_t micros_start(void)
 {
 
   uint32_t time_ms = (uint32_t)sl_sleeptimer_tick_to_ms((uint32_t)sl_sleeptimer_get_tick_count());
@@ -75,7 +76,7 @@ static inline uint32_t micros_start()
   return (uint32_t)sl_sleeptimer_get_tick_count();
 
 }
-
+#endif
 
 
 /*******************************************************************************
