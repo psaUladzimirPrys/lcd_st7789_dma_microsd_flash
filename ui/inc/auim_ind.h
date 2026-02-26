@@ -7,7 +7,6 @@
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
-#include "auim_api.h"
 #include "fuim.h"
 
 /*=======================================================================*/
@@ -16,8 +15,8 @@
 
 /* OSD Indicators */
 
-extern const fuimIndicatorStruct auim_OsdIndicator[AUIM_MAX_OSD_INDICATORS];
-extern const fuimFieldStruct auim_OsdIndicatorFields[AUIM_MAX_OSD_INDICATORS];
+extern const fuimIndicatorStruct auim_OsdIndicator[];
+extern const fuimFieldStruct auim_OsdIndicatorFields[];
 
 
 #endif /* */

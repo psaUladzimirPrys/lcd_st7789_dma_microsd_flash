@@ -11,14 +11,13 @@
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
-#include "img_storage.h"
-#include "fmnu.h"
-#include "fmnu_str.h"
+
 
 /*==========================================================================*/
 /* G L O B A L   R E F E R E N C E S                                        */
 /*==========================================================================*/
 
+struct fmnu_MenuStruct;
 
 /*=========================================================================*/
 /*   G L O B A L   D E F I N I T I O N S                                   */
@@ -54,6 +53,5 @@ enum config_menu_field_index_enum  {
  ,AUIM_MNU_CONFIG_MAX_FIELD
 };
 
-extern const fmnu_MenuStruct auim_Menu[AUIM_MNU_MAX_MENUS];
 
 #endif /* UI_INC_AUIM_MNU_H_ */

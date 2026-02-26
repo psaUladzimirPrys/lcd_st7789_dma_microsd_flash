@@ -20,11 +20,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "mx25_defs.h"
 #include "sl_status.h"
 #include "sl_constants.h"
 #include "drv_spi_master.h"
 #include "spidrv.h"
-#include "mx25_defs.h"
 
 
 

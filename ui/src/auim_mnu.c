@@ -8,6 +8,8 @@
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
 #include "hglobal.h"
+#include "img_storage.h"
+#include "fmnu_str.h"
 #include "fuim.h"
 #include "fmnu.h"
 #include "auim_api.h"

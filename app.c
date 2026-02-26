@@ -46,6 +46,12 @@
 #include "ui_display.h"
 
 
+#include "fuim.h"
+#include "find_api.h"
+
+#include "auph.h"
+
+
 #define TEST_DISPLAY
 //#define TEST_SD
 #define TEST_FLASH
@@ -215,6 +221,11 @@ void app_init(void)
 
 #endif
 
+ fuim_Init();
+ aukh_Init();
+ find_Init();
+
+
 }
 
 /***************************************************************************//**
@@ -272,7 +283,15 @@ void app_process_action(void)
   fs_sd_log_flush_task();
 #endif
 
-  sl_sleeptimer_delay_millisecond(10);
+  if (aukh_ReadCommand())
+  {
+      aukh_ProcessKey();
+  }
 
+  if (  (auph_GetState() != AU_ERROR_STATE )  )
+  {
+    fuim_Update();//1 The location cannot be changed.
+    find_Update();//2 The location cannot be changed.
+  }
 
 }

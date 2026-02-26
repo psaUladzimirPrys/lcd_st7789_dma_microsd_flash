@@ -21,7 +21,7 @@
 #include "fuim_obs.h"
 #include "rbsc_api.h"
 
-
+#include "fmnu_str.h"
 
 
 /*=======================================================================*/
@@ -98,21 +98,21 @@ void fmnu_ConstructValue( fuimFieldStruct  *field_data_ptr ,Bool Highlighted);
 void fmnu_ConstructMenuPrompt(fuimFieldStruct *field_data_ptr, Byte value_position );
 void fuim_ConstructNumeric(fuimFieldStruct  *field_data_ptr, Bool Highlighted );
 
-void fuim_DrawNumeric(char  *NumericCharacter,
+
+void fmnu_DestroyMenu(void);
+/*void fuim_DrawNumeric(char  *NumericCharacter,
                       osdFieldValue GetFunction,
                       Byte FieldScalingNumeric,
                       Byte FieldSizeNumeric,
-                      Bool Highlighted ) ;
+                      Bool Highlighted ) ;*/
+
+
 /*********************************************************************************
 *
 *
 *
 **********************************************************************************/
-
-
-
 void fmnu_InitMenus( void )
-
 {
 
   fmnu_menu_data_ptr      = NULL ;
@@ -127,12 +127,10 @@ void fmnu_InitMenus( void )
   return;
 }
 
-
 /*********************************************************************************
 
 
 **********************************************************************************/
-
 void fmnu_ConstructValue( fuimFieldStruct  *field_data_ptr ,Bool Highlighted)
 {
 
@@ -191,13 +189,13 @@ void fmnu_UpdateValueField( fuimFieldStruct  *field_data_ptr, Bool Highlighted)
 //  fuim_DrawRepeatedCharacter(Count  ,' ');
 
 }
+
 /*********************************************************************************
 *
 *
 *
 *
 **********************************************************************************/
-
 void fmnu_ConstructMenuField(fuimFieldStruct  *field_data_ptr, Bool Highlighted )
 {
 
@@ -205,11 +203,11 @@ void fmnu_ConstructMenuField(fuimFieldStruct  *field_data_ptr, Bool Highlighted 
 
  Byte   MenuValidity;
  Byte   MenuXpos  = fmnu_menu_data_ptr ->Xpos;
- Byte   MenuYpos;
+ Byte   MenuYpos = 0;
  Byte   MenuWidth = fmnu_menu_data_ptr ->Width;
  Byte   MenuPromptPos = fmnu_menu_data_ptr ->PromptPos;
  Byte   MenuValuePos  = fmnu_menu_data_ptr ->ValuePos;
-  Byte   Count;
+ Byte   Count;
 
 #if 0
  Byte   cursor_char;
@@ -368,9 +366,32 @@ void fmnu_ConstructMenuField(fuimFieldStruct  *field_data_ptr, Bool Highlighted 
  Count = (MenuXpos + MenuWidth) - fuim_GetColumnPosition();
  // fuim_DrawRepeatedCharacter(Count  ,' ');
 
-
+  MenuYpos = MenuYpos;
   MenuPromptPos = MenuPromptPos;
   Count = Count;
+}
+
+/*********************************************************************************
+
+
+**********************************************************************************/
+void fmnu_DestroyField(fmnu_MenuProperty   *position)
+//fuimFieldStruct RDATA *field_data_ptr, fuim_MenuProperty XDATA *position)
+{
+
+Byte FirstPos,EndPos,length;
+
+ FirstPos = position->FirstPos;
+   EndPos = position->EndPos;
+
+  MY_plt_CCSetPosition (fuim_GetRowPosition(), FirstPos);
+  length = ( EndPos - FirstPos )  + 1;
+  //fuim_DrawRepeatedCharacter (length, ' '); //Erase till end of ROWS
+
+  fuim_SetColumnPosition(0);
+  //fuim_DrawRepeatedCharacter( 1 ,' ');
+
+  length = length;
 }
 
 /*********************************************************************************
@@ -378,8 +399,6 @@ void fmnu_ConstructMenuField(fuimFieldStruct  *field_data_ptr, Bool Highlighted 
 *
 *
 **********************************************************************************/
-
-
 void fmnu_DrawMenuFields(Bool bDraw)
 {
   Byte i, visible_fields;
@@ -471,7 +490,6 @@ void fmnu_DrawMenuFields(Bool bDraw)
 }
 
 
-
 /*****************************************************************************
 *
 *
@@ -502,8 +520,7 @@ void fmnu_ChangeField(Bool direction )
   active_field_ptr = displayed_fields[ active_field_nr ] ;
   field_status     = fuim_ValidityFunction (active_field_ptr -> ValidityFunction);
 
-  }
-  while( ( field_status != FUIM_VALIDITY_SELECTABLE ) && (--loop!=0) );
+  }while( ( field_status != FUIM_VALIDITY_SELECTABLE ) && (--loop!=0) );
 
   if( loop == 0 )
   {
@@ -514,23 +531,21 @@ void fmnu_ChangeField(Bool direction )
     if( previous_active_field_ptr != active_field_ptr )
     {
         fmnu_ConstructMenuField( previous_active_field_ptr, FALSE );
-    MenuDialogProperties.ActiveFieldNr = active_field_nr ;
+      MenuDialogProperties.ActiveFieldNr = active_field_nr ;
 
-    if( fuim_GetMenuVisibleFields (fmnu_menu_data_ptr) != 0 )
-    {
-      fmnu_DrawMenuFields(TRUE);
+      if( fuim_GetMenuVisibleFields (fmnu_menu_data_ptr) != 0 )
+      {
+        fmnu_DrawMenuFields(TRUE);
+      }
+      else
+      {
+
+  //  MenuDialogProperties.CurrentFieldNr = MenuDialogProperties.ActiveFieldNr;
+      fuim_SetRowPosition( osd_row[ active_field_nr ] );
+      fmnu_ConstructMenuField( active_field_ptr, TRUE);
+
+      }
     }
-    else
-    {
-
-//                MenuDialogProperties.CurrentFieldNr = MenuDialogProperties.ActiveFieldNr;
-    fuim_SetRowPosition( osd_row[ active_field_nr ] );
-                fmnu_ConstructMenuField( active_field_ptr  ,TRUE);
-
-    }
-    }
-
-
 
 }
 

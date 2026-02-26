@@ -24,6 +24,16 @@
 
 #define FUIM_FOOTER_HEIGHT      35
 
+
+/******************************************************************************/
+/* @Macro General | Integer | The multiply of FUIM_MAX_NR_OF_ROWS and FUIM_MAX_NR_OF_COLS must not exceed 544. */
+#define FUIM_MAX_NR_OF_ROWS 3
+
+/******************************************************************************/
+/* @Macro General | Integer | The multiply of FUIM_MAX_NR_OF_ROWS and FUIM_MAX_NR_OF_COLS must not exceed 544. */
+#define FUIM_MAX_NR_OF_COLS 16
+
+
 /******************************************************************************/
 
 #define FUIM_MAX_INDICATORS 5 /*Максимальное число разрешенных индикаторов одновременно отображаемых на экране  */
@@ -317,6 +327,23 @@ typedef struct {
   Byte              GetFunction; /* @field Observer ID of function which will return the text of the field. */
   Byte        Alignment;   /* @field Alignment of text in field as specified in fuim_Alignment */
 } fuimFixedFieldStruct;
+
+
+/************************************************************************
+  Определяет каждый цвет используемый для прорисовки
+    field-prompt,
+    field-value
+или   dialog title
+*************************************************************************/
+typedef struct {
+  Byte ForeGndColour;       //Значения от 0 до 7
+  Byte BackGndColour;       //Значения от 0 до 15
+  Byte ForeGndHighLighted;  //Значения от 0 до 7
+  Byte BackGndHighLighted;  //Значения от 0 до 15
+  Byte Attribute;           // перечисление enum fuim_Attributes
+  Byte AttributeHighLighted;// перечисление enum fuim_Attributes
+} fuimColourStruct;
+
 /*EMP=======================================================================*/
 
 
@@ -388,6 +415,10 @@ typedef enum
 
 } fuim_AlignmentRepeated;
 
+
+void fuim_Update(void);
+void fuim_Init(void);
+
 void fuim_InitIndicators( void );
 
 void fuim_DrawTitle(img_storage_id_t img_id, Byte width, Word bg_color, Bool remove);
@@ -400,7 +431,7 @@ osdDialogHandle fuim_ConstructIndicator(fuimIndicatorStruct *indicator_data_ptr)
 void fuim_UpdateIndicator(osdDialogHandle handle,Bool restart_timer);
 void fuim_DestroyIndicator(osdDialogHandle indicator );
 
-void fuim_TimerFunction( Byte index,  osdDialogHandle hDialog );
+
 
 osdDialogHandle fuim_GetIndicatorHandle(fuimIndicatorStruct   *indicator_data_ptr);
 void fuim_SetIndicatorTimeOut (osdDialogHandle hDialog,  Byte TimeOutInSeconds  );
@@ -420,5 +451,7 @@ void fuim_ConstructString(fuimFieldStruct  *field_data_ptr, Bool Highlighted);
 void fuim_ConstructIndicatorValue( fuimFieldStruct  *field_data_ptr );
 void fuim_ConstructIndicatorPrompt(fuimFieldStruct  *field_data_ptr,  Byte value_position );
 void fuim_DrawString(img_storage_id_t img_id);
+
+fuimColourStruct  *fuim_DynamicColours ( Byte index );
 
 #endif /* _HFUIM_H */

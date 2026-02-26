@@ -12,35 +12,103 @@
 #include "ui_display.h"
 #include "fmnu.h"
 #include "ccstd.h"
-#include "aukh.h"
 #include "auph.h"
 #include "fuim_obs.h"
+#include "auim_api.h"
+#include "rbsc_api.h"
 
-
-
-/*=======================================================================*/
-/* G L O B A L   D E F I N I T I O N S                                   */
-/*=======================================================================*/
-
+#include "sl_sleeptimer.h"
 
 /*============================================================================*/
 /*    G L O B A L  S Y M B O L    D E C L A R A T I O N S                     */
 /*============================================================================*/
-fuimIndicatorStruct    *fuim_Indicators[FUIM_MAX_INDICATORS];
-fuim_IndicatorProperty  fuim_indicator_properties[FUIM_MAX_INDICATORS];
-       osdTimerHandle   indicator_timer_handle[FUIM_MAX_INDICATORS];
-                TIMER   fuim_Timer[FUIM_MAX_TIMERS];
+
+
+/*=======================================================================*/
+/* L O C A L   D E F I N I T I O N S                                   */
+/*=======================================================================*/
+
+
+
+const fuimColourStruct MainMenuPromptColor =
+{
+   FUIM_COLOUR_4,       /* Foreground colour             */
+   FUIM_COLOUR_3,       /* Background colour             */
+   FUIM_COLOUR_4,       /* Foreground highlighted colour */
+   FUIM_COLOUR_3,       /* Background highlighted colour */
+   FUIM_ATTRIBUTES_DOUBLEHEIGHT + FUIM_ATTRIBUTES_SHADOWED,/* No attributes                 */
+   FUIM_ATTRIBUTES_DOUBLEHEIGHT + FUIM_ATTRIBUTES_SHADOWED /* attributes highlighted     */
+
+};
+/*****************************************************************************
+
+*****************************************************************************/
+
+const fuimColourStruct IndicatorPromptColour =
+{
+   FUIM_COLOUR_2,                       /* Foreground colour             */
+   FUIM_COLOUR_0,                   /* Background colour             */
+   FUIM_COLOUR_7,                       /* Foreground highlighted colour */
+   FUIM_COLOUR_TRANSPARENT,             /* Background highlighted colour */
+   FUIM_ATTRIBUTES_DOUBLEHEIGHT+FUIM_ATTRIBUTES_SHADOWED, /* With shadowing   */
+   FUIM_ATTRIBUTES_NONE         /*attributes highlighted */
+};
+
+/*****************************************************************************
+
+*****************************************************************************/
+
+
+const fuimColourStruct NormalMenuPromptColour =
+  {
+   FUIM_COLOUR_7,       /* Foreground colour             */
+   FUIM_COLOUR_0,       /* Background colour             */
+   FUIM_COLOUR_7,       /* Foreground highlighted colour */
+   FUIM_COLOUR_4,       /* Background highlighted colour */
+   FUIM_ATTRIBUTES_SHADOWED,/* No attributes                 */
+   FUIM_ATTRIBUTES_SHADOWED /* attributes highlighted      */
+  };
+
+#define FUIM_PERIODIC_TIMER_DELAY_64MS  64
+
+/*============================================================================*/
+/*    L O C A L  S Y M B O L    D E C L A R A T I O N S                     */
+/*============================================================================*/
+
+static fuimIndicatorStruct            * fuim_Indicators[FUIM_MAX_INDICATORS];
+static fuim_IndicatorProperty fuim_indicator_properties[FUIM_MAX_INDICATORS];
+static osdTimerHandle            indicator_timer_handle[FUIM_MAX_INDICATORS];
+static TIMER fuim_Timer[FUIM_MAX_TIMERS];
+static sl_sleeptimer_timer_handle_t  fuim_timeout_timer_handle;
 
 
 /*=============================================================================*/
 /*    L O C A L   F U N C T I O N   P R O T O T Y P E S                        */
 /*=============================================================================*/
-
 static void SetupPeriodicTimer (Byte timeOutInTicks);
-void PeriodicTimerExpired(void);
+
+void fuim_PeriodicTimerExpired(void);
+void fuim_UpdateTimer064ms(void);
+void fuim_TimerFunction(Byte index, osdDialogHandle hDialog);
+
+void fuim_DrawImage(int16_t x, int16_t y, img_storage_id_t img_id);
+
+
 /*==========================================================================*/
 /*    L O C A L   F U N C T I O N                                           */
 /*==========================================================================*/
+
+/***************************************************************************//**
+ * Sleeptimer callback function to generate card control timing.
+ ******************************************************************************/
+static void fuim_timer_callback(sl_sleeptimer_timer_handle_t *handle,
+                                          void *data)
+{
+  (void)handle;
+  (void)data;
+  fuim_UpdateTimer064ms();
+}
+
 
 static void SetupPeriodicTimer (Byte timeOutInTicks)
 {
@@ -51,17 +119,6 @@ static void SetupPeriodicTimer (Byte timeOutInTicks)
     return;
 }
 
-
-
-/*=============================================================================*/
-/*    L O C A L   F U N C T I O N   P R O T O T Y P E S                        */
-/*=============================================================================*/
-void fuim_DrawImage(int16_t x, int16_t y, img_storage_id_t img_id);
-
-
-/*==========================================================================*/
-/*    L O C A L   F U N C T I O N                                           */
-/*==========================================================================*/
 void fuim_DrawImage(int16_t x, int16_t y, img_storage_id_t img_id)
 {
    adafruit_st7789_draw_rgb_bitmap_from_flash(x, y, IMG_GET_WIDTH(img_id), IMG_GET_HEIGHT(img_id), IMG_GET_ADDRESS(img_id),  true);
@@ -151,7 +208,7 @@ void fuim_InitTimers(void)
 
 **********************************************************************************/
 
-void fuim_InitIndicators( void )
+void fuim_InitIndicators(void)
 {
 	Byte  i;
 
@@ -163,6 +220,11 @@ void fuim_InitIndicators( void )
     return;
 }
 
+
+/*********************************************************************************
+
+
+**********************************************************************************/
 osdDialogHandle fuim_GetIndicatorHandle(fuimIndicatorStruct   *indicator_data_ptr )
 {
   osdDialogHandle  i;
@@ -300,9 +362,9 @@ void fuim_ConstructIndicatorField( fuimFieldStruct     *field_data_ptr,
                          fuim_IndicatorProperty  *position )
 {
 
-  Byte  ForeGndColour;
-  Byte  BackGndColour;
-  Byte  Attribute;
+  Byte  ForeGndColour = 0;
+  Byte  BackGndColour = 0;
+  Byte  Attribute = 0;
   //Byte XDATA MenuValidity;
   Byte  value_length;
   Byte  value_delta = 0;
@@ -344,11 +406,11 @@ void fuim_ConstructIndicatorField( fuimFieldStruct     *field_data_ptr,
      }
 
 /*************************************************************************************/
-  // Attribute = fuim_GetFieldPromptColour(field_data_ptr) -> Attribute;
-  // ForeGndColour = fuim_GetFieldPromptColour( field_data_ptr) -> ForeGndColour  ;
-  // BackGndColour = fuim_GetFieldPromptColour( field_data_ptr) -> BackGndColour;
+   Attribute = fuim_GetFieldPromptColour(field_data_ptr) -> Attribute;
+   ForeGndColour = fuim_GetFieldPromptColour( field_data_ptr) -> ForeGndColour  ;
+   BackGndColour = fuim_GetFieldPromptColour( field_data_ptr) -> BackGndColour;
 
-//   plt_CCSetRowSize( Attribute & (FUIM_ATTRIBUTES_DOUBLEHEIGHT + FUIM_ATTRIBUTES_DOUBLEWIDTH));
+   //plt_CCSetRowSize( Attribute & (FUIM_ATTRIBUTES_DOUBLEHEIGHT + FUIM_ATTRIBUTES_DOUBLEWIDTH));
    MY_plt_CCSetPosition( fuim_GetRowPosition() , 0 );
 
    plt_CCSetForegroundColour( ForeGndColour );
@@ -384,6 +446,10 @@ void fuim_ConstructIndicatorField( fuimFieldStruct     *field_data_ptr,
 
 
   // }
+
+   ForeGndColour = ForeGndColour;
+   BackGndColour = BackGndColour;
+   Attribute = Attribute;
 
 }
 
@@ -615,6 +681,18 @@ void fuim_RestartTimer (osdTimerHandle hTimer,  Byte TimeoutInSeconds )
     return;
 }
 
+/*********************************************************************************
+
+
+**********************************************************************************/
+void fuim_UpdateTimer064ms(void)
+{
+  Byte i;
+for( i = 0; i < FUIM_MAX_TIMERS; i++)
+ {
+  rbsc_UpdateTimer(&fuim_Timer[i].TimeOut);
+ }
+}
 
 /*********************************************************************************
 
@@ -623,22 +701,17 @@ void fuim_RestartTimer (osdTimerHandle hTimer,  Byte TimeoutInSeconds )
 
 void fuim_DestroyIndicatorTimer(osdDialogHandle indicator )
 {
-	if (indicator == 0 || indicator > FUIM_MAX_INDICATORS)
-	{
+	if (indicator == 0 || indicator > FUIM_MAX_INDICATORS) {
 		return ;
 	}
 
 	indicator--;
 
-	if (indicator_timer_handle [indicator] != FUIM_NO_FREE_TIMER_HANDLE)
-	{
+	if (indicator_timer_handle [indicator] != FUIM_NO_FREE_TIMER_HANDLE) {
 		
         fuim_DestroyTimer (&indicator_timer_handle [indicator]);
-	
 	}
 
-    return;
-	
 } 
 
 
@@ -646,7 +719,7 @@ void fuim_DestroyIndicatorTimer(osdDialogHandle indicator )
 
 
 **********************************************************************************/
-void PeriodicTimerExpired(void)
+void fuim_PeriodicTimerExpired(void)
 {
 
   fmnu_UpdateMenu();
@@ -658,7 +731,6 @@ void PeriodicTimerExpired(void)
         fuim_UpdateIndicator(i, FALSE);
   }
 
-  return;
 }
 
 /* ============ */
@@ -681,7 +753,7 @@ void fuim_TimerFunction( Byte index,  osdDialogHandle hDialog )
       break;
 
     case PERIODIC_TIMER_FUNCTION:
-      PeriodicTimerExpired();
+      fuim_PeriodicTimerExpired();
     break;
 
     case INDICATOR_TIMER_FUNCTION:
@@ -732,43 +804,67 @@ void fuim_UpdateTimers(void)
 }
 
 
-void fuim_TurnOn ( void )
-{
-
-    SetupPeriodicTimer (FUIM_PERIODIC_TIMEOUT);
-    return;
-}
 
 /*****************************************************************************
 
 *****************************************************************************/
-void fuim_TurnOff ( void )
+void fuim_Init(void)
+
 {
-    fuim_InitTimers();
-}
+  bool is_timer64ms_running = false;
 
 
-/*****************************************************************************
-
-*****************************************************************************/
-void fuim_Init(void )
-{
-
- // plt_SetDisplayMode (DISPLAY_MODE_CC);
-//  pltstd_CCInit( FUIM_MAX_NR_OF_COLS, FUIM_MAX_NR_OF_ROWS);//, TRUE );
- // plt_CCSetOSDEnable(3);
-
+  pltstd_CCInit( FUIM_MAX_NR_OF_COLS, FUIM_MAX_NR_OF_ROWS);//, TRUE );
   fuim_InitTimers();
   fmnu_InitMenus();
   fuim_InitIndicators();
 
+
+  /* Make sure the mx_25_timeout_timer_handle timer is initialized only once */
+  sl_sleeptimer_is_timer_running(&fuim_timeout_timer_handle,
+                                 &is_timer64ms_running);
+  if (is_timer64ms_running == false) {
+  /* Start a periodic timer 64ms to generate  timing */
+    sl_sleeptimer_start_periodic_timer_ms(&fuim_timeout_timer_handle,
+                                          FUIM_PERIODIC_TIMER_DELAY_64MS,
+                                          fuim_timer_callback,
+                                          (void *)NULL,
+                                          0,
+                                          0);
+  }
+
 }
+
+/*****************************************************************************
+
+*****************************************************************************/
+void fuim_TurnOn(void)
+{
+    SetupPeriodicTimer(FUIM_PERIODIC_TIMEOUT);
+}
+
+/*****************************************************************************
+
+*****************************************************************************/
+void fuim_TurnOff(void)
+{
+    fuim_InitTimers();
+}
+
 /*********************************************************************************
 
 
 **********************************************************************************/
-Byte fuim_GetColumnPosition( void )
+void fuim_Update(void)
+{
+    fuim_UpdateTimers();
+}
 
+/*********************************************************************************
+
+
+**********************************************************************************/
+Byte fuim_GetColumnPosition(void)
 {
     Byte    posd_CCRow, posd_CCColumn;
 
@@ -777,12 +873,11 @@ Byte fuim_GetColumnPosition( void )
   return( posd_CCColumn );
 }
 
-
 /*********************************************************************************
 
 
 **********************************************************************************/
-Byte fuim_GetRowPosition( void )
+Byte fuim_GetRowPosition(void)
 {
     Byte    posd_CCRow, posd_CCColumn;
 
@@ -790,12 +885,12 @@ Byte fuim_GetRowPosition( void )
 
     return posd_CCRow;
 }
+
 /*********************************************************************************
 
 
-********************************************************************************
-**/
-void fuim_SetRowPosition( Byte row )
+********************************************************************************/
+void fuim_SetRowPosition(Byte row)
 {
      plt_CCSetPosition( row, fuim_GetColumnPosition() );
 }
@@ -804,7 +899,7 @@ void fuim_SetRowPosition( Byte row )
 
 
 **********************************************************************************/
-void fuim_SetColumnPosition( Byte column )
+void fuim_SetColumnPosition(Byte column)
 {
   plt_CCSetPosition( fuim_GetRowPosition(), column );
 }
@@ -814,7 +909,7 @@ void fuim_SetColumnPosition( Byte column )
 
 
 **********************************************************************************/
-void fuim_SetAttributes(  Byte Attributes )
+void fuim_SetAttributes(Byte Attributes)
 {
 //  Bool Mode = TRUE;
 
@@ -849,8 +944,7 @@ void fuim_SetBackgroundColour(Byte BackgroundColour, Byte SetAt)
 
 
 **********************************************************************************/
-void fuim_SetIndicatorTimeOut (osdDialogHandle hDialog,  Byte TimeOutInSeconds  )
-
+void fuim_SetIndicatorTimeOut (osdDialogHandle hDialog,  Byte TimeOutInSeconds)
 {
 
   hDialog --;
@@ -868,9 +962,40 @@ void fuim_SetIndicatorTimeOut (osdDialogHandle hDialog,  Byte TimeOutInSeconds  
 
 
 **********************************************************************************/
-
-void fuim_SetNextRow( void)
-
+void fuim_SetNextRow(void)
 {
     plt_CCSetPosition( fuim_GetRowPosition() + 1, fuim_GetColumnPosition() );
+}
+
+
+/*MPF=======================================================================*/
+/*
+   @func    Calls an dynamic colours get function
+
+   @rdesc   The result of the dynamic colours get function with ID index.
+
+*/
+fuimColourStruct  *fuim_DynamicColours ( Byte index )/* @parm function ID */
+/*EMP=======================================================================*/
+{
+   switch (index)
+   {
+     case AUIM_MAIN_MENU_COLOUR:
+         return ((fuimColourStruct  *)&MainMenuPromptColor);
+         break;
+
+     case  AUIM_INDICATOR_COLOUR:
+         return ((fuimColourStruct  *)&IndicatorPromptColour);
+         break;
+
+      case AUIM_MENU_FIELD_COLOUR:
+         return ((fuimColourStruct  *)&NormalMenuPromptColour);
+         break;
+
+    default:
+         return ((fuimColourStruct  *)&IndicatorPromptColour);
+         break;
+
+  }
+
 }

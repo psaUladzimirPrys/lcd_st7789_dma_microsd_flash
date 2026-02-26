@@ -30,8 +30,8 @@
 /*==========================================================================*/
 
 
-typedef struct
-{
+typedef struct {
+
     Byte Type;   /* Menu type {FMNU_MAIN_MENU, FMNU_SUB_MAIN_MENU, FMNU_MESSAGE_BOARD} */
 
     Byte Xpos;   // X position
@@ -77,8 +77,8 @@ typedef struct
 
 *************************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     Byte FirstPos;   /* First column position used by the menu/all fields
                         equals MenuDataPtr->HorLocation */
 
@@ -99,6 +99,17 @@ typedef struct
     Byte StartFieldNr;  /* Number of the first field visible in the menu window */
 
 } fmnu_MenuProperty;
+
+/*==========================================================================*/
+/*        G L O B A L   D A T A   D E C L A R A T I O N S                   */
+/*==========================================================================*/
+
+extern const fmnu_MenuStruct auim_Menu[];
+
+/*=======================================================================*/
+/* G L O B A L   F U N C T I O N   D E C L A R A T I O N                 */
+/*=======================================================================*/
+
 
 void fmnu_InitMenus(void);
 void fmnu_UpdateMenu( void);

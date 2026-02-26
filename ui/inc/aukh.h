@@ -4,7 +4,6 @@
  *  Created on: 20 02 2026
  *      Author: priss
  */
-
 #ifndef UI_INC_AUKH_H_
 #define UI_INC_AUKH_H_
 
@@ -13,23 +12,18 @@
 /*    е              */
 /*=======================================================================*/
 #include "hglobal.h"
+
+
 /*=======================================================================*/
 /*    G L O B A L   D A T A   D E C L A R A T I O N S                    */
 /*=======================================================================*/
 
-
-
 #define AU_DOWN  0  /* Определяет boolean значение для направления    */
 #define AU_UP    1  /* новой клавиши: которая может AU_UP или AU_DOWN.     */
 
-
-
-
-
 /* auphTvState_enum | Этот перечислаямый тип показывает TV состояния  */
 
-typedef enum
- {
+typedef enum {
 
    AU_STANDBY_STATE,     /* @emem TV приемник в SDtand-by состоянии */
    AU_TELETEXT_STATE,    /* @emem TV приемник в Teletext состоянии  */
@@ -89,8 +83,7 @@ typedef enum
 
 /* Определение груп используемых клавиш */
 
-enum
-{
+enum {
   AU_GROUP_DIGITS,
   AU_GROUP_STANDBY,
   AU_GROUP_MUTE,
@@ -119,8 +112,7 @@ enum
  *     - system -кода системы
  *     - command - кода команды
  */
-typedef struct
-{
+typedef struct {
    Byte  system;
    Byte  command;
 } AU_COMMAND;
@@ -129,8 +121,9 @@ typedef struct
  /*===========================================================================*/
  /*    G L O B A L   F U N C T I O N P R O T O T Y P E S                      */
  /*===========================================================================*/
-
+void aukh_Init(void);
 void aukh_ProcessKey(void);
+Bool aukh_ReadCommand (void);
 Byte aukh_GetCurrentCommand(void);
 Bool aukh_KeyHold(Byte hold_time);
 Bool aukh_FirstKeyPress(void);

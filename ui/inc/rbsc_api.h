@@ -9,20 +9,9 @@
 #include "hglobal.h"
 
 /*==========================================================================*/
-
-
+/*                                                                          */
 /*==========================================================================*/
-/*
-   @func This function updates (decrements) the calculated timer value (*rbsc_timer_value)
-          until it expires (RBSC_TIMER_EXPIRED) with one step.
-   @noi2c
-   @nobit
-   @int        RBSC_BASIC_INTERFACE
-   @parm       Pointer to calculated timer value
-   @values     [possible value between 0x00 - 0xFF]
-*/
-/*==========================================================================*/
-extern void rbsc_UpdateTimer(Byte   *rbsc_timer_ptr) ;
+
 
 
 /*==========================================================================*/
@@ -46,13 +35,27 @@ extern void rbsc_UpdateTimer(Byte   *rbsc_timer_ptr) ;
 /*==========================================================================*/
 #define rbsc_Timer_Value(time,step)  (((time)/(step))+2)
 
-extern void rbsc_Init(void);
-extern Bool rbsc_IsMax(Byte X,Byte Y);
-extern Bool rbsc_IsMin(Byte X,Byte Y);
+/*===========================================================================
+   @func This function updates (decrements) the calculated timer value (*rbsc_timer_value)
+          until it expires (RBSC_TIMER_EXPIRED) with one step.
+   @noi2c
+   @nobit
+   @int        RBSC_BASIC_INTERFACE
+   @parm       Pointer to calculated timer value
+   @values     [possible value between 0x00 - 0xFF]
+============================================================================*/
+/*==========================================================================*/
+extern void rbsc_UpdateTimer(Byte *rbsc_timer_ptr) ;
 
-extern Byte rbsc_ChangeControl(Byte  rbsc_control, Bool   rbsc_direction, Byte   rbsc_max, Byte  rbsc_min);
-extern Byte rbsc_ChangeControlAround(Byte rbsc_control, Bool rbsc_direction, Byte  rbsc_max, Byte   rbsc_min);
-extern Word rgen_ChangeControlWord(Word rgen_control, Bool rgen_direction,Word rgen_max,Word rgen_min);
+/*==========================================================================*/
+
+extern void rbsc_Init(void);
+extern Bool rbsc_IsMax(Byte X, Byte Y);
+extern Bool rbsc_IsMin(Byte X, Byte Y);
+
+extern Byte rbsc_ChangeControl(Byte  rbsc_control, Bool rbsc_direction, Byte rbsc_max, Byte rbsc_min);
+extern Byte rbsc_ChangeControlAround(Byte rbsc_control, Bool rbsc_direction, Byte rbsc_max, Byte rbsc_min);
+extern Word rgen_ChangeControlWord(Word rgen_control, Bool rgen_direction, Word rgen_max, Word rgen_min);
 
 extern Byte rbsc_GetLocalKey(void);
 

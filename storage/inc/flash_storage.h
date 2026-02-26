@@ -12,10 +12,11 @@
 //                       Includes
 // -----------------------------------------------------------------------------
 #include <stdint.h>
-#include "sl_status.h"
-#include "em_gpio.h"
+
 #include "mx25.h"
 #include "mx25_config.h"
+#include "sl_status.h"
+#include "em_gpio.h"
 
 
 #ifdef __cplusplus

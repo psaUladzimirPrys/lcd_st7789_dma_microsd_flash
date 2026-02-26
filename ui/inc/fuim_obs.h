@@ -14,7 +14,6 @@
 
 #include "hglobal.h"
 #include "fuim.h"
-#include "auim_api.h"
 
 /*=======================================================================*/
 /*        G L O B A L   D A T A   D E C L A R A T I O N S                */

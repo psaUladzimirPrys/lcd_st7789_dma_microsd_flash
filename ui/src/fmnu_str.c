@@ -6,19 +6,37 @@
 #include "fmnu.h"
 #include "fmnu_str.h"
 
-Byte fmnu_str_Texno_Menu_STRING[] = "1.2";
-Byte * fmnu_str_GetVerTexnoMenu(void)
-{  
-  return  (Byte * )(&fmnu_str_Texno_Menu_STRING[0]);
-}
 
 
+/*=======================================================================*/
+/* G L O B A L   D E F I N I T I O N S                                   */
+/*=======================================================================*/
 
+const Byte fmnu_str_Texno_Menu_STRING[] = "1.2";
 
-Byte const fmnu_str_List[FMNU_LIST_ITEMS_LAST_STRING] =
+const Byte fmnu_str_List[FMNU_LIST_ITEMS_LAST_STRING] =
 {
     IMG_ID_PROPERTY_1_VARIANT9_4
    ,IMG_ID_PROPERTY_1_VARIANT8_6
 
    ,IMG_ID_A
 };
+
+
+/*=======================================================================*/
+/* L O C A L   D A T A   D E F I N I T I O N S                           */
+/*=======================================================================*/
+
+/*=============================================================================*/
+/*    L O C A L   F U N C T I O N   P R O T O T Y P E S                        */
+/*=============================================================================*/
+
+
+/*=============================================================================*/
+/*   G L O B A L   F U N C T I O N                                            */
+/*=============================================================================*/
+
+Byte * fmnu_str_GetVerTexnoMenu(void)
+{
+  return  (Byte * )(&fmnu_str_Texno_Menu_STRING[0]);
+}

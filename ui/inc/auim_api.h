@@ -13,28 +13,26 @@
 /*=======================================================================*/
 
 /*=======================================================================*/
-/*        В С Е    Д Л Я     И Н Д И К А Т О Р О В                       */
+/*                                                                       */
 /*=======================================================================*/
 #define AUIM_NO_ATTRIBUTES  0
-/*************************************************************************
+/* ************************************************************************
 Массив последовательности кодов для индиаторов типа мьют
 перечисление для этого массива необходимое для индиации
-**************************************************************************/
-enum auim_SignIndicator_enum
-  {
+************************************************************************* */
+enum auim_SignIndicator_enum {
    AUIM_MUTE_ON_SIGN_INDICATOR
   ,AUIM_MUTE_OFF_SIGN_INDICATOR
 //Все добавления Выше этой строки
   ,AUIM_MAX_SIGN_INDICATOR
   ,AUIM_NONE_SIGN_INDICATOR
-  };
+};
 
 
 /*=======================================================================*/
 /*        П Р Е Р Е Ч И С Л Е Н И Я                          */
 /*=======================================================================*/
-enum colour_index_enum
-{
+enum colour_index_enum {
   AUIM_MAIN_MENU_COLOUR
  ,AUIM_MAIN_MENU_FIELD_COLOUR
  ,AUIM_SOUND_MENU_COLOUR
@@ -60,38 +58,37 @@ enum colour_index_enum
  ,AUIM_BLANK_TVSETUP_MENU_COLOUR
 };
 
-enum indicator_index_enum
-{
+enum indicator_index_enum {
 
    AUIM_INDEX_BATTERY_INDICATOR = 0
   ,AUIM_INDEX_BLE_INDICATOR
   ,AUIM_INDEX_SYNC_INDICATOR
 
- ,AUIM_MAX_OSD_INDICATORS
+  ,AUIM_MAX_OSD_INDICATORS
 };
 
 /* Индексы в функцию fuim_ValidityFunction() и в структуру поля типа fuimFieldStruct
 */
-enum valididy_function_tables_ids
-{
-  AUIM_MENU_VALIDITY_FUNCTION      = 0
- ,AUIM_FIELD_VALIDITY_FUNCTION
- ,AUIM_FIELD_SPACER_VALIDITY_FUNCTION
- ,AUIM_FIELD_SEPARATOR_VALIDITY_FUNCTION
- ,AUIM_FIELD_TINT_VALIDITY_FUNCTION
- ,AUIM_FIELD_HUE_VALIDITY_FUNCTION
- ,AUIM_FIELD_PICTURE_STORE_VALIDITY_FUNCTION
- ,AUIM_FIELD_SOUND_STORE_VALIDITY_FUNCTION
- ,AUIM_FIELD_EDIT_DELETE_VALIDITY_FUNCTION
- ,AUIM_FIELD_TUNE_STORE_VALIDITY_FUNCTION
- ,AUIM_FIELD_MANUAL_TUNE_WSB_VALIDITY_FUNCTION
- ,AUIM_FIELD_TEXNO_MENU_RESET_VALIDITY_FUNCTION
- ,AUIM_MENU_PROGRAMME_TUNING_VALIDITY_FUNCTION
- ,AUIM_MENU_OVERVIEW_VALIDITY_FUNCTION
- ,AUIM_FIELD_EDIT_VALIDITY_FUNCTION
- ,AUIM_MENU_TIMER_PROG_NUMBER_VALIDITY_FUNCTION
- ,AUIM_INDICATOR_NUMBER_PROGRAMM_VALIDITY_FUNCTION
- ,AUIM_INDICATOR_NAME_PROGRAMM_VALIDITY_FUNCTION
+enum valididy_function_tables_ids {
+
+   AUIM_MENU_VALIDITY_FUNCTION      = 0
+  ,AUIM_FIELD_VALIDITY_FUNCTION
+  ,AUIM_FIELD_SPACER_VALIDITY_FUNCTION
+  ,AUIM_FIELD_SEPARATOR_VALIDITY_FUNCTION
+  ,AUIM_FIELD_TINT_VALIDITY_FUNCTION
+  ,AUIM_FIELD_HUE_VALIDITY_FUNCTION
+  ,AUIM_FIELD_PICTURE_STORE_VALIDITY_FUNCTION
+  ,AUIM_FIELD_SOUND_STORE_VALIDITY_FUNCTION
+  ,AUIM_FIELD_EDIT_DELETE_VALIDITY_FUNCTION
+  ,AUIM_FIELD_TUNE_STORE_VALIDITY_FUNCTION
+  ,AUIM_FIELD_MANUAL_TUNE_WSB_VALIDITY_FUNCTION
+  ,AUIM_FIELD_TEXNO_MENU_RESET_VALIDITY_FUNCTION
+  ,AUIM_MENU_PROGRAMME_TUNING_VALIDITY_FUNCTION
+  ,AUIM_MENU_OVERVIEW_VALIDITY_FUNCTION
+  ,AUIM_FIELD_EDIT_VALIDITY_FUNCTION
+  ,AUIM_MENU_TIMER_PROG_NUMBER_VALIDITY_FUNCTION
+  ,AUIM_INDICATOR_NUMBER_PROGRAMM_VALIDITY_FUNCTION
+  ,AUIM_INDICATOR_NAME_PROGRAMM_VALIDITY_FUNCTION
 
 
 };
@@ -103,8 +100,8 @@ enum valididy_function_tables_ids
 /*       Action handler functions are defined in the ...DialogKeys       */
 /*       arrays. See fuim_ActionHandler for more information             */
 
-enum action_handler_function_tables_ids
-{
+enum action_handler_function_tables_ids {
+
     AUIM_NO_ACTION_FUNCTION
    ,AUIM_DISPLAY_CONFIG_MENU
 
@@ -162,10 +159,6 @@ enum action_handler_function_tables_ids
 ///////////////////////////////////-ИНДИКАТОРЫ
    ,AUIM_INDICATOR_DISPLAY_MAIN_MENU
 
-/* ,AUIM_HIDE_SOUND_INDICATOR
-   ,AUIM_HIDE_BRIGHTNESS_INDICATOR
-   ,AUIM_HIDE_SATURATION_INDICATOR
-   ,AUIM_HIDE_MAIN_MENU_INDICATOR*/
 
 
 };

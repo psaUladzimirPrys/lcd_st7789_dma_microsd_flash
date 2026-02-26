@@ -4,9 +4,12 @@
 
 
 #include "fuim_obs.h"
+#include "fmnu.h"
 #include "aukh.h"
 #include "auim_mnu.h"
-#include "fuim.h"
+#include "auim_api.h"
+
+
 
 
 /*=======================================================================*/
@@ -140,4 +143,5 @@ osdFieldValue fuim_ActionHandler(Byte index,  osdFieldValue value)
 
     return ((osdFieldValue) result);
 }
+
 
