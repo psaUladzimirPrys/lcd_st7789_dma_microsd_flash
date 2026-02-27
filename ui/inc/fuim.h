@@ -10,12 +10,11 @@
 #include "adafruit_st7789.h"
 #include "img_storage.h"
 
-
-
 /*=======================================================================*/
 /*        G L O B A L   D A T A   D E C L A R A T I O N S                */
 
 /*=======================================================================*/
+/*Definition values for positioning the Menu Title and the width and height of the MENU  in pixels */
 #define FUIM_TITLE_RIGHT_MARGIN  21    //px
 #define FUIM_TITLE_HEIGHT        44
 
@@ -25,19 +24,18 @@
 #define FUIM_FOOTER_HEIGHT      35
 
 
-/******************************************************************************/
+/*=======================================================================*/
 /* @Macro General | Integer | The multiply of FUIM_MAX_NR_OF_ROWS and FUIM_MAX_NR_OF_COLS must not exceed 544. */
 #define FUIM_MAX_NR_OF_ROWS 3
 
-/******************************************************************************/
+/*=======================================================================*/
 /* @Macro General | Integer | The multiply of FUIM_MAX_NR_OF_ROWS and FUIM_MAX_NR_OF_COLS must not exceed 544. */
 #define FUIM_MAX_NR_OF_COLS 16
 
-
-/******************************************************************************/
-
-#define FUIM_MAX_INDICATORS 5 /*Максимальное число разрешенных индикаторов одновременно отображаемых на экране  */
+/*=======================================================================*/
+#define FUIM_MAX_INDICATORS 5 /*Maximum number of indicators allowed to be displayed on the screen simultaneously */
 #define FUIM_MAX_DISPLAY_MENUS  1
+
 /* @Macro General | Integer | 10 10 1 25 |Max number of fields in a menu. Does not affect the number of fields in an overview. */
 #define FUIM_MAX_DISPLAY_FIELDS 5
 
@@ -47,26 +45,29 @@
 #define FUIM_MAX_NUMERIC_LENGTH 5
 #define DIGIT_BUFFER_SIZE FUIM_MAX_NUMERIC_LENGTH
 
-/******************************************************************************/
 
 /* Need timers for indicators, menus, 1 overview and 1 periodic timer: */
 #define FUIM_MAX_TIMERS (FUIM_MAX_INDICATORS + FUIM_MAX_DISPLAY_MENUS + 2)
-/******************************************************************************/
+
+/*=======================================================================*/
 
 #define FUIM_GRAYED_OUT_COLOUR  ST7789_BLUE
 
-
+/*=======================================================================*/
 #define fuim_GetIndicatorVertLocation(pIndicator) pIndicator->VertLocation
 #define fuim_GetIndicatorHorLocation(pIndicator)  pIndicator -> HorLocation
 #define fuim_GetIndicatorFieldWidth(pIndicator)   pIndicator -> FieldWidth
 #define fuim_GetIndicatorValuePos(pIndicator)     pIndicator -> ValuePos
 #define fuim_GetIndicatorTimeout(pIndicator)      pIndicator->TimeOut
 
+/*=======================================================================*/
 
 #define fuim_GetFieldPromptColour(pField) (fuim_DynamicColours(pField->PromptColour))
 #define fuim_GetFieldValidity(pField)     (fuim_Observer(pField->ValidityFunction))
 #define fuim_GetFieldPrefix(pField)       (fuim_Observer(pField->Prefix))
 #define fuim_GetFieldSuffix(pField)        pField->Suffix
+
+/*=======================================================================*/
 
 #define fuim_GetMenuVisibleFields(pMenu)          pMenu->VisibleFields
 #define fuim_GetMenuVertLocation(pMenu)           pMenu->VertLocation
@@ -74,8 +75,11 @@
 #define fuim_GetFixedBottomField(pMenu)           pMenu->FixedBottomField
 #define fuim_GetMenuHorLocation(pMenu)            pMenu->HorLocation
 
+/*=======================================================================*/
+
 #define fuim_GetActiveMenuTimeout(pTimeOut)       pTimeOut->TimeOut
 
+/*=======================================================================*/
 
 typedef Byte osdStringID;
 typedef LongLong osdFieldValue;
@@ -95,22 +99,24 @@ typedef Byte cmdKeyNumber;
 /* When fuim uses the 64ms timer: this is to convert seconds->timer-ticks */
 #define FUIM_TIMER_RESOLUTION  16   /* timer-ticks per second (1000/64) */
 
-/* Fuim Происходит обновление всего что указано в меню :    */
+/*  Everything in the menu is being updated: */
 #define FUIM_PERIODIC_TIMEOUT  3    /*  in timer-ticks  */
-/*Значение в секундах показываущее после кокого времени введенные числа будут приняты (0 = no timeout) */
+
+/*Value in seconds indicating after how long the entered numbers will be accepted (0 = no timeout) */
 #define FUIM_NUMERIC_TIMEOUT 4
 
 #define FUIM_MENU_TIMEOUT 10
 #define FUIM_FIELD_NO_TIMEOUT 0
 #define FUIM_FIELD_TIMEOUT 1
 
+/*=======================================================================*/
 typedef struct {
-              Byte TimeOut;     /* в 'timer-ticks' */
-              Byte TimerID;   /* ID функции которая будет вызыватся когда Таймер истечет */
-   osdDialogHandle Parameter;   /* given to 'timerfunction' */
+              Byte TimeOut;    /* в 'timer-ticks' */
+              Byte TimerID;    /* ID of the function that will be called when the timer expires */
+   osdDialogHandle Parameter;  /* given to 'timerfunction' */
 } TIMER;
 
-
+/*=======================================================================*/
  /*
      @enum fuim_TimerParentType | A timer can be associated with:
  */
@@ -119,6 +125,7 @@ typedef enum {
    FUIM_TIMERPARENTTYPE_INDICATOR    /* @emem The timer is associated with an indicator */
  } fuim_TimerParentType;
 
+/*=======================================================================*/
 /* Timer function IDs */
 enum Timer_ID {
   EMPTY_TIMER,
@@ -129,8 +136,7 @@ enum Timer_ID {
   NUMERIC_TIMER_FUNCTION
 };
 
-/******************************************************************************/
-
+/*=======================================================================*/
 typedef enum  {
   FUIM_FIELDTYPE_SPACER,
   FUIM_FIELDTYPE_SLIDER,
@@ -149,22 +155,28 @@ typedef enum  {
 
 } fuim_FieldType;
 
+
+/*=======================================================================*/
 /*
     @enum fuim_Validity | Validity describes the appearance of a field in the dialog:
 */
 typedef enum
 {
-  FUIM_VALIDITY_NOTPRESENT, /*  Field не присутствует (so not selectable and/or visible) */
-  FUIM_VALIDITY_VISIBLE ,   /*  Field видимо но не выбираемо*/
-  FUIM_VALIDITY_PRESENT ,     /*  Field присутствует но не видимо*/
-  FUIM_VALIDITY_SELECTABLE ,  /*  Field видимо и выбираемо*/
-  FUIM_VALIDITY_GRAYEDOUT   /*  Field is grayed out, не выбираемо */
+  FUIM_VALIDITY_NOTPRESENT, /* Field is not present (so not selectable and/or visible) */
+  FUIM_VALIDITY_VISIBLE , /* Field is visible but not selectable*/
+  FUIM_VALIDITY_PRESENT , /* Field is present but not visible */
+  FUIM_VALIDITY_SELECTABLE , /* Field is visible and selectable */
+  FUIM_VALIDITY_GRAYEDOUT /* Field is grayed out, not selectable */
 } fuim_Validity;
+
+/*=======================================================================*/
 
 typedef struct {
   Byte    Value;   /* @field actual valid value used in the set and get function of the corresponding field */
   Byte    ListItem;/* @field id-number of the string which replaces the value. */
 } fmnu_ListStruct;
+
+/*=======================================================================*/
 
 typedef union {
   Byte  Slider;  /* @field number of segments used for displaying the slider.
@@ -184,7 +196,7 @@ typedef union {
 
 } TFieldSize;
 
-
+/*=======================================================================*/
 typedef union {
   Byte    Slider;     /* @field value used for dividing the return-value of the GetFunction to
                       fit the number of segments in a slider */
@@ -217,12 +229,11 @@ osdStringID   Button;             /* ID - надписи на нопке*/
 
 /*=======================================================================*/
 typedef struct {
-
-  Byte Action;          /* Поле действия (номер клавиши)*/
-  Byte DialogFunction;  /*Поле фнкции которая выполняется когда клавиша нажата Это как индекс в обзервер функций таблице*/
+  Byte Action; /* Action field (key number)*/
+  Byte DialogFunction; /*Field of the function that is executed when the key is pressed. This is like an index in the function observer table*/
 } fuimDialogNavigation;
 
-
+/*=======================================================================*/
 typedef struct {
     fuim_FieldType Type;
     // Field type (combines rendering type and control behavior)
@@ -297,14 +308,12 @@ typedef struct {
  *
  * */
 /*=======================================================================*/
-/*Самая верхняя структура */
 typedef struct {
-
-  Byte VertLocation;           //Номер строки где  расп верхний левый угол
-  Byte HorLocation;            //номер столбца где расп верхн левый угол
-  Byte ValuePos;        /* @field total width of the field */
-  Byte TimeOut;        //Знач в сек сколько показывать поле
-  const fuimFieldStruct  *Field;//Указатель на стртуру прорисовки и контроля
+  Byte VertLocation; //Row number where the upper left corner is located
+  Byte HorLocation; //Column number where the upper left corner is located
+  Byte ValuePos; /* @field total width of the field */
+  Byte TimeOut; //Value in seconds for how long to display the field
+  const fuimFieldStruct *Field;//Pointer to the drawing and control structure
 
 } fuimIndicatorStruct;
 
@@ -359,8 +368,7 @@ enum fuim_Attributes {
 };
 
 /********************************************************************************
-    @enum fuim_Colours | Available colours in the Painter device. There they are mapped onto real colours
-    using a colour lookup table in the DPTR component. The colours 0 through 7 are available
+    @enum fuim_Colours | Available colours.  The colours 0 through 7 are available
     for foreground colours and colours 8 through 15 are for background colours
 
 *********************************************************************************/
@@ -385,7 +393,7 @@ typedef enum
   FUIM_COLOUR_14 ,        /* @emem Background Cyan    (14) */
   FUIM_COLOUR_15 ,        /* @emem Background White   (15) */
 
-  FUIM_COLOUR_TRANSPARENT     /* @emem Background Transparent - Устанавливает режим блочный*/
+  FUIM_COLOUR_TRANSPARENT     /* @emem Background Transparent  */
 } fuim_Colour;
 
 /*MPF=======================================================================*/

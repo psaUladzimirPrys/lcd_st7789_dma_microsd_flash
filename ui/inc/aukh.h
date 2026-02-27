@@ -18,26 +18,46 @@
 /*    G L O B A L   D A T A   D E C L A R A T I O N S                    */
 /*=======================================================================*/
 
-#define AU_DOWN  0  /* Определяет boolean значение для направления    */
-#define AU_UP    1  /* новой клавиши: которая может AU_UP или AU_DOWN.     */
+#define AU_DOWN  0  /* Defines the boolean value for the direction    */
+#define AU_UP    1  /* of the new key: which can be AU_UP or AU_DOWN. */
 
-/* auphTvState_enum | Этот перечислаямый тип показывает TV состояния  */
 
 typedef enum {
 
-   AU_STANDBY_STATE,     /* @emem TV приемник в SDtand-by состоянии */
-   AU_TELETEXT_STATE,    /* @emem TV приемник в Teletext состоянии  */
-   AU_SERVICE_STATE,     /* @emem TV приемник в Service состоянии   */
-   AU_MENU_STATE,        /* @emem TV приемник в Menu состоянии      */
-   AU_DIRECT_STATE,      /* @emem TV приемник в Normal состоянии    */
-   AU_FACTORY_STATE,     /* @emem TV приемник в Factory состоянии   */
-   AU_GAME_STATE,        /* @emem TV приемник в Game состоянии      */
-   AU_ABB_STATE,         /* @emem TV приемник в ABB реглировки      */
-   AU_ERROR_STATE        /* @emem TV приемник в Error состоянии     */
- }auphTvState_enum;
+  // --- System Startup & Idling ---
+   AU_STARTUP_SPLASH_STATE,        //OsteoProbe Boot screen: logo, hardware self-test animation
+   AU_IDLE_STATE,                  //OsteoProbe Home screen: BLE status, battery, , and usage tips
+
+   // --- Connectivity & Data Management ---
+   AU_BLE_DISCOVERABLE_STATE,      //OsteoProbe Pairing mode: waiting for OsteoVault app connection
+  // AU_WAIT_TIP_ID_STATE,         //OsteoProbe Input required: waiting for Tip ID from OsteoVault
+   AU_CONFIGURAION_MENU_STATE,
+
+   // --- Measurement Procedures ---
+   AU_PERFORMANCE_CHECK_MEASURE_STATE, //OsteoProbe Performance test: verifying accuracy against limit values
+   AU_REFERENCE_CHECK_MEASURE_STATE,   //OsteoProbe Reference check: measuring a standard phantom for calibration
+   AU_PATIENT_MEASURE_STATE,           //OsteoProbe Active session: indentation counter, validity, real-time tips
+
+   AU_STANDBY_STATE,     /* @emem OsteoProbe SDtand-by  */
+   AU_MENU_STATE,        /* @emem OsteoProbe in Menu      */
+   AU_DIRECT_STATE,      /* @emem OsteoProbe in Normal    */
+
+   // --- Results & Notifications ---
+   AU_BATTERY_CHARGING_STATE,     //OsteoProbe stop measure: Very low battery
+   AU_ERROR_STATE                 //OsteoProbe Alerts: sensor errors, or process violations
+
+}auphOsteoState_enum;
 
 
- /* Определения времени нажатия клавиши  для повтора клавиш. */
+ typedef enum {
+     AU_KEY_PRESS_SHORT,
+     AU_KEY_PRESS_LONG,
+     AU_KEY_PRESS_VERY_LONG,
+     AU_KEY_PRESS_MULTI,
+ } auphKeyPressType_enum;
+
+
+ /* Key press timing definitions for key repetition. */
 
  #define AU_KEY_PRESSED_FIRST_TIME        0   /*  first time           */
  #define AU_KEY_PRESSED_128_MSEC          1   /*  1 * 128 ms = 128 ms  */
@@ -49,15 +69,26 @@ typedef enum {
  #define AU_KEY_PRESSED_FOUR_SECONDS     32   /* 32 * 128 ms = 4 secs  */
  #define AU_KEY_PRESSED_FIVE_SECONDS     40   /* 40 * 128 ms = 5 secs  */
 
- /* Определение для всех возможных клавиш      */
- /* Номер клавиши > 127 являются симулируемыми клавишами. */
+ /* Definition for all possible keys */
+ /* Key numbers > 127 are simulated keys. */
 
-#define AU_KEY_STANDBY                 12
-#define AU_KEY_CANCEL                  45
-#define AU_KEY_MENU                    59
 
-#define AU_KEY_SERVICE                 150   /* Simulated key */
-#define AU_KEY_PROTECTION              151   /* Simulated key */
+#define AU_KEY_START                  1
+#define AU_KEY_NO                     2
+#define AU_KEY_CLOSE                  4
+#define AU_KEY_PERF_CHK               8
+#define AU_KEY_NEXT                   10
+
+#define AU_KEY_CANCEL                 20
+#define AU_KEY_YES                    40
+#define AU_KEY_PARAMS                 50
+
+
+#define AU_KEY_STANDBY                52
+#define AU_KEY_MENU                   59
+
+#define AU_KEY_SERVICE                150   /* Simulated key */
+
 
 #define FUIM_ACTION_PUSH_THROUGH      253 /* previous entered digit is hold */
 
@@ -77,43 +108,27 @@ typedef enum {
 
 #define AU_LOCAL_KEY_CODE_MASK     0x7 /*Отфильтровка бита удержания клавиши локальной клавиши от клавиши*/
 
-#define AU_ADDRESS_TV_KEY           0
 #define AU_ADDRESS_SERVICE_KEY      7
 
+ /* Defining the groups of keys used */
 
-/* Определение груп используемых клавиш */
-
-enum {
-  AU_GROUP_DIGITS,
-  AU_GROUP_STANDBY,
-  AU_GROUP_MUTE,
-  AU_GROUP_PP,
-  AU_GROUP_DIRECT,
-  AU_GROUP_CONTROL_LEFT_RIGHT,
-  AU_GROUP_CONTROL_UP_DOWN,
-  AU_GROUP_MENU,
-  AU_GROUP_DIRECT_MENU,
-  AU_GROUP_AV,
-  AU_GROUP_TV,
-  AU_GROUP_PIP,
-  AU_GROUP_TEXT,
-  AU_GROUP_TEXT_SPECIAL,
-  AU_GROUP_SERVICE,
-  AU_GROUP_PROTECTION,
-  AU_GROUP_ABB,
-  NUMBER_OF_AU_GROUPS
-};
+ enum {
+   AU_GROUP_IDLE,
+   AU_GROUP_STANDBY,
+   AU_GROUP_DIRECT,
+   AU_GROUP_MENU,
+   AU_GROUP_SERVICE,
+   NUMBER_OF_AU_GROUPS
+ };
 
 #define     AU_GROUP_INVALID           255
 
 
-/* Структура используется для сохранения команды ДУ.
+/* Структура используется для сохранения команды
  * Эта команда состоит из :
- *     - system -кода системы
  *     - command - кода команды
  */
 typedef struct {
-   Byte  system;
    Byte  command;
 } AU_COMMAND;
 

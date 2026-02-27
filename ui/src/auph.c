@@ -1,7 +1,7 @@
 /*
  * auph.c
  *
- *  Created on: 20 февр. 2026 г.
+ *  Created on: 20 Feb. 2026 г.
  *      Author: priss
  */
 
@@ -32,131 +32,125 @@ typedef void (* VOID_FUNCTION_PTR)(void);
 #define X_IN_MENU                0x08
 #define X_NOT_IN_MENU            0x10
 #define X_IN_STANDBY             0x20
-#define X_NOT_RESET_DIGIT_ENTRY  0x40
+#define X_IN_IDLE                0x40
 #define X_IN_SERVICE             0x80
 
 
-#define PERMISSION_DIGITS             X_REPEAT + X_IN_STANDBY + X_IN_TEXT + X_IN_MENU + X_NOT_RESET_DIGIT_ENTRY
 #define PERMISSION_STANDBY            X_IN_STANDBY + X_IN_SERVICE  
-#define PERMISSION_MUTE               X_ALWAYS
-#define PERMISSION_PP                 X_REPEAT + X_NOT_IN_TEXT + X_NOT_IN_MENU
-#define PERMISSION_DIRECT             X_NOT_IN_TEXT + X_NOT_IN_MENU
-#define PERMISSION_CONTROL_LEFT_RIGHT X_REPEAT + X_IN_MENU  
-#define PERMISSION_CONTROL_UP_DOWN    X_REPEAT + X_IN_STANDBY + X_IN_TEXT + X_IN_MENU  
+#define PERMISSION_DIRECT             X_IN_IDLE + X_NOT_IN_MENU
+#define PERMISSION_IDLE               X_IN_IDLE
 #define PERMISSION_MENU               X_REPEAT + X_NOT_IN_TEXT + X_IN_MENU  
 #define PERMISSION_DIRECT_MENU        X_IN_TEXT
-#define PERMISSION_AV                 X_NOT_IN_TEXT + X_NOT_IN_MENU + X_IN_STANDBY
-#define PERMISSION_TV                 X_IN_TEXT + X_NOT_IN_MENU + X_IN_MENU + X_IN_STANDBY
-#define PERMISSION_PIP                X_REPEAT + X_NOT_IN_TEXT + X_NOT_IN_MENU
-#define PERMISSION_TEXT               X_IN_TEXT + X_IN_MENU
-#define PERMISSION_TEXT_SPECIAL       X_IN_TEXT + X_NOT_IN_MENU
 #define PERMISSION_SERVICE            X_IN_STANDBY + X_NOT_IN_MENU
 #define PERMISSION_PROTECTION         X_ALWAYS
-#define PERMISSION_ABB                X_NOT_IN_MENU + X_NOT_IN_TEXT
+
 
 #define LENGTH_KEY_GROUPCODE_TABLE  ( sizeof(key_groupcode_table) / \
                                       sizeof(auphKeyGroup) )
 /*==========================================================================*/
 /*     L O C A L   F U N C T I O N S   P R O T O T Y P E S                  */
 /*==========================================================================*/
+
 static void HandleIdleKey(void);
 static void HandleStandby(void);
 static void HandleMenu(void);
-static void HandleDirectKey(Byte key_group) ;
-/*MPF=======================================================================*/
+static void HandleDirectKey(Byte key_group);
+static void HandleService(void);
+static void HandleDirect(void);
+
+
+/*==========================================================================*/
+/*     L O C A L   D A T A   D E F I N I T I O N S                          */
+/*==========================================================================*/
 /******************************************************************************
-    @struct auphKeyGroup | В структуре первое поле , содержит код клавиши.
-            Второе поле содержит код группы, которой клавиша  принадлежит.
+    @struct auphKeyGroup | In the structure, the first field contains the key code.
+            The second field contains the group code to which the key belongs.
 ******************************************************************************/
 typedef struct
 {
-   Byte key;   /* @field action поле действие (номер - клавиши) */
-   Byte group; /* @field function поле функции Быть выполнен, когда клавиша нажата.
-                              Это - индекс в 'Observer' таблице функции */
+   Byte key;   /* @field action action field (key number) */
+   Byte group; /* @field function function field to be executed when the key is pressed.
+                              This is an index in the 'Observer' function table */
 } auphKeyGroup;
 /*EMP=======================================================================*/
 
-/* Таблица ROM, содержащая группу кода для каждого кода клавиши. */
+
+/* ROM table containing the code group for each key code. */
 static auphKeyGroup const key_groupcode_table[] = {
-    { AU_KEY_STANDBY, AU_GROUP_STANDBY}
-   ,{ AU_KEY_CANCEL,  AU_GROUP_DIRECT}
-   ,{ AU_KEY_MENU,    AU_GROUP_MENU}
+
+ { AU_KEY_START,    AU_GROUP_MENU        }
+,{ AU_KEY_NO,       AU_GROUP_MENU        }
+,{ AU_KEY_CLOSE,    AU_GROUP_MENU        }
+,{ AU_KEY_PERF_CHK, AU_GROUP_IDLE        }
+,{ AU_KEY_NEXT,     AU_GROUP_MENU        }
+,{ AU_KEY_CANCEL,   AU_GROUP_MENU        }
+,{ AU_KEY_YES,      AU_GROUP_MENU        }
+,{ AU_KEY_PARAMS,   AU_GROUP_IDLE        }
+
+,{ AU_KEY_STANDBY,  AU_GROUP_STANDBY     }
+,{ AU_KEY_MENU,     AU_GROUP_MENU        }
+,{ AU_KEY_SERVICE,  AU_GROUP_SERVICE     }
+
 };
 
 
-/* Таблица ROM, содержащая разрешения для каждого кода группы клавиш.
-
-*/
+/* ROM table containing permissions for each key group code. */
 static Byte const permission_table[] =
 {
+
+   PERMISSION_IDLE,               /* AU_GROUP_IDLE               */
    PERMISSION_STANDBY,            /* AU_GROUP_STANDBY            */
-   PERMISSION_MUTE,               /* AU_GROUP_MUTE               */
    PERMISSION_DIRECT,             /* AU_GROUP_DIRECT             */
    PERMISSION_MENU,               /* AU_GROUP_MENU               */
-   PERMISSION_DIRECT_MENU,        /* AU_GROUP_DIRECT_MENU        */
    PERMISSION_SERVICE,            /* AU_GROUP_SERVICE            */
 
 };
 
 
-/* Таблица ROM, содержащая указатели функции для каждой клавиши group code. */
-
+/* ROM table containing function pointers for each key group code. */
 static const VOID_FUNCTION_PTR direct_function_table[] =
 {
+   HandleIdleKey,                /* AU_GROUP_IDLE                 */
    HandleStandby,                /* AU_GROUP_STANDBY              */
+   HandleDirect,                 /* AU_GROUP_DIRECT               */
    HandleMenu,                   /* AU_GROUP_MENU                 */
-//   HandleDirectMenu,             /* AU_GROUP_DIRECT_MENU          */
-   HandleIdleKey,                /* AU_GROUP_TEXT                 */
-//   HandleService,                /* AU_GROUP_SERVICE              */
-
+   HandleService,                /* AU_GROUP_SERVICE              */
 };
 
 /*==========================================================================*/
-/*     L O C A L   D A T A   D E F I N I T I O N S                          */
+/*     L O C A L   S Y M B O L   D E C L A R A T I O N S                    */
 /*==========================================================================*/
 
-static auphTvState_enum  auph_state;
+static auphOsteoState_enum  auph_state;
 //static Bool auph_key_repetition_allowed;
 
 
 /*=======================================================================*/
-/*************************************************************************
-   @func   Возвращает теущее состояние  TV
-
-   @rdesc  Текущее tv-state<nl><nl>
-           Одно из:<nl>
-   AU_STANDBY_STATE,        @emem TV приемник в SDtand-by состоянии
-   AU_TELETEXT_STATE,       @emem TV приемник в Teletext состоянии
-   AU_SERVICE_STATE,        @emem TV приемник в Service состоянии
-   AU_MENU_STATE,           @emem TV приемник в Menu состоянии
-   AU_DIRECT_STATE,         @emem TV приемник в Normal состоянии
-   AU_FACTORY_STATE,        @emem TV приемник в Factory состоянии
-   AU_GAME_STATE,           @emem TV приемник в Game состоянии
-   AU_ABB_STATE,            @emem TV приемник в АВВ регулировке
-   AU_ERROR_STATE           @emem TV приемник в Error состоянии
-
-   @comm   Функция принадлежит компоненту: auph
-****************************************************************************/
-
-auphTvState_enum auph_GetState(void)
+/*========================================================================
+   @func   Returns the current OsteoProbe state
+   @comm   Function belongs to component: auph
+========================================================================*/
+auphOsteoState_enum auph_GetState(void)
 {
    return auph_state;
 }
 
 
-
-void auph_SetState(auphTvState_enum new_state)
+/*========================================================================
+   @func   Set the new OsteoProbe state
+   @comm   Function belongs to component: auph
+========================================================================*/
+void auph_SetState(auphOsteoState_enum new_state)
 {
    auph_state = new_state;
-
 }
 
 
-/******************************************************************************
-          Функция обрабатывает команды standby command
-          Ничего не возвращает
-          Принадлежит компоненту: auph
-******************************************************************************/
+/*========================================================================
+          Function processes standby command
+          Returns nothing
+          Belongs to component: auph
+========================================================================*/
 static void HandleStandby(void)
 {
 /*
@@ -173,15 +167,31 @@ static void HandleStandby(void)
   return;
 }
 
-/******************************************************************************
-          Пустая функция без действия на будущие применения
-
-          Ничего не возвращает
-
-          Принадлежит компоненту: auph
-
-******************************************************************************/
+/*========================================================================
+  Empty function with no action for future use
+  Returns nothing
+  Belongs to component: auph
+========================================================================**/
 static void HandleIdleKey(void)
+{
+  return;
+}
+
+/*========================================================================
+  Empty function with no action for future use
+  Returns nothing
+  Belongs to component: auph
+========================================================================**/
+static void HandleDirect(void)
+{
+  return;
+}
+/*========================================================================
+  Empty function with no action for future use
+  Returns nothing
+  Belongs to component: auph
+========================================================================**/
+static void HandleService(void)
 {
   return;
 }
@@ -198,8 +208,7 @@ static void HandleMenu(void)
 {
 
 
- if (aukh_KeyHold(AU_KEY_PRESSED_ONE_SECOND))
- {
+ if (aukh_KeyHold(AU_KEY_PRESSED_ONE_SECOND)) {
 
    fmnu_Activate(AUIM_MNU_INDEX_CONFIG_MENU);
    auph_SetState(AU_MENU_STATE);
@@ -218,14 +227,14 @@ static void HandleMenu(void)
 }
 
 /*************************************************************************
-           Оработка пользовательских клавиш , когда не в:<nl>
+           Processing of user keys when not in:<nl>
               - standby mode<nl>
               - menu mode<nl>
               - text mode<nl><nl>
-             так , Все функции прямого доступа обработаны.
+             So, all direct access functions are processed.
 
-           Ничего не возвращает
-           Принадлежит компоненту: auph
+           Returns nothing
+           Belongs to component: auph
 ***************************************************************************/
 
  static void HandleDirectKey(Byte key_group)
@@ -234,35 +243,8 @@ static void HandleMenu(void)
 }
 
 
- /******************************************************************************
-            Обрабатывает клавишу.
-
-            Каждая клавиша принадлежит определенной группе. Для каждой группы разрешения
-  доступны, чтобы видеть, имеет ли команда силу в некоторых состояниях ТВ.
-
-            Мы грубо отличаем 4 различных состояния, кто весь взаимны исключительны:
-               - Standby.
-               - Normal operation.
-               - Normal operation, menu on.
-               - Normal operation, teletext on.
-
-            При обработке клавиши, разрешение клавиши  и состояния ТВ проверено, чтобы видеть,
-       если и где клавиша  будет обработана:
-            - Если клавише установили разрешение X_IN_STANDBY, и ТВ находится в StandBy,
-       клавиша  будет обработана в пакете fpmt.
-            - Если клавише установили разрешение X_IN_SERVICE, и ТВ находится в Service Mode,
-       клавиша  будет обработана в пакете fsrv.
-            - Если клавише установили разрешение X_IN_MENU, и меню включено,
-       клавиша  будет обработана в пакете fmnu.
-            - Если клавише  установили разрешение X_IN_TEXT, и телетекст включен,
-       клавиша  будет обработана в пакете ftxt.
-            - Во всех других случаях  клавиша  обработана как прямая клавиша .
-
-             Ничего не возвращает
-
-            Принадлежит компоненту: auph
-
- ******************************************************************************/
+/******************************************************************************
+******************************************************************************/
  void auph_ProcessKey(void)
  {
     Byte permission;
@@ -281,31 +263,19 @@ static void HandleMenu(void)
 
       permission = permission_table[key_groupcode_table[index].group];
 
-       if ((permission & X_REPEAT) || aukh_FirstKeyPress())/*Проверяет введенная клавиша первый раз нажата*/
+       if ((permission & X_REPEAT) || aukh_FirstKeyPress())/*Checks if the entered key is pressed for the first time*/
        {
-
-/*           if (!(permission & X_NOT_RESET_DIGIT_ENTRY)) //Здесь не понимаю
-           {
-           fchg_CancelProgramDigitEntry();
-           }*/
-           /******************************************************************************
-              AU_STANDBY_STATE,              TV приемник в SDtand-by состоянии
-              AU_TELETEXT_STATE,             TV приемник в Teletext состоянии
-              AU_SERVICE_STATE,              TV приемник в Service состоянии
-              AU_MENU_STATE,                 TV приемник в Menu состоянии
-              AU_DIRECT_STATE,               TV приемник в Normal состоянии
-              AU_FACTORY_STATE,              TV приемник в Factory состоянии
-              AU_GAME_STATE,                 TV приемник в Game состоянии
-              AU_ABB_STATE,                  TV приемник в АВВ регулировке
-             AU_ERROR_STATE                 TV приемник в Error состоянии
-
-           ******************************************************************************/
-           /* Если кнопка первый раз нажата или разрешен ее повтор */
-
+           /* If the button is pressed for the first time or its repetition is allowed */
             switch ( auph_GetState() )
-            {//Начвльная скобка от switch(auph_GetState)
+            {
+              case AU_IDLE_STATE: {
+               if (permission & PERMISSION_IDLE)
+               {
+                   HandleDirectKey(key_groupcode_table[index].group);
+               }
+              } break;
 
-                case AU_MENU_STATE:{
+              case AU_MENU_STATE:{
                  if (permission & X_IN_MENU)
                  {
                 /*  Menu is active, and the key is allowed in menu   */
@@ -314,7 +284,7 @@ static void HandleMenu(void)
                   } else
                   {
                      if (!(permission & X_NOT_IN_MENU))
-                     { /*Не клавиши меню но которые допскаются в меню*/
+                     { /*Not a menu key but allowed in menu*/
                       /* Not a menu key but allowed in menu       */
                       HandleDirectKey(key_groupcode_table[index].group);
                      }
@@ -329,14 +299,13 @@ static void HandleMenu(void)
                  }break;
 
                   default:{
-                            ; /* Нет действия, потому что  клавиша НЕ разрешена в текущем состоянии  */
+                            ; /* No action, because the key is NOT allowed in the current state */
                            }
 
-             }//Концевая скобка от switch(auph_GetState)
+             }//End brace of switch(auph_GetState)
 
-         }      /* End: repitition allowed or first key and normal key handling */
-    }         /* End: Допустимая клавиша введена  */
+         }      /* End: repetition allowed or first key and normal key handling */
+    }         /* End: Valid key entered */
 
     au_current.command = AU_KEY_PROCESSED;
  }
-

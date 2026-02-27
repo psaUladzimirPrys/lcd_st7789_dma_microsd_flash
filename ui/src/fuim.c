@@ -820,7 +820,7 @@ void fuim_Init(void)
   fuim_InitIndicators();
 
 
-  /* Make sure the mx_25_timeout_timer_handle timer is initialized only once */
+  /* Make sure the fuim_timeout_timer_handle timer is initialized only once */
   sl_sleeptimer_is_timer_running(&fuim_timeout_timer_handle,
                                  &is_timer64ms_running);
   if (is_timer64ms_running == false) {

@@ -11,11 +11,7 @@
 
   The function aukh_ProcessKey() is 'called' by various modules to process the key (action)
   depending on the current mode:
-  - audi:   direct mode
-  - aumn:   menu mode
-  - atxt:   teletext mode
-  - asrv:   servicemode
-  - afac:   factory mode
+
 */
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
@@ -30,23 +26,14 @@
 
 typedef struct
 {
-   Byte key_system_code; /* F  0  0  s4 s3 s3 s1 s0 : s0..4 = system address */
-   Byte key_code;        /* t E/N c5 c4 c3 c2 c1 c0 : t = toggle bit,       */
-                         /*                        : c0..6 = command code   */
+   Byte key_code;
 
-   /*    t  indicates the toggle bit of the remote control, changing state
-    *       with every new key press.
-            E/N indicates Enhanced/Normal mode - type of remote control
-    *
-    *    F  0 : normal key
-    *       1 : key press of the system remote control toggle key.
-    */
 } KEY_DATA_STRUCT;
 
 typedef union
 {
-   KEY_DATA_STRUCT   rc5_key_data;
-   Word              rc5_data_int;
+   KEY_DATA_STRUCT   key_data;
+   Word              data_int;
 } KEY_UNION;
 
 /* @enum key_origin_enum | Type for determining the origin of the received
@@ -54,7 +41,6 @@ typedef union
 typedef enum
 {
    KEY_NONE,    /* @emem No key pressed                          */
-   KEY_RC5,     /* @emem Key received from remote control */
    KEY_LOCAL,   /* @emem Key received from local keyboard */
    KEY_SIMUL    /* @emem Key is simulated                      */
 } key_origin_enum;
@@ -98,24 +84,32 @@ static Byte   au_simulated_key; /* Variable for simulating a key press */
 
 static Byte const LOCAL_KEYBOARD_TABLE[] =
 {
-   AU_KEY_INVALID,
-   AU_KEY_MENU          /* Key 1 */
+   AU_KEY_INVALID
+  ,AU_KEY_START
+  ,AU_KEY_NO
+  ,AU_KEY_CLOSE
+  ,AU_KEY_PERF_CHK
+  ,AU_KEY_NEXT
+  ,AU_KEY_CANCEL
+  ,AU_KEY_YES
+  ,AU_KEY_PARAMS
 
+  ,AU_KEY_MENU          /* Key 1 */
 };
 
 /*=======================================================================*/
 /* L O C A L   F U N C T I O N   P R O T O T Y P E S                     */
 /*=======================================================================*/
-static void CheckKeyRepetition(Byte system, Byte command) ;
+static void CheckKeyRepetition(Byte command) ;
 
 /*=======================================================================*/
 /* F U N C T I O N S                                                     */
 /*=======================================================================*/
 /*************************************************************************
-           Initializes internal variables for the AUKH module.
-           Sets all internal variables to initial state.
+   Initializes internal variables for the AUKH module.
+   Sets all internal variables to initial state.
 
-           Module name: aukh
+   Module name: aukh
 **************************************************************************/
 void aukh_Init(void)
 {
@@ -125,33 +119,29 @@ void aukh_Init(void)
 }
 
 /*************************************************************************
-           Returns the command code of the current key.
+   Returns the command code of the current key.
 
-           Returns
-           Command code
+   Returns
+   Command code
 
-           Module name: aukh
+   Module name: aukh
 **************************************************************************/
 Byte aukh_GetCurrentCommand(void)
 {
    return au_current.command;
 }
 /**************************************************************************
-             Reads the RC-5 remote control code and local key and stores
-             it in the global structure of the current command.
-             The function returns the following information about the key:
+   Reads the  local key and stores
+   it in the global structure of the current command.
+   The function returns the following information about the key:
 
+     - command code       (for processing the control)
+     - repetition count   (for processing the control)
 
-               - command system  (for processing the remote control)
-               - command code    (for processing the remote control)
+   TRUE if a new key is detected<nl>
+   FALSE if no new key is detected
 
-               - repetition count   (for processing the remote control)
-
-
-           TRUE if a new key is detected<nl>
-           FALSE if no new key is detected
-
-           Module name: aukh
+   Module name: aukh
 
 ****************************************************************************/
 Bool aukh_ReadCommand (void)
@@ -159,29 +149,29 @@ Bool aukh_ReadCommand (void)
           KEY_UNION   new_key;
    key_origin_enum    new_key_detected = KEY_NONE;
 
-   if ((new_key.rc5_key_data.key_code = rbsc_GetLocalKey()) != 0)
+   if ((new_key.key_data.key_code = rbsc_GetLocalKey()) != 0)
    {
 
-      /****************************************************************************/
-      /*           Press of a local key detected  Mapping local key code                */
-      /****************************************************************************/
+      /* ***************************************************************************/
+      /*           Press of a local key detected  Mapping local key code           */
+      /* ***************************************************************************/
 
       new_key_detected = KEY_LOCAL;
 
-      au_current.command = LOCAL_KEYBOARD_TABLE[new_key.rc5_key_data.key_code & AU_LOCAL_KEY_CODE_MASK];
-      au_current.system  = AU_ADDRESS_TV_KEY;
+      au_current.command = LOCAL_KEYBOARD_TABLE[new_key.key_data.key_code];
+
 
     }
     else if (au_simulated_key != AU_KEY_INVALID)
     {
-      /******************************************************************************/
-      /*                Simulated key press detected                                  */
-      /******************************************************************************/
+      /* *****************************************************************************/
+      /*                Simulated key press detected                                 */
+      /* *****************************************************************************/
 
       new_key_detected     = KEY_SIMUL;
 
       au_current.command   = au_simulated_key;
-      au_current.system    = AU_ADDRESS_TV_KEY;
+
 
       key_hold_count       = AU_KEY_PRESSED_FIRST_TIME;
       key_repetition_count = AU_KEY_PRESSED_FIRST_TIME;
@@ -201,25 +191,25 @@ Bool aukh_ReadCommand (void)
    {
   /*===========================================================================*/
   /*    If   a  new  key  is  detected (au_current.command changes),          */
-  /*   save new_key.rc5_key_data.key_code for comparison.          */
+  /*   save new_key.key_data.key_code for comparison.          */
   /*  If the key is the same - it is a repetition, increase the counter.    */
   /*  If a different key is pressed, reset the counter and                  */
   /*  start counting from the beginning.                      */
   /*===========================================================================*/
-      CheckKeyRepetition(au_current.system, new_key.rc5_key_data.key_code);
+      CheckKeyRepetition(new_key.key_data.key_code);
    }
 
    return ((Bool)(new_key_detected != KEY_NONE));
 }
 
 /**************************************************************************
-           Checks if it is the first key press.
-           For processing
+   Checks if it is the first key press.
+   For processing
 
-           TRUE if it is the first key press
-           FALSE if it is a repeated key press
+   TRUE if it is the first key press
+   FALSE if it is a repeated key press
 
-           Module name: aukh
+   Module name: aukh
 ****************************************************************************/
 Bool aukh_FirstKeyPress(void)
 {
@@ -227,16 +217,15 @@ Bool aukh_FirstKeyPress(void)
 }
 
 /*************************************************************************
-           Checks if the key is being pressed continuously
-           for a certain time (repeat rate).
+   Checks if the key is being pressed continuously
+   for a certain time (repeat rate).
 
+   TRUE if the key is pressed for "repeat_time"
+   FALSE if the key is not pressed for that time
 
-           TRUE if the key is pressed for "repeat_time"
-           FALSE if the key is not pressed for that time
+   The function returns TRUE, resets the counter to "AU_KEY_PRESSED_FIRST_TIME".
 
-           The function returns TRUE, resets the counter to "AU_KEY_PRESSED_FIRST_TIME".
-
-           Module name : aukh
+   Module name : aukh
 ****************************************************************************/
 Bool aukh_RepeatEvery(Byte repeat_time)
 {
@@ -253,13 +242,13 @@ Bool aukh_RepeatEvery(Byte repeat_time)
 }
 
 /*************************************************************************
-           Checks if the key is being held (continuous press)
-      for a specific time.
+  Checks if the key is being held (continuous press)
+  for a specific time.
 
-           TRUE if the key is held for "hold_time"
-           FALSE if the key is not held for "hold_time"
+  TRUE if the key is held for "hold_time"
+  FALSE if the key is not held for "hold_time"
 
-            Module name: aukh
+  Module name: aukh
 
 **************************************************************************/
 Bool aukh_KeyHold(Byte hold_time)
@@ -294,7 +283,7 @@ Bool aukh_KeyHold(Byte hold_time)
                            from the remote control.
 
            Post condition : au_current.command = AU_KEY_INVALID
-                            au_current.system  = AU_ADDRESS_TV_KEY
+
 
            Module name: aukh
 
@@ -308,7 +297,7 @@ void aukh_ProcessKey(void)
    auph_ProcessKey();
 
    au_current.command = AU_KEY_INVALID;
-   au_current.system  = AU_ADDRESS_TV_KEY;
+
 }
 
 /**************************************************************************
@@ -337,10 +326,9 @@ void aukh_SetSimulatedKey(Byte simulate_key)
 
            Module name: aukh
 ****************************************************************************/
-static void CheckKeyRepetition(Byte system, Byte command)
+static void CheckKeyRepetition(Byte command)
 {
-   if ((system  == previous.system) &&
-       (command == previous.command))
+   if ((command == previous.command))
    {
       key_hold_count++;
       key_repetition_count++;
@@ -353,7 +341,7 @@ static void CheckKeyRepetition(Byte system, Byte command)
 
    }
 
-   previous.system  = system;
+
    previous.command = command;
 }
 

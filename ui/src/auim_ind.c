@@ -109,7 +109,7 @@ fuimDialogNavigation RDATA auim_MainMenuIndKeys[] =
    FUIM_FIELDTYPE_STRING,
    AUIM_FIELD_VALIDITY_FUNCTION,//Byte       ValidityFunction;
    FMNU_NONE_PROMPT,//osdStringID  Prompt;
-   AUIM_MUTE_INDICATOR_COLOUR,   //    Specific Field prompt colour,
+   AUIM_MUTE_INDICATOR_COLOUR,   //    Specific Field prompt color,
    0,//Byte      ChangeFunction;
    AUIM_INDEX_SYNC_INDICATOR,//Byte      GetFunction;
    0,//Byte      SetFunction;

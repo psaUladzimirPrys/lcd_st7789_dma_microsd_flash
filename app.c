@@ -51,7 +51,7 @@
 
 #include "auph.h"
 
-
+#include "button.h"
 #define TEST_DISPLAY
 //#define TEST_SD
 #define TEST_FLASH
@@ -224,7 +224,7 @@ void app_init(void)
  fuim_Init();
  aukh_Init();
  find_Init();
-
+ button_feature_init();
 
 }
 
@@ -277,19 +277,21 @@ void app_process_action(void)
   disp_process_action();
 #endif
 
-  sl_sleeptimer_delay_millisecond(1);
+  sl_sleeptimer_delay_millisecond(5);
 
 #ifdef TEST_SD
   fs_sd_log_flush_task();
 #endif
 
-  if (aukh_ReadCommand())
-  {
+  button_feature_process();
+
+  if (aukh_ReadCommand()) {
+
       aukh_ProcessKey();
   }
 
-  if (  (auph_GetState() != AU_ERROR_STATE )  )
-  {
+  if ((auph_GetState() != AU_ERROR_STATE )) {
+
     fuim_Update();//1 The location cannot be changed.
     find_Update();//2 The location cannot be changed.
   }

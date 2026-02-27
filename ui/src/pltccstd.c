@@ -9,22 +9,20 @@
 /*============================================= =================*/ 
 
 
-/*******************
-* STATIC DATA      *
-********************/
 
-static Byte  CCRows;            //Текущее значение строк и столбцов
+/*==========================================================================*/
+/*        L O C A L   D A T A   D E C L A R A T I O N S                     */
+/*==========================================================================*/
+static Byte  CCRows;             //Current position Row and Column
 static Byte  CCColumn; 
  
  
-static Byte  CCMaxRows;                //Мах значения строк и столбцов
-static Byte  CCMaxColumns;             //
-
+static Byte  CCMaxRows;          //Мах values of Rows and Columns
+static Byte  CCMaxColumns;
 
 /*==========================================================================*/
 /* L O C A L   F U N C T I O N   P R O T O T Y P E S                        */
 /*==========================================================================*/
-
 
 /*==========================================================================*/
 /* L O C A L   F U N C T I O N                                              */
@@ -36,44 +34,40 @@ static Byte  CCMaxColumns;             //
 
 /*****************************************************************************
 *
-* НАЗВАНИЕ: pltstd_CCInit
-* Инициализирует  дисплейный обьект перед использованием
+* NAME: pltstd_CCInit
 *  
 *
-* Возвращает :  void
+* Returns:  void
 *
-* Параметр    Flow    Описание
-* ------------------------------------------------------------------ ----------
-* Length        IN      Требемое число столбцов
-* Height        IN      Требуемое число строк
-* PageANotB     IN      Флаг, чтобы указать, предназначен ли OSD для страницы A или
-*                                   страницы B дисплея (Действительно для Painter2 только)
+* Parameter    Flow    Description
+* --------------------------------------------------------------------------
+* Length        IN      Required number of columns
+* Height        IN      Required number of rows
 ******************************************************************************/
- 
+
 void pltstd_CCInit(Byte Length, Byte Height)
 {
- 	CCMaxColumns = Length; //Сохраняем в памяти запрашиваемое число столбцов
-	CCMaxRows    = Height; //  и строк
+  CCMaxColumns = Length; // Store the requested number of columns in memory
+  CCMaxRows    = Height; //  and rows
 }
- 
+
 /*******************************************************************************
 * NAME: plt_CCSetPosition
-* Устанавливает поицию дисплея для записи данных
+* Sets the display position for data recording
 *
 * Returns :  void
 *
-* Параметр    Вх/Вых    Описание
+* Parameter    Flow    Description
 * ------------------------------------------------------------------------------
--
-* Row           IN      Строка начала записи информации OSD.
-* Column        IN      Столбец записи информации OSD.
+*
+* Row           IN      Start row for OSD information recording.
+* Column        IN      Start column for OSD information recording.
 ********************************************************************************/
- 
+
 void plt_CCSetPosition(Byte Row, Byte Column) 
 {
-CCRows = Row;      // Текущее значение строк 
-CCColumn = Column;  // Текущее значение столбцов
-
+  CCRows = Row;      // Current row value
+  CCColumn = Column;  // Current column value
 }
  
 
@@ -102,7 +96,6 @@ CCColumn = Column;  // Текущее значение столбцов
 ********************************************************************************/
 void plt_CCGetPosition(Byte   *Row, Byte   *Column) 
 {
-
 	* Row    = CCRows;
 	* Column = CCColumn;
 }
@@ -141,12 +134,10 @@ Mode  = Mode;
 * Externals    Flow    Usage
 * -------------------------------------------------------------------------------
 ********************************/
-
 void plt_CCSetUnderline(Bool Mode)
 {
 Mode = Mode;
 }
-
 
 
 /********************************************************************************
@@ -156,7 +147,7 @@ Mode = Mode;
 *
 * Parameter             Flow    Description
 * -------------------------------------------------------------------------------
-* BackgroundColour      IN      Colour to be set as the background
+* BackgroundColour      IN      Color to be set as the background
 * SetAt                 IN      Flag to indicate when the attribute should take effect
 *
 * Externals    Flow    Usage
@@ -184,13 +175,13 @@ void  plt_CCSetBackgroundColour(Byte BackgroundColour, Byte SetAt)
 *@begin
 * NAME: plt_CCSetForegroundColour
 *
-* Sets the required foreground colour for characters to be written in
+* Sets the required foreground color for characters to be written in
 *
 * Returns :  void
 *
 * Parameter    Flow    Description
 * -------------------------------------------------------------------------------
-* ForegroundColour      IN      Colour to be set as the foreground
+* ForegroundColour      IN      Color to be set as the foreground
 *
 * Externals    Flow    Usage
 * -------------------------------------------------------------------------------
@@ -211,28 +202,28 @@ void plt_CCSetForegroundColour(Byte ForegroundColour)
 *
 *
 ********************************************************************************/ 
-/**
+/*
 void plt_CCInstForegroundColour(Byte ForegroundColour) 
 {
   ForegroundColour = ForegroundColour;
 }
-***/
+*/
 /*******************************************************************************
 * NAME: plt_CCDrawChar
-*  Оторажает символ на экране
+*
 * Returns :  void
 *
-* Параметр    Вх/Вых    Описание
+* Parameter    Flow    Description
 * ------------------------------------------------------------------------------
-* Character     IN      Символ записанный к отображению
+* Character     IN
 *
 * Externals    Flow    Usage
 *******************************************************************************/
 
 void plt_CCDrawChar(char Character)    
 {
-  if(Character!=0) //test
-     CCColumn++;      // Текущее значение столбцов
+  Character = Character;
+  CCColumn++;
 }
  
 /**********************************************************************************

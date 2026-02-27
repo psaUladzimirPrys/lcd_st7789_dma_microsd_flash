@@ -25,9 +25,9 @@
 /* G L O B A L   D E F I N I T I O N S                                   */
 /*=======================================================================*/
 
-#define EMPTY_INDICATOR          0xFF  /*  ��� ����������	  */
+#define EMPTY_INDICATOR          0xFF  /* No indicator  */
 
-#define NR_OF_DOUBLE_INDICATORS  0xFF  /*  ������� ��������� */
+#define NR_OF_DOUBLE_INDICATORS  0xFF  /*  Double indicator */
  	 
 
 #define INDICATOR_TIME_OUT       0x03  /*  Time out in seconds */
@@ -267,8 +267,8 @@ void find_Update(void)
 {
 
  if (auph_GetState() == AU_DIRECT_STATE)
-{ 
-  Byte  i, indicator;
+ {
+   Byte  i, indicator;
    
    for (i = 0; i < FUIM_MAX_INDICATORS; i++)
    {
@@ -405,18 +405,18 @@ void find_UpdateIndicator(find_id_enum indicator)
 /*=======================================================================*/
 void find_IndicatorAction(fuimIndicatorStruct *indicator_data_ptr )
 {
-//	   fuimFieldStruct  * field_data_ptr;
+	   fuimFieldStruct  * field_data_ptr;
 			osdDialogHandle   handle;
 			
     handle = fuim_GetIndicatorHandle(indicator_data_ptr);
 
     if ((handle != 0 )&&( handle < FUIM_MAX_INDICATORS))
      {  
-//       field_data_ptr = indicator_data_ptr->Field;
+       field_data_ptr = (fuimFieldStruct  *)indicator_data_ptr->Field;
       // find_ProcessIndicatorAction(aukh_GetCurrentCommand(),field_data_ptr);
        fuim_UpdateIndicator (handle, TRUE);
      }
- 
+    field_data_ptr = field_data_ptr;
 } 
 
 /*=======================================================================*/
@@ -482,18 +482,17 @@ void RemoveEmptyIndicator(find_id_enum indicator)
    */
 
 
-if(PassRemove == TRUE)
- {
+  if(PassRemove == TRUE) {
+    if (find_IsIndicatorDisplayed(indicator)) {
 
-   			if (find_IsIndicatorDisplayed(indicator))
-  			 {
-     		 active = 0;
- 		        while (active_indicators[active] != indicator)
-		        {
-      		    active++;
-   		        }
-             active_indicators[active] = EMPTY_INDICATOR;
-             } 	
+        active = 0;
+
+        while (active_indicators[active] != indicator) {
+          active++;
+        }
+
+        active_indicators[active] = EMPTY_INDICATOR;
+     }
   }
   
 }    
@@ -501,43 +500,34 @@ if(PassRemove == TRUE)
 /*=======================================================================*/
 /*                                                                       */
 /*=======================================================================*/
-void find_ProcessIndicatorAction(cmdKeyNumber action ,	fuimFieldStruct  *   field_data_ptr )
+void find_ProcessIndicatorAction(cmdKeyNumber action,	fuimFieldStruct  *field_data_ptr)
 {
 
-	 fuimDialogNavigation  *   ActionPtr;
+	fuimDialogNavigation  *ActionPtr;
+  Byte   new_action;
  
- 
-     	Byte   new_action;
- 
- 
-		if (field_data_ptr != NULL)
-    {
-		    ActionPtr = field_data_ptr -> ToDoWithKey;
+  if (field_data_ptr != NULL) {
 
-			if( ActionPtr != NULL )
-			{
- 			   do
- 			   {
-			   	if( ActionPtr->Action == action )
-					{
-								
-			   	   		new_action = fuim_ActionHandler (ActionPtr->DialogFunction, action);
+    ActionPtr = field_data_ptr -> ToDoWithKey;
 
-                if ( new_action != AU_KEY_PROCESSED )
-                {
-                  action = new_action;
-                 }
-                 else
-                 {
-                      action = AU_KEY_PROCESSED;
-                 }
-			   	  }
+    if( ActionPtr != NULL ) {
 
-				   if( ActionPtr->Action != AU_KEY_INVALID ) ActionPtr++;
- 			   }
- 			   while( ActionPtr->Action != AU_KEY_INVALID );
-			}
-		}
+       do {
+           if( ActionPtr->Action == action ) {
+              new_action = fuim_ActionHandler (ActionPtr->DialogFunction, action);
+
+              if ( new_action != AU_KEY_PROCESSED ) {
+                action = new_action;
+              }else{
+                action = AU_KEY_PROCESSED;
+              }
+           }
+
+         if( ActionPtr->Action != AU_KEY_INVALID ) ActionPtr++;
+
+       } while( ActionPtr->Action != AU_KEY_INVALID );
+    }
+  }
  			
 ///////////////////////////////////////////////////////////////////////////////////
 

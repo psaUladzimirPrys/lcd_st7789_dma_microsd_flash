@@ -58,12 +58,12 @@ osdFieldValue fuim_Observer (Byte index)
    @rdesc   The result of the observer function with ID index.
 
    @comm    An observer may also return a string pointer, in which
-            case the result needs to te be re-cast to '(Byte *)'.
+            case the result needs to be re-cast to '(Byte *)'.
 
    @design  The return values of observer functions that return a Byte are
             casted at the end of this function, before returning. When an
             observer function does return another type the return value is
-            immediately casted, after which the functio is left.
+            immediately casted, after which the function is left.
 
 */
 fuim_Validity fuim_ValidityFunction (Byte index)

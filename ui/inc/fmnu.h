@@ -38,7 +38,7 @@ typedef struct {
     Byte Ypos;   // Y position
     Byte Width;  // Menu width
 
-    Byte Title;  // Title string ID
+    Byte Title;  //ID of the Title string
 
     Word TitleAttribute;
     /* Title rendering attributes - fuim_Attributes

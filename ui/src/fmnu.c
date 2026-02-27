@@ -39,18 +39,18 @@
 /*    L O C A L   S Y M B O L    D E C L A R A T I O N S                     */
 /*===========================================================================*/
 
-static fmnu_MenuStruct  *fmnu_menu_data_ptr;       //Указатель на текущее активное Меню
-static fuimFieldStruct  *fmnu_field_data_ptr;      //Указатель на массив полей текущего Меню
-static fuimFieldStruct  *active_field_ptr;         //Указатель на текущее Поле
-static Byte  active_index_menu;     //Индекс текушего активного Меню
 
+static fmnu_MenuStruct *fmnu_menu_data_ptr;  //Pointer to the currently active menu
+static fuimFieldStruct *fmnu_field_data_ptr; //Pointer to the array of fields in the current menu
+static fuimFieldStruct *active_field_ptr;    //Pointer to the current field
+static Byte active_index_menu;               //Index of the current active menu
 /*****************************************************************************/
 static fmnu_MenuProperty  MenuDialogProperties;
 static              Byte  osd_row[ FUIM_MAX_DISPLAY_FIELDS ];
 static   fuimFieldStruct * displayed_fields[ FUIM_MAX_DISPLAY_FIELDS ];
 
-/* active_menu_handle будет сохранять handle текущего отображаемого и активного меню.
- NULL = нет активного меню */
+/* active_menu_handle will store the handle of the currently displayed and active menu.
+NULL = no active menu */
 osdDialogHandle fmnu_active_menu_handle ;
 osdTimerHandle  field_timer_handle;
 osdTimerHandle  fmnu_menu_timer_handle;
@@ -80,26 +80,29 @@ void fuim_ProcessMenuAction(cmdKeyNumber action);
 
 void fmnu_ChangeField(Bool direction );
 
-void fmnu_ConstructMenuField(fuimFieldStruct  *field_data_ptr, Bool Highlighted );
-void fmnu_UpdateValueField(fuimFieldStruct  *field_data_ptr, Bool Highlighted);
+void fmnu_ConstructMenuField(fuimFieldStruct *field_data_ptr, Bool Highlighted);
+void fmnu_UpdateValueField(  fuimFieldStruct *field_data_ptr, Bool Highlighted);
 
 //void fmnu_ConstructSpaser(void);
 
 void fmnu_ConstructTitle(Bool SelectPtr,  Byte width);
+void fmnu_DestroyTitle  (Bool SelectPtr,  Byte MenuWidth);
+
 void fmnu_DestroyField(fmnu_MenuProperty *position);
 
-void fmnu_ConstructList( fuimFieldStruct   *field_data_ptr );
-void fmnu_ConstructValue( fuimFieldStruct  *field_data_ptr ,Bool Highlighted);
+void fmnu_ConstructList( fuimFieldStruct *field_data_ptr );
+void fmnu_ConstructValue(fuimFieldStruct *field_data_ptr, Bool Highlighted);
 
 //void fmnu_ConstructFixedField( Bool SelectPtr , Bool Top);
 //void fmnu_ConstructEmptyField(  Bool SelectPtr );
 
 
-void fmnu_ConstructMenuPrompt(fuimFieldStruct *field_data_ptr, Byte value_position );
-void fuim_ConstructNumeric(fuimFieldStruct  *field_data_ptr, Bool Highlighted );
+void fmnu_ConstructMenuPrompt(fuimFieldStruct *field_data_ptr, Byte value_position);
+void fuim_ConstructNumeric(   fuimFieldStruct *field_data_ptr, Bool Highlighted);
 
 
 void fmnu_DestroyMenu(void);
+
 /*void fuim_DrawNumeric(char  *NumericCharacter,
                       osdFieldValue GetFunction,
                       Byte FieldScalingNumeric,
@@ -866,7 +869,7 @@ Byte   col;
 
     if( fuim_GetMenuVisibleFields(fmnu_menu_data_ptr) == 0)
     {
-        //visiblefields = fmnu_menu_data_ptr -> FieldCount; - неправильно!!!!!!
+
         visiblefields = MenuDialogProperties.LastFieldNr;
     }
     else
@@ -928,7 +931,7 @@ void fmnu_RemoveCurrentMenu(void)
 {
 
    fmnu_DestroyMenu();
-   active_index_menu = AUIM_MNU_MAX_MENUS; //не указывает ни на какое активное меню
+   active_index_menu = AUIM_MNU_MAX_MENUS; //does not indicate any active menu
 
 }
 /**********************************************************************************
@@ -1012,11 +1015,11 @@ void fmnu_HandleCommand(void)
            case AU_KEY_MENU: {
               field_Repeat = active_field_ptr -> Alignment;
 
-               if(field_Repeat == FUIM_REPEAT_KEY_ALWAYS) //Или нет специального указания на время одиночного удержания
+               if(field_Repeat == FUIM_REPEAT_KEY_ALWAYS) //Or there is no specific indication of the duration of a single detention
                {
 
-                      if ( aukh_KeyHold(AU_KEY_PRESSED_ONE_SECOND) ) // Но если она еще и удерживалась
-                      {  //две минуты  - то пусть повторяется пока удерживают клавишу
+                      if ( aukh_KeyHold(AU_KEY_PRESSED_ONE_SECOND) ) // But if is was still holding on
+                      {  //two minutes - let it repeat while the key is held down
                          fmnu_KeyPassAlways = TRUE;
                          fmnu_KeyPassCommand = command;
                       }
