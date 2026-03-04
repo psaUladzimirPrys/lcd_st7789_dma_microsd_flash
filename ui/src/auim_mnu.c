@@ -7,7 +7,7 @@
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
-#include "hglobal.h"
+#include <global.h>
 #include "img_storage.h"
 #include "fmnu_str.h"
 #include "fuim.h"

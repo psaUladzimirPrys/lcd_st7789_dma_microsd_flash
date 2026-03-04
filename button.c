@@ -9,9 +9,7 @@
 #include "sl_simple_button.h"
 #include "sl_simple_button_instances.h"   // SL_SIMPLE_BUTTON_INSTANCE(i)
 #include "sl_button.h"
-
-
-
+#include "aukh.h"
 
 
 // Временные пороги (мс)
@@ -19,6 +17,11 @@
 #define MULTI_PRESS_DURATION   (800)   // пауза между кликами
 #define SHORT_PRESS_DURATION   (250)   // < 500 мс — короткое
 #define LONG_PRESS_DURATION    (3000)  // < 3000 — длинное, >= 3000 — очень длинное
+
+#define BUTTON_CNT_1_TIME     (1)
+#define BUTTON_CNT_3_TIME     (3)
+#define BUTTON_CNT_5_TIME     (5)
+
 
 void button_feature_init(void);
 void button_feature_process(void);   // вызывать из main()
@@ -171,23 +174,30 @@ void button_on_multi_click(uint8_t count)
   cnt = get_button_count_valut();
   app_log("press count %d times\r\n",cnt);
 
+  if (BUTTON_CNT_1_TIME  == cnt ) {
+      aukh_PostButtonEvent(AU_KEY_PRESS_SHORT);
+  }else if (BUTTON_CNT_3_TIME  == cnt ) {
+     aukh_PostButtonEvent(AU_KEY_PRESS_MULTI_3_TIME);
 
-  // 1 клик → действие 1
-  // 2 клика → действие 2
-  // 3 клика → действие 3
+ }else if (BUTTON_CNT_5_TIME  == cnt ) {
+     aukh_PostButtonEvent(AU_KEY_PRESS_MULTI_5_TIME);
+ }else{
+     aukh_PostButtonEvent(AU_KEY_PRESS_INVALID);
+ }
+
 
   count = count;
 }
 
 void button_on_long_press(void)
 {
-  // длинное нажатие
+  aukh_PostButtonEvent(AU_KEY_PRESS_LONG);
   app_log("button long press\r\n");
 }
 
 void button_on_very_long_press(void)
 {
-  // очень длинное нажатие
+  aukh_PostButtonEvent(AU_KEY_PRESS_VERY_LONG);
   app_log("button very long press\r\n");
 }
 

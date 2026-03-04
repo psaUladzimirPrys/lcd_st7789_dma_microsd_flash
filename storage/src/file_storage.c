@@ -4,6 +4,9 @@
  *  Created on: 15 Jan. 2026.
  *      Author: priss
 *******************************************************************************/
+/*==========================================================================*/
+/*        I N C L U D E S                                                   */
+/*==========================================================================*/
 #include <stdio.h>
 #include <string.h>
 #include "sl_sleeptimer.h"
@@ -14,6 +17,20 @@
 /***************************************************************************//**
 *  File storage of SD card configuration section declaration global variables
 *******************************************************************************/
+/*=======================================================================*/
+/* L O C A L   D E F I N I T I O N S                     */
+/*=======================================================================*/
+#define FS_LOG_PRINTF_BUFFER_SIZE    128
+#define FS_LOG_RING_BUFFER_SIZE   1024
+#define FS_LOG_FLUSH_THRESHOLD     256
+#define FS_LOG_FILE_PATH          "log.txt"
+
+#define FS_LOG_ENABLE          true
+#define FS_LOG_DISABLE         false
+
+/*=======================================================================*/
+/* L O C A L   S Y M B O L   D E C L A R A T I O N S                     */
+/*=======================================================================*/
 
 static mikroe_spi_handle_t app_spi_instance = NULL;
 
@@ -28,23 +45,38 @@ static FIL   File;                      // File object structure
 //static BYTE work_buffer[FF_MAX_SS];   // Working buffer for operations (e.g., f_mkfs).
 static bool sd_mounted = false;         // Mounting flag.
 
+static volatile bool g_log_enabled = FS_LOG_DISABLE; //Logging flag - Enable/Disable
 
-#define FS_LOG_RING_BUFFER_SIZE   1024
-#define FS_LOG_FLUSH_THRESHOLD     256
-#define FS_LOG_FILE_PATH          "log.txt"
-
-
-
-static uint8_t fs_log_ring_buffer[FS_LOG_RING_BUFFER_SIZE];
-static volatile uint16_t fs_log_ring_head = 0;
-static volatile uint16_t fs_log_ring_tail = 0;
-static volatile uint16_t fs_log_ring_used = 0;
-
-static inline uint16_t fs_log_rb_free(void)
+static uint8_t ring_buffer[FS_LOG_RING_BUFFER_SIZE];
+static volatile uint16_t ring_head = 0;
+static volatile uint16_t ring_tail = 0;
+static volatile uint16_t ring_used = 0;
+static const char *level_str[] =
 {
-  return FS_LOG_RING_BUFFER_SIZE - fs_log_ring_used;
+  "[ERR ] ",
+  "[WARN] ",
+  "[INFO] ",
+  "[DBG ] "
+};
+
+/*=======================================================================*/
+/*       L O C A L   F U N C T I O N   D E C L A R A T I O N             */
+/*=======================================================================*/
+void log_flush_task(void);
+void log_flush_all(void);
+void log_write(const char *str);
+/*=======================================================================*/
+/* L O C A L   F U N C T I O N   P R O T O T Y P E S                     */
+/*=======================================================================*/
+
+static inline uint16_t rb_free(void)
+{
+  return FS_LOG_RING_BUFFER_SIZE - ring_used;
 }
 
+/*=======================================================================*/
+/* G L O B A L   F U N C T I O N   D E C L A R A T I O N                 */
+/*=======================================================================*/
 
 /*
  * Function:    fs_sd_log_init
@@ -60,9 +92,6 @@ void fs_sd_log_init(void)
   const char filepath[] = FS_LOG_FILE_PATH;
   uint32_t f_size;
 
-  fs_log_ring_head = 0;
-  fs_log_ring_tail = 0;
-  fs_log_ring_used = 0;
 
   // Initialize file storage of SD card
   sl_status_code = fs_sd_init();
@@ -87,79 +116,83 @@ void fs_sd_log_init(void)
     app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 
-  app_printf("File %s, size = %lu\r\n",filepath, f_size);
+  app_printf("File %s, size = %lu\r\n", filepath, f_size);
 
 }
 
 /*
- * Function:    fs_sd_log_write
+ * Function:    log_write
  * Arguments:   const char *str
  * Description:
  *   Writes a string to the ring buffer for later flushing to SD card.
  *
  * Return Message: void
  */
-void fs_sd_log_write(const char *str)
+void log_write(const char *str)
 {
   uint16_t len;
 
-  if (str == NULL) {
+  if (g_log_enabled == false)
     return;
-  }
 
   if (!sd_mounted) {
       app_log_warning("SD card logical drive is not mounted.\r\n");
       return;
   }
 
+  if (str == NULL) {
+    return;
+  }
+
   len = strlen(str);
 
   /* Drop data if buffer overflow */
-  if (len > fs_log_rb_free()) {
+  if (len > rb_free()) {
     return;
   }
 
   for (uint16_t i = 0; i < len; i++) {
-      fs_log_ring_buffer[fs_log_ring_head++] = (uint8_t)str[i];
-    if (fs_log_ring_head >= FS_LOG_RING_BUFFER_SIZE) {
-        fs_log_ring_head = 0;
+
+    ring_buffer[ring_head++] = (uint8_t)str[i];
+
+    if (ring_head >= FS_LOG_RING_BUFFER_SIZE) {
+        ring_head = 0;
     }
   }
 
-  fs_log_ring_used += len;
+  ring_used += len;
 }
 
 /*
- * Function:    fs_sd_log_flush_task
+ * Function:    log_flush_task
  * Arguments:   void
  * Description:
  *   Periodic task that flushes accumulated logs to the SD card file.
  *
  * Return Message: void
  */
-void fs_sd_log_flush_task(void)
+void log_flush_task(void)
 {
   uint8_t temp_buf[FS_LOG_FLUSH_THRESHOLD];
   uint16_t chunk;
 
 
-
-  if (fs_log_ring_used < FS_LOG_FLUSH_THRESHOLD) {
+  if (ring_used < FS_LOG_FLUSH_THRESHOLD) {
     return;
   }
 
-  chunk = (fs_log_ring_used > FS_LOG_FLUSH_THRESHOLD)
+  chunk = (ring_used > FS_LOG_FLUSH_THRESHOLD)
           ? FS_LOG_FLUSH_THRESHOLD
-          : fs_log_ring_used;
+          : ring_used;
 
   for (uint16_t i = 0; i < chunk; i++) {
-    temp_buf[i] = fs_log_ring_buffer[fs_log_ring_tail++];
-    if (fs_log_ring_tail >= FS_LOG_RING_BUFFER_SIZE) {
-        fs_log_ring_tail = 0;
+    temp_buf[i] = ring_buffer[ring_tail++];
+    if (ring_tail >= FS_LOG_RING_BUFFER_SIZE) {
+        ring_tail = 0;
     }
   }
 
-  fs_log_ring_used -= chunk;
+  ring_used -= chunk;
 
   if (!sd_mounted) {
       app_log_warning("SD card logical drive is not mounted.\r\n");
@@ -172,6 +205,36 @@ void fs_sd_log_flush_task(void)
     app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
 
+}
+
+void log_flush_all(void)
+{
+  uint8_t temp_buf[FS_LOG_FLUSH_THRESHOLD];
+
+  if (!sd_mounted) {
+      app_log_warning("SD card logical drive is not mounted.\r\n");
+      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      return;
+  }
+
+  while (ring_used > 0)
+  {
+    uint16_t chunk = (ring_used > sizeof(temp_buf)) ? sizeof(temp_buf) : ring_used;
+
+    for (uint16_t i = 0; i < chunk; i++)
+    {
+        temp_buf[i] = ring_buffer[ring_tail++];
+      if (ring_tail >= FS_LOG_RING_BUFFER_SIZE)
+        ring_tail = 0;
+    }
+
+    ring_used -= chunk;
+
+    if (fs_sd_append_to_file(FS_LOG_FILE_PATH, temp_buf, chunk) != SL_STATUS_OK) {
+      app_log("Append to file: Failed\r\n");
+      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+    }
+  }
 }
 
 /*
@@ -727,4 +790,80 @@ sl_status_t fs_sd_append_to_file(const char   *file_path,
   app_log_debug("Append success: %lu bytes\r\n", (unsigned long)bytes_written);
 
   return SL_STATUS_OK;
+}
+
+bool fslog_IsEnabled(void)
+{
+  return (bool)(g_log_enabled == FS_LOG_ENABLE);
+}
+
+void fslog_TurnOn(void)
+{
+  g_log_enabled = FS_LOG_ENABLE;
+}
+
+void fslog_TurnOff(void)
+{
+  if (!g_log_enabled)
+    return;
+
+  g_log_enabled = FS_LOG_DISABLE;
+
+  /* Flush everything unconditionally */
+  log_flush_all();
+}
+
+void fslog_Update(void)
+{
+   log_flush_task();
+}
+
+void log_vprintf(log_level_t level, const char *fmt, va_list args)
+{
+  char buffer[FS_LOG_PRINTF_BUFFER_SIZE];
+  int len;
+
+  if (!g_log_enabled)
+    return;
+
+  if (level > LOG_LEVEL_ALL)
+    return;
+
+  if(level != LOG_LEVEL_ALL) { /* prefix */
+    log_write((const char*)level_str[level]);
+  }
+
+  /* format */
+  len = vsnprintf((char *)&buffer[0], sizeof(buffer), fmt, args);
+  if (len <= 0) {
+    return;
+  }
+
+  if (len > (int)sizeof(buffer)) { /* truncate buffer[LOG_PRINTF_BUFFER_SIZE] overflow */
+    len = sizeof(buffer);
+  }
+
+  log_write((const char*)&buffer[0]);
+
+}
+
+void fslog_printf(log_level_t level, const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  log_vprintf(level, fmt, args);
+  va_end(args);
+}
+
+void fslog_Init(void)
+{
+
+  g_log_enabled = FS_LOG_DISABLE;
+
+// Initialize ring buffer for logging
+memset((void *)&ring_buffer[0],0x00, sizeof(ring_buffer));
+ring_head = 0;
+ring_tail = 0;
+ring_used = 0;
+
 }

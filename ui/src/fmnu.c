@@ -7,6 +7,7 @@
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
+#include <pltccstd.h>
 #include "app_log.h"
 #include "app_assert.h"
 
@@ -17,7 +18,6 @@
 #include "auph.h"
 #include "fmnu.h"
 
-#include "ccstd.h"
 #include "fuim_obs.h"
 #include "rbsc_api.h"
 
@@ -1018,7 +1018,7 @@ void fmnu_HandleCommand(void)
                if(field_Repeat == FUIM_REPEAT_KEY_ALWAYS) //Or there is no specific indication of the duration of a single detention
                {
 
-                      if ( aukh_KeyHold(AU_KEY_PRESSED_ONE_SECOND) ) // But if is was still holding on
+                      if ( aukh_KeyHold(AU_KEY_PRESS_VERY_LONG) ) // But if is was still holding on
                       {  //two minutes - let it repeat while the key is held down
                          fmnu_KeyPassAlways = TRUE;
                          fmnu_KeyPassCommand = command;

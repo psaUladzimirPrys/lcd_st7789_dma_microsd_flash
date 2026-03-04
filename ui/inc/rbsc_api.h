@@ -6,7 +6,7 @@
 /*==========================================================================*/
 /*        I N C L U D E S                                                   */
 /*==========================================================================*/
-#include "hglobal.h"
+#include "global.h"
 
 /*==========================================================================*/
 /*                                                                          */
@@ -57,6 +57,6 @@ extern Byte rbsc_ChangeControl(Byte  rbsc_control, Bool rbsc_direction, Byte rbs
 extern Byte rbsc_ChangeControlAround(Byte rbsc_control, Bool rbsc_direction, Byte rbsc_max, Byte rbsc_min);
 extern Word rgen_ChangeControlWord(Word rgen_control, Bool rgen_direction, Word rgen_max, Word rgen_min);
 
-extern Byte rbsc_GetLocalKey(void);
+
 
 #endif /* _RBSC_API_H */

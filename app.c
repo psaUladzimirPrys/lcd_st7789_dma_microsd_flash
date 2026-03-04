@@ -52,6 +52,12 @@
 #include "auph.h"
 
 #include "button.h"
+
+#include "device_control.h"
+#include "fsrv.h"
+#include "fpmt_api.h"
+
+
 #define TEST_DISPLAY
 //#define TEST_SD
 #define TEST_FLASH
@@ -221,10 +227,16 @@ void app_init(void)
 
 #endif
 
+ button_feature_init();
+
+
+ fpmt_Init();
+
+ fsrv_Init();
  fuim_Init();
  aukh_Init();
  find_Init();
- button_feature_init();
+ fslog_Init();
 
 }
 
@@ -262,9 +274,6 @@ sl_status_t get_time(char *str_buf)
  ******************************************************************************/
 void app_process_action(void)
 {
-#ifdef TEST_SD
-  uint8_t test_str[35] = {0};
-#endif
 
   cli_app_process_action();
 
@@ -279,21 +288,18 @@ void app_process_action(void)
 
   sl_sleeptimer_delay_millisecond(5);
 
-#ifdef TEST_SD
-  fs_sd_log_flush_task();
-#endif
-
-  button_feature_process();
+  device_working_loop();
 
   if (aukh_ReadCommand()) {
-
       aukh_ProcessKey();
   }
 
   if ((auph_GetState() != AU_ERROR_STATE )) {
-
     fuim_Update();//1 The location cannot be changed.
     find_Update();//2 The location cannot be changed.
   }
+
+  fslog_Update();
+  fpmt_Update();
 
 }

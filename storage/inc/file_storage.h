@@ -16,23 +16,36 @@
 #include "sl_sdc_sd_card.h"
 
 #if (defined(SLI_SI917))
-#include "sl_si91x_gspi.h"
-#include "rsi_debug.h"
+  #include "sl_si91x_gspi.h"
+  #include "rsi_debug.h"
 
-#define app_printf(...) DEBUGOUT(__VA_ARGS__)
+  #define app_printf(...) DEBUGOUT(__VA_ARGS__)
 
-static sl_gspi_instance_t gspi_instance = SL_GSPI_MASTER;
+  static sl_gspi_instance_t gspi_instance = SL_GSPI_MASTER;
 #else
-#include "sl_spidrv_instances.h"
-#include "app_log.h"
-#include "app_assert.h"
+  #include "sl_spidrv_instances.h"
+  #include "app_log.h"
+  #include "app_assert.h"
 
-#define app_printf(...) app_log(__VA_ARGS__)
+  #define app_printf(...) app_log(__VA_ARGS__)
 #endif
 
-#define FS_LOG_INFO(msg)   log_write("[INFO] " msg "\r\n")
-#define FS_LOG_WARN(msg)   log_write("[WARN] " msg "\r\n")
-#define FS_LOG_ERR(msg)    log_write("[ERR ] " msg "\r\n")
+typedef enum
+{
+  LOG_LEVEL_ERROR = 0,
+  LOG_LEVEL_WARN,
+  LOG_LEVEL_INFO,
+  LOG_LEVEL_DEBUG,
+  LOG_LEVEL_ALL
+} log_level_t;
+
+
+#define FSLOG_ERROR(...)    log_printf(LOG_LEVEL_ERROR, __VA_ARGS__)
+#define FSLOG_WARNING(...)  log_printf(LOG_LEVEL_WARN,  __VA_ARGS__)
+#define FSLOG_INFO(...)     log_printf(LOG_LEVEL_INFO,  __VA_ARGS__)
+#define FSLOG_DEBUG(...)    log_printf(LOG_LEVEL_DEBUG, __VA_ARGS__)
+#define FSLOG_ALL(...)      log_printf(LOG_LEVEL_ALL, __VA_ARGS__)
+
 /*******************************************************************************
  **************************   GLOBAL FUNCTIONS   *******************************
  ******************************************************************************/
@@ -71,8 +84,14 @@ sl_status_t fs_sd_append_to_file(const char   *file_path,
 
 void fs_sd_log_init(void);
 
-void fs_sd_log_write(const char *str);
+void fslog_Update(void);
+void fslog_TurnOn(void);
+void fslog_TurnOff(void);
+bool fslog_IsEnabled(void);
 
-void fs_sd_log_flush_task(void);
+
+void fslog_printf(log_level_t level, const char *fmt, ...);
+
+
 
 #endif /* FILE_STORAGE_H_ */

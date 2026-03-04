@@ -8,10 +8,10 @@
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
+#include <pltccstd.h>
 #include "fuim.h"
 #include "ui_display.h"
 #include "fmnu.h"
-#include "ccstd.h"
 #include "auph.h"
 #include "fuim_obs.h"
 #include "auim_api.h"
@@ -814,7 +814,7 @@ void fuim_Init(void)
   bool is_timer64ms_running = false;
 
 
-  pltstd_CCInit( FUIM_MAX_NR_OF_COLS, FUIM_MAX_NR_OF_ROWS);//, TRUE );
+  plt_CCInit( FUIM_MAX_NR_OF_COLS, FUIM_MAX_NR_OF_ROWS);//, TRUE );
   fuim_InitTimers();
   fmnu_InitMenus();
   fuim_InitIndicators();

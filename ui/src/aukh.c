@@ -75,13 +75,10 @@ static AU_COMMAND   previous;   /* Previous command. Used to detect
 
 static Byte   au_simulated_key; /* Variable for simulating a key press */
 
-  Bool au_direction; /* Direction of rotation */
-   // For determining - au_direction - variable to determine the direction of rotation
-   // of the rotary encoder or direction of the key based on the command number
-   // stored in the command global variable
+
 
  /* Translation table for local keyboard. */
-
+/*
 static Byte const LOCAL_KEYBOARD_TABLE[] =
 {
    AU_KEY_INVALID
@@ -94,13 +91,51 @@ static Byte const LOCAL_KEYBOARD_TABLE[] =
   ,AU_KEY_YES
   ,AU_KEY_PARAMS
 
-  ,AU_KEY_MENU          /* Key 1 */
+  ,AU_KEY_MENU
 };
+*/
+
+/*
+AU_KEY_PRESS_INVALID = 0
+,AU_KEY_PRESS_SHORT
+,AU_KEY_PRESS_LONG
+,AU_KEY_PRESS_VERY_LONG
+,AU_KEY_PRESS_MULTI_3_TIME
+,AU_KEY_PRESS_MULTI_5_TIME
+*/
+
+static Byte const LOCAL_KEYBOARD_TABLE[] =
+{
+   AU_KEY_INVALID
+  ,AU_VIRTUAL_KEY_1
+  ,AU_VIRTUAL_KEY_2
+  ,AU_VIRTUAL_KEY_3
+  ,AU_VIRTUAL_KEY_4
+  ,AU_VIRTUAL_KEY_5
+  ,AU_KEY_PROCESSED
+};
+
+
+static Byte local_key_buffer;
 
 /*=======================================================================*/
 /* L O C A L   F U N C T I O N   P R O T O T Y P E S                     */
 /*=======================================================================*/
 static void CheckKeyRepetition(Byte command) ;
+static Byte GetLocalKey(void);
+
+
+/*=======================================================================*/
+/*                                                                       */
+/*=======================================================================*/
+static Byte GetLocalKey(void)
+{
+  Byte value;
+  value = local_key_buffer;
+  local_key_buffer = 0;
+  return (value);
+}
+
 
 /*=======================================================================*/
 /* F U N C T I O N S                                                     */
@@ -149,7 +184,7 @@ Bool aukh_ReadCommand (void)
           KEY_UNION   new_key;
    key_origin_enum    new_key_detected = KEY_NONE;
 
-   if ((new_key.key_data.key_code = rbsc_GetLocalKey()) != 0)
+   if ((new_key.key_data.key_code = GetLocalKey()) != 0)
    {
 
       /* ***************************************************************************/
@@ -178,14 +213,6 @@ Bool aukh_ReadCommand (void)
       au_simulated_key     = AU_KEY_INVALID;
 
     }
-
-/*============================================================================*/
-
-   // For determining - au_direction - variable to determine the direction of rotation
-   // of the rotary encoder or direction of the key based on the command number
-   // stored in the command global variable
-
-   au_direction = (Bool)(au_current.command % 2);
 
    if (new_key_detected == KEY_LOCAL)
    {
@@ -257,35 +284,32 @@ Bool aukh_KeyHold(Byte hold_time)
 }
 
 /**************************************************************************
-           Processes the key stored in au_current.
+   Processes the key stored in au_current.
 
-           If the key is valid, the following actions are performed:
+   If the key is valid, the following actions are performed:
 
-           If the key is valid (not invalid):
-               - command, corresponding to the key.
-               - command, corresponding to the mode.
-               - Current command is passed to the processing function.
-               - Processing of the command key depending on the mode.
-               - Pass to the module that is active in VA & PM.
+   If the key is valid (not invalid):
+       - command, corresponding to the key.
+       - command, corresponding to the mode.
+       - Current command is passed to the processing function.
+       - Processing of the command key depending on the mode.
+       - Pass to the module that is active in VA & PM.
 
-           If the key is valid - call the processing function of the corresponding mode
-           in UIFA, then call the function UIDR.
+   If the key is valid - call the processing function of the corresponding mode
+   in UIFA, then call the function UIDR.
 
-           If the key is valid - call the processing function of the corresponding mode
-           in UIDR, then call the function UIUF.
+   If the key is valid - call the processing function of the corresponding mode
+   in UIDR, then call the function UIUF.
 
-           If the key is valid - call the processing function of the corresponding mode
-           in UIUF, then call the function.
+   If the key is valid - call the processing function of the corresponding mode
+   in UIUF, then call the function.
 
-           Return value
+   Return value
 
-           Pre condition  : au_current contains the RC5-command
-                           from the remote control.
+   Pre condition  : au_current contains the RC5-command
+                   from the remote control.
 
-           Post condition : au_current.command = AU_KEY_INVALID
-
-
-           Module name: aukh
+   Post condition : au_current.command = AU_KEY_INVALID
 
 *******************************************************************/
 void aukh_ProcessKey(void)
@@ -301,17 +325,17 @@ void aukh_ProcessKey(void)
 }
 
 /**************************************************************************
-           Simulates a key press from anywhere in the program<nl>
-           For the function to be processed aukh_ReadCommand()
+   Simulates a key press from anywhere in the program<nl>
+   For the function to be processed aukh_ReadCommand()
 
-           No return value
-           Module name: aukh
+   No return value
+   Module name: aukh
 
 ***************************************************************************/
 void aukh_SetSimulatedKey(Byte simulate_key)
- {
-     au_simulated_key = simulate_key;
- }
+{
+  au_simulated_key = simulate_key;
+}
 
 /*=======================================================================*/
 /* L O C A L   F U N C T I O N S                                         */
@@ -345,3 +369,7 @@ static void CheckKeyRepetition(Byte command)
    previous.command = command;
 }
 
+void aukh_PostButtonEvent(auphKeyPressType_enum type)
+{
+  local_key_buffer =  (Byte)type;
+}

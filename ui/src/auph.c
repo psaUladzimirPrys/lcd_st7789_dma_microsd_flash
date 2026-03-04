@@ -15,7 +15,7 @@
 #include "fmnu.h"
 #include "auim_mnu.h"
 #include "find_api.h"
-
+#include "fpmt_api.h"
 
 /*==========================================================================*/
 /*     G L O B A L   D E F I N I T I O N S                                  */
@@ -36,12 +36,12 @@ typedef void (* VOID_FUNCTION_PTR)(void);
 #define X_IN_SERVICE             0x80
 
 
-#define PERMISSION_STANDBY            X_IN_STANDBY + X_IN_SERVICE  
-#define PERMISSION_DIRECT             X_IN_IDLE + X_NOT_IN_MENU
+#define PERMISSION_STANDBY            X_IN_STANDBY + X_IN_MENU + X_IN_SERVICE
+#define PERMISSION_DIRECT             X_IN_IDLE + X_IN_MENU
 #define PERMISSION_IDLE               X_IN_IDLE
 #define PERMISSION_MENU               X_REPEAT + X_NOT_IN_TEXT + X_IN_MENU  
 #define PERMISSION_DIRECT_MENU        X_IN_TEXT
-#define PERMISSION_SERVICE            X_IN_STANDBY + X_NOT_IN_MENU
+#define PERMISSION_SERVICE            X_IN_IDLE
 #define PERMISSION_PROTECTION         X_ALWAYS
 
 
@@ -74,22 +74,21 @@ typedef struct
 } auphKeyGroup;
 /*EMP=======================================================================*/
 
+/* AU_VIRTUAL_KEY_1  AU_KEY_PRESS_SHORT         */
+/* AU_VIRTUAL_KEY_2  AU_KEY_PRESS_LONG          */
+/* AU_VIRTUAL_KEY_3  AU_KEY_PRESS_VERY_LONG     */
+/* AU_VIRTUAL_KEY_4  AU_KEY_PRESS_MULTI_3_TIME  */
+/* AU_VIRTUAL_KEY_5  AU_KEY_PRESS_MULTI_5_TIME  */
 
 /* ROM table containing the code group for each key code. */
 static auphKeyGroup const key_groupcode_table[] = {
 
- { AU_KEY_START,    AU_GROUP_MENU        }
-,{ AU_KEY_NO,       AU_GROUP_MENU        }
-,{ AU_KEY_CLOSE,    AU_GROUP_MENU        }
-,{ AU_KEY_PERF_CHK, AU_GROUP_IDLE        }
-,{ AU_KEY_NEXT,     AU_GROUP_MENU        }
-,{ AU_KEY_CANCEL,   AU_GROUP_MENU        }
-,{ AU_KEY_YES,      AU_GROUP_MENU        }
-,{ AU_KEY_PARAMS,   AU_GROUP_IDLE        }
-
-,{ AU_KEY_STANDBY,  AU_GROUP_STANDBY     }
-,{ AU_KEY_MENU,     AU_GROUP_MENU        }
-,{ AU_KEY_SERVICE,  AU_GROUP_SERVICE     }
+ { AU_VIRTUAL_KEY_1, AU_GROUP_DIRECT      }
+,{ AU_VIRTUAL_KEY_2, AU_GROUP_MENU        }
+,{ AU_VIRTUAL_KEY_4, AU_GROUP_IDLE        }
+,{ AU_VIRTUAL_KEY_3, AU_GROUP_STANDBY     }
+,{ AU_KEY_MENU,      AU_GROUP_MENU        }
+,{ AU_VIRTUAL_KEY_5, AU_GROUP_SERVICE     }
 
 };
 
@@ -153,17 +152,16 @@ void auph_SetState(auphOsteoState_enum new_state)
 ========================================================================*/
 static void HandleStandby(void)
 {
-/*
+
    if (aukh_FirstKeyPress())
    {
       if( ( aukh_GetCurrentCommand() == AU_KEY_STANDBY )&&
           ( fpmt_GetPowerState() == FPMT_POWER_ON )      )
       {
-      fpmt_SetPowerState(FPMT_STAND_BY);
-
+        fpmt_SetPowerState(FPMT_STAND_BY);
       }
    }
-*/
+
   return;
 }
 
@@ -208,10 +206,10 @@ static void HandleMenu(void)
 {
 
 
- if (aukh_KeyHold(AU_KEY_PRESSED_ONE_SECOND)) {
+ if (aukh_FirstKeyPress()) {
 
    fmnu_Activate(AUIM_MNU_INDEX_CONFIG_MENU);
-   auph_SetState(AU_MENU_STATE);
+   auph_SetState(AU_CONFIGURAION_MENU_STATE);
  }
 /* else
  {
@@ -227,14 +225,14 @@ static void HandleMenu(void)
 }
 
 /*************************************************************************
-           Processing of user keys when not in:<nl>
-              - standby mode<nl>
-              - menu mode<nl>
-              - text mode<nl><nl>
-             So, all direct access functions are processed.
+   Processing of user keys when not in:<nl>
+      - standby mode<nl>
+      - menu mode<nl>
+      - text mode<nl><nl>
+     So, all direct access functions are processed.
 
-           Returns nothing
-           Belongs to component: auph
+   Returns nothing
+   Belongs to component: auph
 ***************************************************************************/
 
  static void HandleDirectKey(Byte key_group)

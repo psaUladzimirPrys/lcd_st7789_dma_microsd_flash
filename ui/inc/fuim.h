@@ -6,8 +6,8 @@
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
 
-#include "hglobal.h"
 #include "adafruit_st7789.h"
+#include "global.h"
 #include "img_storage.h"
 
 /*=======================================================================*/
@@ -424,8 +424,13 @@ typedef enum
 } fuim_AlignmentRepeated;
 
 
-void fuim_Update(void);
 void fuim_Init(void);
+
+void fuim_TurnOn(void);
+void fuim_TurnOff(void);
+
+void fuim_Update(void);
+
 
 void fuim_InitIndicators( void );
 

@@ -3,9 +3,8 @@
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
+#include <global.h>
 #include "stddef.h"
-#include "hglobal.h"
-
 #include "aukh.h"
 #include "auph.h"
 #include "fuim.h"
@@ -215,30 +214,26 @@ Bool find_IsIndicatorDisplayed(Byte indicator)
 void find_DisplayIndicator(find_id_enum indicator)
 {
 
-   
-   if (auph_GetState() == AU_DIRECT_STATE)
-   {
+  Byte  active;
 
-     Byte  active;
+  if (!find_IsIndicatorDisplayed(indicator))
+  {
+     active = 0;
 
-      if (!find_IsIndicatorDisplayed(indicator))
-      {
-         active = 0;
+     while ((active_indicators[active] != EMPTY_INDICATOR) && (active < FUIM_MAX_INDICATORS))
+     {
+        active++;
+     }
 
-         while ((active_indicators[active] != EMPTY_INDICATOR) && (active < FUIM_MAX_INDICATORS))
-         {
-            active++;
-         }
-
-         if ((active < FUIM_MAX_INDICATORS) && (active_indicators[active] == EMPTY_INDICATOR))
-         {
-            CreateIndicator(indicator);
-            active_indicators[active] = indicator;
-         }
-      }
-      else find_UpdateIndicator(indicator);
-
-   }
+     if ((active < FUIM_MAX_INDICATORS) && (active_indicators[active] == EMPTY_INDICATOR))
+     {
+        CreateIndicator(indicator);
+        active_indicators[active] = indicator;
+     }
+  }else
+  {
+     find_UpdateIndicator(indicator);
+  }
 
 }
 
@@ -266,18 +261,16 @@ void CreateIndicator(find_id_enum indicator)
 void find_Update(void)
 {
 
- if (auph_GetState() == AU_DIRECT_STATE)
+ if (  ( auph_GetState() != AU_ERROR_STATE )
+     &&( auph_GetState() != AU_STARTUP_SPLASH_STATE)  )
  {
    Byte  i, indicator;
    
    for (i = 0; i < FUIM_MAX_INDICATORS; i++)
    {
       indicator = active_indicators[i];
-      if (indicator != EMPTY_INDICATOR)
-      { 
-      	
-      RemoveEmptyIndicator(indicator);
-
+      if (indicator != EMPTY_INDICATOR) {
+          RemoveEmptyIndicator(indicator);
       }
    }
   
@@ -362,41 +355,10 @@ void find_UpdateIndicator(find_id_enum indicator)
 
    fuimIndicatorStruct  *indicator_data_ptr;
  
-   if (indicator_ids[indicator] < NR_OF_DOUBLE_INDICATORS)
-   {
+   if( indicator_ids[indicator] < NR_OF_DOUBLE_INDICATORS ) {
       indicator_data_ptr = (fuimIndicatorStruct  *)&auim_OsdIndicator[indicator_ids[indicator]];
-      find_IndicatorAction(indicator_data_ptr );
-    }
-/*
-   else 
-   {
-    switch(indicator)
-        {
-         case FIND_ID_SOURCE:{
-
- find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_PROGRAM_NUMBER_INDICATOR] );
- find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_PROGRAM_STRING_INDICATOR]  );
- 
-							}break;
-         case FIND_ID_MENU:{
- find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_MENU_INDICATOR_LEFT]  );
- find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_MENU_INDICATOR]  );
- find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_MENU_INDICATOR_RIGHT]  );
-
-							}break;     
-   case FIND_ID_NO_PROGRAM:{
-   	
-    find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_NO_PROGRAM_INDICATOR_1]);
-    find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_NO_PROGRAM_INDICATOR_2]);
-    
-	 		}break;
-							                    
-         default: break;
-
-        }
-
+      find_IndicatorAction(indicator_data_ptr);
    }
-*/
 
 } 
  
@@ -576,7 +538,7 @@ void find_SetIndicatorFocus( Byte IndicatorFocus )
 /*=======================================================================*/
 void find_ToggleStatusIndicator(void)
 {
-  Byte  handle = 0;
+  Byte handle = 0;
 
   find_DisplayIndicator(FIND_ID_BATTERY);
 

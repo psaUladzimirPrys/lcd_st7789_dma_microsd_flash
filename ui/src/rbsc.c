@@ -9,7 +9,6 @@
 /* L O C A L   D A T A   D E F I N I T I O N S                           */
 /*=======================================================================*/
 
- static Byte local_key_buffer;
 
 /*=======================================================================*/
 /*  L O C A L   F U N C T I O N    D E C L A R A T I O N S               */
@@ -183,13 +182,4 @@ Word rgen_ChangeControlWord( Word rgen_control,  Bool rgen_direction, Word rgen_
     
 }
 
-/*=======================================================================*/
-/*                                                                       */
-/*=======================================================================*/
-Byte rbsc_GetLocalKey(void)
-{
-  Byte value;
-    value = local_key_buffer;
-  local_key_buffer = 0;
-  return (value);
-}
+

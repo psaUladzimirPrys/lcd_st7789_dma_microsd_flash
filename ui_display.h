@@ -29,7 +29,6 @@ void disp_init(void);
 
 void disp_process_action(void);
 
-
 #ifdef __cplusplus
 }
 #endif

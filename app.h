@@ -34,13 +34,9 @@ void app_process_action(void);
  ******************************************************************************/
 void cli_app_init(void);
 
-void disp_init(void);
-
 /***************************************************************************//**
  * Ticking function
  ******************************************************************************/
 void cli_app_process_action();
-
-void disp_process_action(void);
 
 #endif // APP_H

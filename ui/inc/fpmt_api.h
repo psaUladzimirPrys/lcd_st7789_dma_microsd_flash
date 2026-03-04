@@ -1,32 +1,36 @@
-/*
- * fuin_obs.h
- *
- *  Created on: 20 февр. 2026 г.
- *      Author: priss
- */
-
-#ifndef UI_INC_FUIM_OBS_H_
-#define UI_INC_FUIM_OBS_H_
+/*=======================================================================*/
+#ifndef _HFPMT_API_H
+#define _HFPMT_API_H
 
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
 
-#include "fuim.h"
-#include "global.h"
+
 
 /*=======================================================================*/
 /*        G L O B A L   D A T A   D E C L A R A T I O N S                */
 /*=======================================================================*/
 
-/*=======================================================================*/
-/*           */
-/*=======================================================================*/
-osdFieldValue fuim_Observer(Byte index);
-fuim_Validity fuim_ValidityFunction (Byte index);
-osdFieldValue fuim_ActionHandler (      Byte index,          /* @parm Function ID */
-                               osdFieldValue value           /* @parm given to the action handler function */
-                                 );
+typedef enum
+{
+   FPMT_STAND_BY = 0,
+   FPMT_POWER_ON,
+   FPMT_ERROR
+}fpmtPowerMode_enum;
 
 
-#endif /* UI_INC_FUIM_OBS_H_ */
+/*=======================================================================*/
+/*        G L O B A L   F U N C T I O N   P R O T O T Y P E S            */
+/*=======================================================================*/
+
+void fpmt_Init(void);
+void fpmt_Update( void );
+
+void fpmt_SetPowerState(fpmtPowerMode_enum PowerState);
+fpmtPowerMode_enum fpmt_GetPowerState(void);
+
+void fpmt_HandleCommand(void) ;
+
+
+#endif /* _HFPMT_API_H */
