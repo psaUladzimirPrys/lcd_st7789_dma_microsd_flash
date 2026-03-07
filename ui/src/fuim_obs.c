@@ -8,7 +8,7 @@
 #include "aukh.h"
 #include "auim_mnu.h"
 #include "auim_api.h"
-
+#include "fsrv.h"
 
 
 
@@ -36,12 +36,26 @@
 osdFieldValue fuim_Observer (Byte index)
 /*=======================================================================*/
 {
-   Byte result;
+  osdFieldValue result;
 
    switch (index)
-
    {
-      case AUIM_GET_MAIN_VOLUME:
+       case AUIM_GET_BATTERY_INDICATOR:
+         result = (osdFieldValue)fsrv_DS_GetBatStatus();
+       break;
+
+       case AUIM_GET_BLE_INDICATOR:
+         result = (osdFieldValue)fsrv_DS_GetBleStatus();
+       break;
+       case AUIM_GET_SYNC_INDICATOR:
+         result = (osdFieldValue)fsrv_DS_GetSyncStatus();
+       break;
+
+       case AUIM_GET_STRAIN_GAUSE_STATUS:
+         result = (osdFieldValue)fsrv_DS_GetStrainGauseStat();
+       break;
+
+       case AUIM_GET_MAIN_VOLUME:
          result = 100;//psnd_GetVolume_control();
          break;
 
@@ -69,10 +83,40 @@ osdFieldValue fuim_Observer (Byte index)
 fuim_Validity fuim_ValidityFunction (Byte index)
 {
   fuim_Validity result;
+
   switch (index)
   {
+
+    case AUIM_FIELD_BATTERY_INDICATOR_VALIDITY_FUNCTION: {
+      if (fsrv_DS_GetBatStatus() != IMG_MAX_IDS_STORAGE_DESC_COUNT)
+        result = FUIM_VALIDITY_VISIBLE;
+      else
+        result = FUIM_VALIDITY_NOTPRESENT;
+    }break;
+
+    case AUIM_FIELD_BLE_INDICATOR_VALIDITY_FUNCTION: {
+      if (fsrv_DS_GetBleStatus() != IMG_MAX_IDS_STORAGE_DESC_COUNT)
+        result = FUIM_VALIDITY_VISIBLE;
+      else
+        result = FUIM_VALIDITY_NOTPRESENT;
+    }break;
+
+    case AUIM_FIELD_SYNC_INDICATOR_VALIDITY_FUNCTION: {
+      if (fsrv_DS_GetSyncStatus() != IMG_MAX_IDS_STORAGE_DESC_COUNT)
+        result = FUIM_VALIDITY_VISIBLE;
+      else
+        result = FUIM_VALIDITY_NOTPRESENT;
+    }break;
+
+    case AUIM_FIELD_CHARGE_BATT_VALIDITY_FUNCTION:{
+      if (fsrv_DS_GetChargeBatStatus() != IMG_MAX_IDS_STORAGE_DESC_COUNT)
+        result = FUIM_VALIDITY_VISIBLE;
+      else
+        result = FUIM_VALIDITY_NOTPRESENT;
+    }break;
+
+    case AUIM_FIELD_INDICATOR_VALIDITY_FUNCTION:
     case AUIM_FIELD_SPACER_VALIDITY_FUNCTION:
-    case AUIM_FIELD_SEPARATOR_VALIDITY_FUNCTION :
     {
       result = FUIM_VALIDITY_VISIBLE;
     } break;
@@ -83,31 +127,17 @@ fuim_Validity fuim_ValidityFunction (Byte index)
       result = FUIM_VALIDITY_SELECTABLE;
     }break;
 
-    case AUIM_FIELD_PICTURE_STORE_VALIDITY_FUNCTION:
-    {
-          result = FUIM_VALIDITY_VISIBLE;
-    }break;
-   case AUIM_FIELD_MANUAL_TUNE_WSB_VALIDITY_FUNCTION:
-   {
-       result = FUIM_VALIDITY_SELECTABLE;
-   }break;
     case AUIM_FIELD_EDIT_VALIDITY_FUNCTION :
-    case AUIM_MENU_TIMER_PROG_NUMBER_VALIDITY_FUNCTION :
     {
       result = FUIM_VALIDITY_GRAYEDOUT;
     }break;
 
-     case AUIM_INDICATOR_NUMBER_PROGRAMM_VALIDITY_FUNCTION:
-    {
-      result = FUIM_VALIDITY_SELECTABLE;
-
-    }break;
-
     default:
          result = FUIM_VALIDITY_NOTPRESENT;
-         break;
+     break;
   }
- return ((fuim_Validity) result);
+
+  return ((fuim_Validity) result);
 
 }
 

@@ -22,8 +22,13 @@
 #define  VERTICAL_LOCATION_PROGRAM_INDICATOR    2
 #define  HORIZONTAL_LOCATION_PROGRAM_INDICATOR  3
 
-#define  AUIM_DEFAULT_INDICATOR_TIMEOUT			10 //15- ��� ��������
-#define  AUIM_NONE_PROGRAMM_INDICATOR_TIMEOUT   3
+/*
+The timeout period is set in seconds;
+    the maximum possible value before overflow the timeout counter(is Byte type) variable is 15 seconds.
+*/
+#define  AUIM_NO_INDICATOR_TIMEOUT              0
+#define  AUIM_DEFAULT_INDICATOR_TIMEOUT			    10 //Max 15 seconds
+#define  AUIM_CHARGE_BATT_INDICATOR_TIMEOUT     3
 
 //const fuimDialogNavigation  auim_MenuIndicatorDialogKeys[] =/
 //{
@@ -63,11 +68,16 @@ fuimDialogNavigation RDATA auim_MainMenuIndKeys[] =
  /*=======================================================================*/
 
  /* OSD Indicator fields */
- const fuimFieldStruct  auim_OsdIndicatorFields[AUIM_MAX_OSD_INDICATORS] =
- {
+const fuimFieldStruct  auim_OsdIndicatorFields[AUIM_MAX_OSD_INDICATORS] =
+{
+
+/*=======================================================================*/
+/*          B A T T E R Y     I N D I C A T O R                          */
+/*=======================================================================*/
+
    {
-   FUIM_FIELDTYPE_STRING,
-   AUIM_FIELD_VALIDITY_FUNCTION,//Byte       ValidityFunction;
+   FUIM_FIELDTYPE_STRING_ID,
+   AUIM_FIELD_BATTERY_INDICATOR_VALIDITY_FUNCTION,//Byte       ValidityFunction;
    FMNU_NONE_PROMPT,//osdStringID  Prompt;
    AUIM_TIME_HILIGHTE_INDICATOR_COLOUR,//PromptColour
    0,//Byte      ChangeFunction;
@@ -77,7 +87,7 @@ fuimDialogNavigation RDATA auim_MainMenuIndKeys[] =
    {0},//TFieldScaling   FieldScaling;   //
    0,//Byte      Prefix;
    0,//osdStringID   Suffix;
-   FUIM_FIELD_TIMEOUT,//Byte       TimeOut;
+   FUIM_FIELD_NO_TIMEOUT,//Byte       TimeOut;
    0,//Byte      TriggerDigits;
    {0},//TFieldCharacters FieldCharacters;
    0,//Byte      Alignment;
@@ -85,9 +95,13 @@ fuimDialogNavigation RDATA auim_MainMenuIndKeys[] =
    0//fuimDialogNavigation RDATA * ToDoWithKey;
    }
 
-   ,{
-   FUIM_FIELDTYPE_STRING,
-   AUIM_FIELD_VALIDITY_FUNCTION,//Byte       ValidityFunction;
+   /*=======================================================================*/
+   /*          B L E    C O N N E C T I O N    I N D I C A T O R            */
+   /*=======================================================================*/
+
+ ,{
+   FUIM_FIELDTYPE_STRING_ID,
+   AUIM_FIELD_BLE_INDICATOR_VALIDITY_FUNCTION,//Byte       ValidityFunction;
    FMNU_NONE_PROMPT,//osdStringID  Prompt;
    AUIM_TIME_HILIGHTE_INDICATOR_COLOUR,//PromptColour
    0,//Byte      ChangeFunction;
@@ -105,13 +119,16 @@ fuimDialogNavigation RDATA auim_MainMenuIndKeys[] =
    0//fuimDialogNavigation RDATA * ToDoWithKey;
    }
 
-   ,{
-   FUIM_FIELDTYPE_STRING,
-   AUIM_FIELD_VALIDITY_FUNCTION,//Byte       ValidityFunction;
+   /*=======================================================================*/
+   /*     S Y N C H R O N I S A T I O N     I N D I C A T O R            */
+   /*=======================================================================*/
+ ,{
+   FUIM_FIELDTYPE_STRING_ID,
+   AUIM_FIELD_SYNC_INDICATOR_VALIDITY_FUNCTION,//Byte       ValidityFunction;
    FMNU_NONE_PROMPT,//osdStringID  Prompt;
    AUIM_MUTE_INDICATOR_COLOUR,   //    Specific Field prompt color,
    0,//Byte      ChangeFunction;
-   AUIM_INDEX_SYNC_INDICATOR,//Byte      GetFunction;
+   AUIM_GET_SYNC_INDICATOR,//Byte      GetFunction;
    0,//Byte      SetFunction;
    {0},//TFieldSize    FieldSize;
    {0},//TFieldScaling   FieldScaling;
@@ -126,8 +143,53 @@ fuimDialogNavigation RDATA auim_MainMenuIndKeys[] =
 
    }
 
+   /*=======================================================================*/
+   /*    S P L A S H      S C R E E N        I N D I C A T O R              */
+   /*=======================================================================*/
+ ,{
+     FUIM_FIELDTYPE_SPACER,
+   AUIM_FIELD_INDICATOR_VALIDITY_FUNCTION,//Byte       ValidityFunction;
+   IMG_ID_UNION3_OUT,//osdStringID  Prompt;
+   AUIM_MUTE_INDICATOR_COLOUR,   //    Specific Field prompt color,
+   0,//Byte      ChangeFunction;
+   AUIM_NO_GET_FUNCTION,//Byte      GetFunction;
+   0,//Byte      SetFunction;
+   {0},//TFieldSize    FieldSize;
+   {0},//TFieldScaling   FieldScaling;
+   0,//Byte      Prefix;
+   0,//osdStringID   Suffix;
+   FUIM_FIELD_NO_TIMEOUT,//Byte      TimeOut;
+   0,//Byte      TriggerDigits;
+   {0},//TFieldCharacters FieldCharacters;
+   0,//Byte      Alignment;
+   0,//Byte      LeadingZeros;
+   0//fuimDialogNavigation RDATA * ToDoWithKey;
+   }
 
- };
+   /*=======================================================================*/
+   /*     C H A R G E   B A T T E R Y        I N D I C A T O R              */
+   /*=======================================================================*/
+ ,{
+     FUIM_FIELDTYPE_SPACER,
+   AUIM_FIELD_CHARGE_BATT_VALIDITY_FUNCTION,//Byte       ValidityFunction;
+   IMG_ID_PROPERTY_1_VARIANT3,//osdStringID  Prompt;
+   AUIM_MUTE_INDICATOR_COLOUR,   //    Specific Field prompt color,
+   0,//Byte      ChangeFunction;
+   AUIM_NO_GET_FUNCTION,//Byte      GetFunction;
+   0,//Byte      SetFunction;
+   {0},//TFieldSize    FieldSize;
+   {0},//TFieldScaling   FieldScaling;
+   0,//Byte      Prefix;
+   0,//osdStringID   Suffix;
+   FUIM_FIELD_NO_TIMEOUT,//Byte      TimeOut;
+   0,//Byte      TriggerDigits;
+   {0},//TFieldCharacters FieldCharacters;
+   0,//Byte      Alignment;
+   0,//Byte      LeadingZeros;
+   0//fuimDialogNavigation RDATA * ToDoWithKey;
+   }
+
+};
 
 
 
@@ -141,31 +203,49 @@ const fuimIndicatorStruct auim_OsdIndicator[AUIM_MAX_OSD_INDICATORS] =
 {
 
 	 {
-	  0,	//VertLocation
-	  3,  //HorLocation
-    5,  //Byte ValuePos;   			 /* total width of the value */
-	  6,  //TimeOut
+	  10,	//VertLocation
+	  22,  //HorLocation
+    22,  //Byte ValuePos;   			 /* total width of the value */
+    AUIM_NO_INDICATOR_TIMEOUT,  //TimeOut
  	  &auim_OsdIndicatorFields[AUIM_INDEX_BATTERY_INDICATOR] /* Field */
 	  }
 
 	,{
-	  1,  //VertLocation
-	  3,  //HorLocation
-	  5,	//Byte ValuePos;   			 /* total width of the value */
-	  4,	//TimeOut
+	  12,  //VertLocation
+	  26,  //HorLocation
+	  26,	//Byte ValuePos;   			 /* total width of the value */
+	  AUIM_NO_INDICATOR_TIMEOUT,	//TimeOut
 	  &auim_OsdIndicatorFields[AUIM_INDEX_BLE_INDICATOR] /* Field */
 	  }
 
 	,{
-	  7,    //VertLocation
-	  37+4, //HorLocation
-	  37+6,	//Byte ValuePos;   			 /* total width of the value */
-	  0, //TimeOut
-	  &auim_OsdIndicatorFields[ AUIM_INDEX_SYNC_INDICATOR] /* Field */
+	  12,    //VertLocation
+	  54, //HorLocation
+	  54,	//Byte ValuePos;   			 /* total width of the value */
+	  AUIM_NO_INDICATOR_TIMEOUT, //TimeOut
+	  &auim_OsdIndicatorFields[AUIM_INDEX_SYNC_INDICATOR] /* Field */
 	 }
 
+	 ,{
+	    37,   //VertLocation
+	    111,  //HorLocation
+	    111, //Byte ValuePos;         /* total width of the value */
+	    AUIM_NO_INDICATOR_TIMEOUT, //TimeOut
+	    &auim_OsdIndicatorFields[AUIM_INDEX_SPLASH_SCREEN] /* Field */
+	   }
+
+	,{
+    98,   //VertLocation
+    0,  //HorLocation
+    0, //Byte ValuePos;         /* total width of the value */
+    AUIM_CHARGE_BATT_INDICATOR_TIMEOUT, //TimeOut
+    &auim_OsdIndicatorFields[AUIM_INDEX_CHARGE_BATT] /* Field */
+   }
 
 };
+
+
+
 
 
 

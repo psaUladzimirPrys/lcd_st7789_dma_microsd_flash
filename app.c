@@ -43,23 +43,20 @@
 #include "cli.h"
 #include "file_storage.h"
 #include "flash_storage.h"
-#include "ui_display.h"
 
-
+#include "disp.h"
 #include "fuim.h"
 #include "find_api.h"
-
 #include "auph.h"
-
-#include "button.h"
-
-#include "device_control.h"
 #include "fsrv.h"
 #include "fpmt_api.h"
 
+#include "button.h"
+#include "device_control.h"
+#include "event_simulation.h"
 
-#define TEST_DISPLAY
-//#define TEST_SD
+
+#define TEST_SD
 #define TEST_FLASH
 
 //#define TEST_FLASH_ERASE_PROG
@@ -119,7 +116,8 @@ void app_init(void)
 #if defined(TEST_SD)
   const char filepath[] = "HELLO.TXT";
         char test_str[] = "Initialize application.";
-  uint32_t f_size;
+
+  //uint32_t f_size;
 #endif
 
   //uint32_t f_req;
@@ -129,15 +127,16 @@ void app_init(void)
 
   cli_app_init();
 
-#ifdef TEST_DISPLAY
   // Initialize DISPLAY interface
-  disp_init();
-#endif
+  disp_Init();
 
 #ifdef TEST_SD
   // Initialize file storage of SD card
   fs_sd_log_init();
-  FS_LOG_INFO((const char *)&test_str[0]);
+
+  //IMPORTANT - This the test line In this case logging to file has not had alloyed yet
+  FSLOG_INFO((const char *)&test_str[0]); //The string doesn't log
+  FSLOG_INFO((const char *)&filepath[0]); //The string doesn't log
 #endif
 
 #ifdef TEST_FLASH
@@ -228,10 +227,9 @@ void app_init(void)
 #endif
 
  button_feature_init();
-
+ sim_Init();
 
  fpmt_Init();
-
  fsrv_Init();
  fuim_Init();
  aukh_Init();
@@ -243,7 +241,7 @@ void app_init(void)
 /***************************************************************************//**
  * Initialize application.
  ******************************************************************************/
-
+#if 0
 sl_status_t get_time(char *str_buf)
 {
   sl_status_t sl_status_code = SL_STATUS_OK;
@@ -268,7 +266,7 @@ sl_status_t get_time(char *str_buf)
 
   return sl_status_code;
 }
-
+#endif
 /***************************************************************************//**
  * App ticking function.
  ******************************************************************************/
@@ -282,17 +280,17 @@ void app_process_action(void)
   flash_storage_wakeup_chip(); /*This is the worst way to solve the issue*/
 #endif
 
-#ifdef TEST_DISPLAY
-  disp_process_action();
-#endif
-
   sl_sleeptimer_delay_millisecond(5);
 
+  sim_Update();  //Simulation Data change
   device_working_loop();
+  button_feature_process();  /* button task */
 
   if (aukh_ReadCommand()) {
       aukh_ProcessKey();
   }
+
+  disp_Update();
 
   if ((auph_GetState() != AU_ERROR_STATE )) {
     fuim_Update();//1 The location cannot be changed.
@@ -301,5 +299,7 @@ void app_process_action(void)
 
   fslog_Update();
   fpmt_Update();
+
+
 
 }

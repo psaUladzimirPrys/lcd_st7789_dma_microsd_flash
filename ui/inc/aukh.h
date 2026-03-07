@@ -24,8 +24,11 @@
 
 typedef enum {
 
-  // --- System Startup & Idling ---
-    AU_STARTUP_SPLASH_STATE        //OsteoProbe Boot screen: logo, hardware self-test animation
+   // --- System Power ---
+    AU_STANDBY_STATE = 0     /* @emem OsteoProbe Stand-by on startup */
+
+   // --- System Startup & Idling ---
+   ,AU_STARTUP_SPLASH_STATE        //OsteoProbe Boot screen: logo, hardware self-test animation
    ,AU_IDLE_STATE                  //OsteoProbe Home screen: BLE status, battery, , and usage tips
 
    // --- Connectivity & Data Management ---
@@ -38,7 +41,7 @@ typedef enum {
    ,AU_REFERENCE_CHECK_MEASURE_STATE   //OsteoProbe Reference check: measuring a standard phantom for calibration
    ,AU_PATIENT_MEASURE_STATE           //OsteoProbe Active session: indentation counter, validity, real-time tips
 
-   ,AU_STANDBY_STATE     /* @emem OsteoProbe Stand-by  */
+
    ,AU_MENU_STATE        /* @emem OsteoProbe in Menu      */
    ,AU_DIRECT_STATE      /* @emem OsteoProbe in Normal    */
 

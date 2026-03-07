@@ -4,6 +4,7 @@
 
 #include "fsrv.h"
 
+
 /*=======================================================================*/
 /* L O C A L   F U N C T I O N   P R O T O T Y P E S                     */
 /*=======================================================================*/
@@ -22,7 +23,7 @@ fsrv_display_datastore_t fsrv_display_datastore = {0};
 void fsrv_Init(void)
 {
 
- fsrv_display_datastore.fw_version = "TEST";
+ fsrv_display_datastore.fw_version = "1.30";
  fsrv_display_datastore.serial_num = 1234;
  fsrv_display_datastore.bat_status = BAT_NORMAL;
  fsrv_display_datastore.ble_status = BLE_DISCONNECTED;
@@ -31,7 +32,7 @@ void fsrv_Init(void)
      // strain gauge parameters
 
  fsrv_display_datastore.ref_number = 987;
- fsrv_display_datastore.strain_gause_stat = STATUS_GOOD;  // good/bad
+ fsrv_display_datastore.strain_gause_stat = FSRV_GAUGE_STATUS_GOOD;  // good/bad
  fsrv_display_datastore.strain_gauge_value = 111; // current value
 
      // for measurement mode
@@ -63,16 +64,70 @@ uint32_t fsrv_DS_GetSerialNum(void) {
     return fsrv_display_datastore.serial_num;
 }
 
-st_battery_t fsrv_DS_GetBatStatus(void) {
-    return fsrv_display_datastore.bat_status;
+img_storage_id_t fsrv_DS_GetBatStatus(void) {
+
+  img_storage_id_t img_id = IMG_MAX_IDS_STORAGE_DESC_COUNT;
+
+  switch(fsrv_display_datastore.bat_status)
+  {
+    case BAT_NORMAL:
+      img_id = IMG_ID_PROPERTY_1_BATTERY_100;
+      break;
+
+    case BAT_LOW_50:
+      img_id = IMG_ID_PROPERTY_1_VARIANT2_8;
+      break;
+
+    case BAT_LOW_30:
+      img_id = IMG_ID_PROPERTY_1_VARIANT3_8;
+      break;
+
+    case BAT_LOW_10:
+      img_id = IMG_ID_PROPERTY_1_VARIANT4_7;
+      break;
+
+    case BAT_CRITICAL:
+      img_id = IMG_ID_PROPERTY_1_VARIANT6_7;
+      break;
+
+    case BAT_CHARGING:
+      img_id = IMG_ID_PROPERTY_1_VARIANT5_7;
+      break;
+
+    case BAT_ERROR:
+    default:
+      img_id = IMG_MAX_IDS_STORAGE_DESC_COUNT;
+      break;
+  }
+
+    return  img_id;
 }
 
-st_ble_connect_t fsrv_DS_GetBleStatus(void) {
-    return fsrv_display_datastore.ble_status;
+img_storage_id_t fsrv_DS_GetChargeBatStatus(void)
+{
+
+  if (fsrv_display_datastore.bat_status == BAT_CRITICAL) {
+     return IMG_ID_PROPERTY_1_VARIANT3;
+  }
+
+  return IMG_MAX_IDS_STORAGE_DESC_COUNT;
 }
 
-st_sync_t fsrv_DS_GetSyncStatus(void) {
-    return fsrv_display_datastore.sync_status;
+img_storage_id_t fsrv_DS_GetBleStatus(void)
+{
+  if (fsrv_display_datastore.ble_status == BLE_CONNECTED) {
+    return IMG_ID_PROPERTY_1_LINK;
+  }
+
+  return IMG_MAX_IDS_STORAGE_DESC_COUNT;
+}
+
+img_storage_id_t fsrv_DS_GetSyncStatus(void) {
+
+  if (fsrv_display_datastore.sync_status  == SYNC_COMPLETED) {
+      return IMG_ID_PROPERTY_1_ARROW_PATH;
+  }
+  return IMG_MAX_IDS_STORAGE_DESC_COUNT;
 }
 
 uint32_t fsrv_DS_GetRefNumber(void) {
@@ -80,7 +135,11 @@ uint32_t fsrv_DS_GetRefNumber(void) {
 }
 
 bool fsrv_DS_GetStrainGauseStat(void) {
-    return fsrv_display_datastore.strain_gause_stat;
+
+  if (fsrv_display_datastore.strain_gause_stat == FSRV_GAUGE_STATUS_GOOD) {
+   return FSRV_GAUGE_STATUS_GOOD;
+  }
+   return FSRV_GAUGE_STATUS_BAD;
 }
 
 uint16_t fsrv_DS_GetStrainGaugeValue(void) {

@@ -35,7 +35,7 @@
  
  
 /*=======================================================================*/
-/* L O C A L   D E F I N I T I O N S                     */
+/* L O C A L   D E F I N I T I O N S                                     */
 /*=======================================================================*/
 /*=======================================================================*/
 /* L O C A L   S Y M B O L   D E C L A R A T I O N S                     */
@@ -45,7 +45,15 @@
 /* L O C A L   D A T A   D E F I N I T I O N S                           */
 /*=======================================================================*/
 
-static Byte  active_indicators[FUIM_MAX_INDICATORS];
+static Byte active_indicators[FUIM_MAX_INDICATORS] =
+{
+    EMPTY_INDICATOR,
+    EMPTY_INDICATOR,
+    EMPTY_INDICATOR,
+    EMPTY_INDICATOR,
+    EMPTY_INDICATOR
+};
+
 static Byte  find_IndicatorFocus;
 
 
@@ -58,36 +66,48 @@ static Byte  find_IndicatorFocus;
 const Byte indicator_ids[] =   /*             */
 {/* Index in array  auim_OsdIndicator/<- = ->/       */
 
-    AUIM_INDEX_BATTERY_INDICATOR      /* FIND_ID_BATTERY       Volume (String)   */
-    ,AUIM_INDEX_BLE_INDICATOR          /* FIND_ID_BLE       Volume (String)       */
-    ,AUIM_INDEX_SYNC_INDICATOR         /* FIND_ID_SYNC       Volume (String)      */
+    AUIM_INDEX_BATTERY_INDICATOR    /* FIND_ID_BATTERY       Volume (String)   */
+    ,AUIM_INDEX_BLE_INDICATOR       /* FIND_ID_BLE       Volume (String)       */
+    ,AUIM_INDEX_SYNC_INDICATOR      /* FIND_ID_SYNC       Volume (String)      */
+    ,AUIM_INDEX_SPLASH_SCREEN       /* FIND_ID_SPLASH_SCREEN Company logo (String)     */
+    ,AUIM_INDEX_CHARGE_BATT         /* FIND_ID_CHARGE_BATT  Volume (String)     */
+
 
  //   ,NR_OF_DOUBLE_INDICATORS
-
 };
 
 
-static Bool RestoreAllIndicators;
-static Bool findDisplayTemporaryProgNumber;
-static Bool findDisplayTemporaryClock;
+static Bool RestoreAllIndicators = FALSE;
+ 
 
 /*=======================================================================*/
 /*    L O C A L   F U N C T I O N   P R O T O T Y P E S                  */
 /*=======================================================================*/
 
 
- void CreateIndicator(find_id_enum indicator);
- Bool find_IsRemoveIndicator(fuimIndicatorStruct  *indicator_data_ptr );
-void find_IndicatorAction(fuimIndicatorStruct  *indicator_data_ptr );
+void CreateIndicator(find_id_enum indicator);
+Bool find_IsRemoveIndicator(fuimIndicatorStruct *indicator_data_ptr );
+void find_IndicatorAction(fuimIndicatorStruct *indicator_data_ptr );
 
- void find_ProcessIndicatorAction(cmdKeyNumber action,	fuimFieldStruct  *field_data_ptr );
- void RemoveEmptyIndicator(find_id_enum indicator);
+void find_ProcessIndicatorAction(cmdKeyNumber action,	fuimFieldStruct *field_data_ptr );
+void RemoveEmptyIndicator(find_id_enum indicator);
+
+
+
+
 /*=======================================================================*/
 /*=======================================================================*/
 void find_Init(void)
 {
-   findDisplayTemporaryClock = FALSE;
+  Byte  i;
 
+  for (i = 0; i < FUIM_MAX_INDICATORS; i++ )
+  {
+    active_indicators[i] = EMPTY_INDICATOR;
+  }
+
+  RestoreAllIndicators = FALSE;
+ 
 }
 
 /*=======================================================================*/
@@ -101,39 +121,17 @@ void find_TurnOn(void)
    for (i = 0; i < FUIM_MAX_INDICATORS; i++ )
    {
         active_indicators[i] = EMPTY_INDICATOR;
- 
    }
  
    find_IndicatorFocus = TRUE;
-   RestoreAllIndicators = FALSE;
+   RestoreAllIndicators = TRUE;
 
 }
 
-void find_ChangeDisplayTemporaryClock(void)
-{
-    findDisplayTemporaryClock = ~findDisplayTemporaryClock;
  
-}
-/*=======================================================================*/
-/*=======================================================================*/
-
-Bool find_GetDisplayTemporaryClock(void)
-{
- return  findDisplayTemporaryClock;	
-}
 
 /*=======================================================================*/
 /*=======================================================================*/
-
-void find_ChangeDisplayTemporaryProgNumber(void)
-{
-    findDisplayTemporaryProgNumber = ~findDisplayTemporaryProgNumber;
-//	rpms_Set1Bit( FPMS_TV_SETUP , FIND_CFG_DISPLAY_PROG_NUMBER  , findDisplayTemporaryProgNumber  );
-}
-
-
-
-
 /*=======================================================================*/
 /*************************************************************************
    @func   This displays an indicator on the screen.
@@ -147,13 +145,22 @@ void find_ChangeDisplayTemporaryProgNumber(void)
 **************************************************************************/  
 void find_RestoreIndicators(void)
 {
+   auphOsteoState_enum auph_curr_state = auph_GetState();    
   
-   find_DisplayIndicator(FIND_ID_BATTERY);
    
-   if ( findDisplayTemporaryClock )
+   if (auph_curr_state == AU_STARTUP_SPLASH_STATE)
    {
-   	find_DisplayIndicator(FIND_ID_CLOCK);
+   	 find_DisplayIndicator(FIND_ID_SPLASH_SCREEN);
    }
+   else
+   {
+     find_DisplayIndicator(FIND_ID_BATTERY);
+     find_DisplayIndicator(FIND_ID_BLE);
+     find_DisplayIndicator(FIND_ID_SYNC);
+     find_DisplayIndicator(FIND_ID_CHARGE_BATT);
+   }
+
+
 
 }   
 /*=======================================================================*/
@@ -181,14 +188,6 @@ void find_RemoveAllIndicators(void)
          find_RemoveIndicator( active_indicators[i] );
       }
    }
-#if 0
-   for( i = 0; i < FUIM_MAX_NR_OF_ROWS ;i++)
-  
-  {
-   plt_CCSetPosition(i, 0 );
-   plt_CCDrawChar(' '); 
-  }
-#endif
 }
 
 /*=======================================================================*/
@@ -260,10 +259,6 @@ void CreateIndicator(find_id_enum indicator)
 /*=======================================================================*/
 void find_Update(void)
 {
-
- if (  ( auph_GetState() != AU_ERROR_STATE )
-     &&( auph_GetState() != AU_STARTUP_SPLASH_STATE)  )
- {
    Byte  i, indicator;
    
    for (i = 0; i < FUIM_MAX_INDICATORS; i++)
@@ -280,7 +275,6 @@ void find_Update(void)
      RestoreAllIndicators = FALSE;
    } 
 
- }
 } 
 /*=======================================================================*/
 /*************************************************************************
@@ -291,59 +285,25 @@ void find_Update(void)
 **************************************************************************/  
 void find_RemoveIndicator(find_id_enum indicator)
 {
-   Byte  active;
-osdDialogHandle  handle;
 
+Byte  active;
+osdDialogHandle handle;
 
-   if (find_IsIndicatorDisplayed(indicator))
-   {
+  if (find_IsIndicatorDisplayed(indicator)) {
 
-      active = 0;
+    active = 0;
 
-      while (active_indicators[active] != indicator)
-      {
+    while (active_indicators[active] != indicator) {
       active++;
-      }
+    }
 
-	   if (indicator_ids[indicator] < NR_OF_DOUBLE_INDICATORS)
-	   { 
-       handle = fuim_GetIndicatorHandle((fuimIndicatorStruct   *)&auim_OsdIndicator[indicator_ids[indicator]]);
-	     fuim_DestroyIndicator(handle);
-	   }
-/*	   else
-	   {
-			switch(indicator)
-	  		{
-	 
-	        case FIND_ID_SOURCE:	{
-	
-            fuim_DestroyIndicator(fuim_GetIndicatorHandle(&auim_OsdIndicator[AUIM_INDEX_PROGRAM_NUMBER_INDICATOR]));
-            fuim_DestroyIndicator(fuim_GetIndicatorHandle(&auim_OsdIndicator[AUIM_INDEX_PROGRAM_STRING_INDICATOR]));
-	                             
-									} break;
-	         case FIND_ID_MENU:	{
-								fuim_DestroyIndicator(fuim_GetIndicatorHandle(&auim_OsdIndicator[AUIM_INDEX_MENU_INDICATOR]));
-								fuim_DestroyIndicator(fuim_GetIndicatorHandle(&auim_OsdIndicator[AUIM_INDEX_MENU_INDICATOR_LEFT]));
-								fuim_DestroyIndicator(fuim_GetIndicatorHandle(&auim_OsdIndicator[AUIM_INDEX_MENU_INDICATOR_RIGHT]));
-								}break;
-  	       case FIND_ID_NO_SIGNALS:
-								{
-							    fuim_DestroyIndicator(fuim_GetIndicatorHandle(&auim_OsdIndicator[AUIM_INDEX_NO_SIGNAL_INDICATOR]));
-							    fuim_DestroyIndicator(fuim_GetIndicatorHandle(&auim_OsdIndicator[AUIM_INDEX_NO_SIGNAL_TIME_INDICATOR]));
-								}break;
-	
-		   case FIND_ID_NO_PROGRAM:
-								{
-		    fuim_DestroyIndicator(fuim_GetIndicatorHandle(&auim_OsdIndicator[AUIM_INDEX_NO_PROGRAM_INDICATOR_1]));
-		    fuim_DestroyIndicator(fuim_GetIndicatorHandle(&auim_OsdIndicator[AUIM_INDEX_NO_PROGRAM_INDICATOR_2]));
-	 							 }break;
-	
-		 	 }
+    if (indicator_ids[indicator] < NR_OF_DOUBLE_INDICATORS) {
+      handle = fuim_GetIndicatorHandle((fuimIndicatorStruct   *)&auim_OsdIndicator[indicator_ids[indicator]]);
+      fuim_DestroyIndicator(handle);
+    }
 
-	    }*/
- 
-      active_indicators[active] = EMPTY_INDICATOR;
-   }
+    active_indicators[active] = EMPTY_INDICATOR;
+  }
 
 }   
 
@@ -402,59 +362,28 @@ Bool find_IsRemoveIndicator(fuimIndicatorStruct  *  indicator_data_ptr )
 /*                                                                       */
 /*=======================================================================*/
 void RemoveEmptyIndicator(find_id_enum indicator)
- {
+{
  
  fuimIndicatorStruct *indicator_data_ptr;
  Bool PassRemove = TRUE; 
- Byte   active;
-   if (indicator_ids[ indicator ] < NR_OF_DOUBLE_INDICATORS)
-   {
-        indicator_data_ptr = (fuimIndicatorStruct *)&auim_OsdIndicator[indicator_ids[indicator ]];
-               PassRemove &= find_IsRemoveIndicator(indicator_data_ptr  );
-    }
-   /*
-      else
-      {
-       switch(indicator)
-           {
-            case FIND_ID_SOURCE:{
+ Byte active = 0;
 
-    find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_PROGRAM_NUMBER_INDICATOR] );
-    find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_PROGRAM_STRING_INDICATOR]  );
-
-                 }break;
-            case FIND_ID_MENU:{
-    find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_MENU_INDICATOR_LEFT]  );
-    find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_MENU_INDICATOR]  );
-    find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_MENU_INDICATOR_RIGHT]  );
-
-                 }break;
-      case FIND_ID_NO_PROGRAM:{
-
-       find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_NO_PROGRAM_INDICATOR_1]);
-       find_IndicatorAction(&auim_OsdIndicator[AUIM_INDEX_NO_PROGRAM_INDICATOR_2]);
-
-         }break;
-
-            default: break;
-
-           }
-
-      }
-   */
-
+  if (indicator_ids[ indicator ] < NR_OF_DOUBLE_INDICATORS) {
+      indicator_data_ptr = (fuimIndicatorStruct *)&auim_OsdIndicator[ indicator_ids[indicator] ];
+             PassRemove &= find_IsRemoveIndicator(indicator_data_ptr  );
+  }
 
   if(PassRemove == TRUE) {
     if (find_IsIndicatorDisplayed(indicator)) {
 
-        active = 0;
+      active = 0;
 
-        while (active_indicators[active] != indicator) {
-          active++;
-        }
+      while (active_indicators[active] != indicator) {
+        active++;
+      }
 
-        active_indicators[active] = EMPTY_INDICATOR;
-     }
+      active_indicators[active] = EMPTY_INDICATOR;
+    }
   }
   
 }    

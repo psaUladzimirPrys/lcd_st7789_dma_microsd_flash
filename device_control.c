@@ -134,7 +134,6 @@ void device_working_loop(void)
 
 
       device_state_curr = DEVICE_IDLE;
-      auph_SetState(AU_IDLE_STATE);
     break;
 
     case DEVICE_IDLE:
@@ -165,8 +164,6 @@ void device_working_loop(void)
       app_log("Device State Machine: Unknown state\r\n");
     break;
   }
-
-  button_feature_process();
 
 
 }

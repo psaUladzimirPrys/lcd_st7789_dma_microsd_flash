@@ -15,6 +15,7 @@
 #include "auim_api.h"
 #include "auim_mnu.h"
 #include "aukh.h"
+#include "fsrv.h"
 
 
 
@@ -46,9 +47,9 @@ enum configuration_fields_index_enum
 
 const fmnu_ListStruct ListDataGoodBad[]=
 {
-  {0,  FMNU_LIST_ITEMS_BAD}
- ,{1,  FMNU_LIST_ITEMS_GOOD}
- ,{255, FMNU_LIST_ITEMS_ERROR}
+  { FSRV_GAUGE_STATUS_BAD,   FMNU_LIST_ITEMS_BAD  }
+ ,{ FSRV_GAUGE_STATUS_GOOD,  FMNU_LIST_ITEMS_GOOD }
+ ,{ 255,                     FMNU_LIST_ITEMS_ERROR}
 };
 
 const fuimDialogNavigation auim_CongigurationMenuDialogKeys[] = {
@@ -136,7 +137,7 @@ const fuimFieldStruct auim_ConfigurationMenuFields[AUIM_MNU_CONFIG_MAX_FIELD] = 
   IMG_ID_PROPERTY_1_VARIANT7_6,//osdStringID   Prompt;
   AUIM_MENU_FIELD_COLOUR,//Byte PromptColour;
   AUIM_CHANGE_AV_SOURSE,       //Byte ChangeFunction;
-  AUIM_GET_AV_SOURSE,//Byte       GetFunction;
+  AUIM_GET_STRAIN_GAUSE_STATUS,//Byte       GetFunction;
   0,//Byte      SetFunction;
   {0},//TFieldSize    FieldSize;
   {0},//TFieldScaling   FieldScaling;

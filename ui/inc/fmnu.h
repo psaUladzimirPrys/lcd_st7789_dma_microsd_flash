@@ -22,8 +22,8 @@
 #define FMNU_SUB_MAIN_MENU  1
 #define FMNU_MESSAGE_BOARD  2
 
-#define FMNU_NONE_PROMPT IMG_ID_COUNT
-#define FMNU_NONE_TITLE  FMNU_NONE_PROMPT
+#define FMNU_NONE_PROMPT  IMG_MAX_IDS_STORAGE_DESC_COUNT
+#define FMNU_NONE_TITLE   FMNU_NONE_PROMPT
 
 /*==========================================================================*/
 /*        G L O B A L   D A T A   D E C L A R A T I O N S                   */
@@ -34,9 +34,9 @@ typedef struct {
 
     Byte Type;   /* Menu type {FMNU_MAIN_MENU, FMNU_SUB_MAIN_MENU, FMNU_MESSAGE_BOARD} */
 
-    Byte Xpos;   // X position
-    Byte Ypos;   // Y position
-    Byte Width;  // Menu width
+    Word Xpos;   // X position
+    Word Ypos;   // Y position
+    Word Width;  // Menu width
 
     Byte Title;  //ID of the Title string
 
@@ -44,8 +44,8 @@ typedef struct {
     /* Title rendering attributes - fuim_Attributes
        Includes foreground/background color, size, shadow, etc. */
 
-    Byte PromptPos;
-    Byte ValuePos;
+    Word PromptPos;
+    Word ValuePos;
 
     fuimFieldStruct const *MenuField;
     // Pointer to an array of field structures
@@ -79,14 +79,14 @@ typedef struct {
 
 typedef struct {
 
-    Byte FirstPos;   /* First column position used by the menu/all fields
+    Word FirstPos;   /* First column position used by the menu/all fields
                         equals MenuDataPtr->HorLocation */
 
-    Byte PromptPos;  /* Column position where the prompt starts */
-    Byte ValuePos;   /* Position where the value starts */
-    Byte EndPos;     /* Position of the end-box character */
-    Byte ValueWidth; /* Total width of the value */
-    Byte FieldWidth; /* Total width of the field */
+    Word PromptPos;  /* Column position where the prompt starts */
+    Word ValuePos;   /* Position where the value starts */
+    Word EndPos;     /* Position of the end-box character */
+    Word ValueWidth; /* Total width of the value */
+    Word FieldWidth; /* Total width of the field */
 
     Byte FirstFieldNr;  /* Number of the first drawn field of the menu */
     Byte LastFieldNr;   /* Number of the last drawn field of the menu */

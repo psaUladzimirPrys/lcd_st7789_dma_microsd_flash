@@ -119,7 +119,7 @@ typedef struct {
 /*=======================================================================*/
  /*
      @enum fuim_TimerParentType | A timer can be associated with:
- */
+ =======================================================================*/
 typedef enum {
    FUIM_TIMERPARENTTYPE_MENU,      /* @emem The timer is associated with a menu */
    FUIM_TIMERPARENTTYPE_INDICATOR    /* @emem The timer is associated with an indicator */
@@ -138,6 +138,8 @@ enum Timer_ID {
 
 /*=======================================================================*/
 typedef enum  {
+
+  FUIM_FIELDTYPE_STRING_ID,    //String by ID
   FUIM_FIELDTYPE_SPACER,
   FUIM_FIELDTYPE_SLIDER,
   FUIM_FIELDTYPE_SLIDER_WRITE_ERASE,
@@ -159,7 +161,7 @@ typedef enum  {
 /*=======================================================================*/
 /*
     @enum fuim_Validity | Validity describes the appearance of a field in the dialog:
-*/
+==========================================================================*/
 typedef enum
 {
   FUIM_VALIDITY_NOTPRESENT, /* Field is not present (so not selectable and/or visible) */
@@ -229,7 +231,7 @@ osdStringID   Button;             /* ID - надписи на нопке*/
 
 /*=======================================================================*/
 typedef struct {
-  Byte Action; /* Action field (key number)*/
+  Byte Action;         /* Action field (key number)*/
   Byte DialogFunction; /*Field of the function that is executed when the key is pressed. This is like an index in the function observer table*/
 } fuimDialogNavigation;
 
@@ -309,10 +311,10 @@ typedef struct {
  * */
 /*=======================================================================*/
 typedef struct {
-  Byte VertLocation; //Row number where the upper left corner is located
-  Byte HorLocation; //Column number where the upper left corner is located
-  Byte ValuePos; /* @field total width of the field */
-  Byte TimeOut; //Value in seconds for how long to display the field
+  Word VertLocation; //Row number where the upper left corner is located
+  Word HorLocation; //Column number where the upper left corner is located
+  Word ValuePos; /* @field total width of the field */
+  Word TimeOut; //Value in seconds for how long to display the field
   const fuimFieldStruct *Field;//Pointer to the drawing and control structure
 
 } fuimIndicatorStruct;
@@ -320,20 +322,20 @@ typedef struct {
 
 /*=======================================================================*/
 typedef struct {
-  Byte  FirstPos;       /* @field Первая позиция столбца used by the menu/all fields equals MenuDataPtr->HorLocation */
-  Byte  PromptPos ;       /* @field column-position where the prompt starts */
-  Byte  ValuePos ;        /* @field position where the value starts */
-  Byte  EndPos;         /* @field position of the end-box character */
-  Byte    ValueWidth ;        /* @field total width of the value */
-  Byte    FieldWidth ;        /* @field total width of the field */
+  Word  FirstPos;       /* @field first column-position used by the menu/all fields equals MenuDataPtr->HorLocation */
+  Word  PromptPos;      /* @field column-position where the prompt starts */
+  Word  ValuePos;       /* @field position where the value starts */
+  Word  EndPos;         /* @field position of the end-box character */
+  Word  ValueWidth;     /* @field total width of the value */
+  Word  FieldWidth;     /* @field total width of the field */
 }fuim_IndicatorProperty;
 
 
 /*MPF=======================================================================*/
  typedef struct
 {
-  Byte          PromptColour;    /* @field Colour ID of function which returns pointer to a colour struct (FUIM_FIELD_DYNAMIC_COLOURS_SWITCH = GTV_ALWAYS) or pointer to colour struct used when displaying the field of this field as specified in fuimColourStruct (FUIM_FIELD_DYNAMIC_COLOURS_SWITCH = GTV_NEVER). */
-  Byte              GetFunction; /* @field Observer ID of function which will return the text of the field. */
+  Byte        PromptColour;    /* @field Colour ID of function which returns pointer to a colour struct (FUIM_FIELD_DYNAMIC_COLOURS_SWITCH = GTV_ALWAYS) or pointer to colour struct used when displaying the field of this field as specified in fuimColourStruct (FUIM_FIELD_DYNAMIC_COLOURS_SWITCH = GTV_NEVER). */
+  Byte        GetFunction; /* @field Observer ID of function which will return the text of the field. */
   Byte        Alignment;   /* @field Alignment of text in field as specified in fuim_Alignment */
 } fuimFixedFieldStruct;
 
@@ -400,8 +402,6 @@ typedef enum
 /*
     @enum fuim_Alignment |  The type of alignment of the text in a fixed field can be:
 */
-//Совмещаем значения т к в на фиксированные поля никогда не ставится никакой указатель
-// На них нет действия
 typedef enum
 {
   FUIM_ALIGNMENT_LEFT = 0,      /* @emem text will be left aligned */
@@ -423,48 +423,58 @@ typedef enum
 
 } fuim_AlignmentRepeated;
 
+typedef enum {
+   FUIM_FONT_SIZE_SMALL = 0
+  ,FUIM_FONT_SIZE_LARGE
+  ,FUIM_MAX_FONT_SIZE
+} fuim_FontSize;
+
+typedef enum {
+   FUIM_FONT_COLOR_1 = 0
+  ,FUIM_FONT_COLOR_2
+  ,FUIM_FONT_COLOR_3
+  ,FUIM_FONT_COLOR_4
+  ,FUIM_MAX_FONT_COLOR
+} fuim_FontColor;
+
 
 void fuim_Init(void);
-
 void fuim_TurnOn(void);
+void fuim_Update(void);
 void fuim_TurnOff(void);
 
-void fuim_Update(void);
 
+void fuim_InitIndicators(void);
 
-void fuim_InitIndicators( void );
+void fuim_DrawTitle(img_storage_id_t img_id, Word width, Word bg_color, Bool remove);
 
-void fuim_DrawTitle(img_storage_id_t img_id, Byte width, Word bg_color, Bool remove);
+osdTimerHandle fuim_ConstructTimer(Byte TimeoutSeconds,Byte TimerID,osdDialogHandle hDialog);
+void fuim_DestroyTimer(osdTimerHandle * hTimer);
+void fuim_RestartTimer(osdTimerHandle hTimer, Byte TimeoutInSeconds);
 
-osdTimerHandle fuim_ConstructTimer( Byte TimeoutSeconds,Byte TimerID,osdDialogHandle hDialog );
-void fuim_DestroyTimer(osdTimerHandle *hTimer );
-void fuim_RestartTimer(osdTimerHandle hTimer,  Byte TimeoutInSeconds );
-
-osdDialogHandle fuim_ConstructIndicator(fuimIndicatorStruct *indicator_data_ptr);
-void fuim_UpdateIndicator(osdDialogHandle handle,Bool restart_timer);
-void fuim_DestroyIndicator(osdDialogHandle indicator );
+osdDialogHandle fuim_ConstructIndicator(fuimIndicatorStruct * indicator_data_ptr);
+void fuim_UpdateIndicator(osdDialogHandle handle, Bool restart_timer);
+void fuim_DestroyIndicator(osdDialogHandle indicator);
 
 
 
 osdDialogHandle fuim_GetIndicatorHandle(fuimIndicatorStruct   *indicator_data_ptr);
-void fuim_SetIndicatorTimeOut (osdDialogHandle hDialog,  Byte TimeOutInSeconds  );
+void fuim_SetIndicatorTimeOut(osdDialogHandle hDialog,  Byte TimeOutInSeconds);
 
-void fuim_SetColumnPosition( Byte column );
-void fuim_SetRowPosition( Byte row );
+void fuim_SetColumnPosition(Word column);
+void fuim_SetRowPosition(Word row);
 
-Byte fuim_GetRowPosition( void );
+Word fuim_GetRowPosition(void);
+Word fuim_GetColumnPosition(void);
+void fuim_SetNextRow(void);
 
-Byte fuim_GetColumnPosition( void );
-void fuim_SetNextRow( void);
-
-void fuim_SetAttributes(  Byte Attributes );
-void fuim_SetBackgroundColour(Byte BackgroundColour, Byte SetAt);
+void fuim_SetAttributes(Byte Attributes);
 
 void fuim_ConstructString(fuimFieldStruct  *field_data_ptr, Bool Highlighted);
-void fuim_ConstructIndicatorValue( fuimFieldStruct  *field_data_ptr );
-void fuim_ConstructIndicatorPrompt(fuimFieldStruct  *field_data_ptr,  Byte value_position );
+void fuim_ConstructIndicatorValue(fuimFieldStruct  * field_data_ptr);
+void fuim_ConstructIndicatorPrompt(fuimFieldStruct  * field_data_ptr, Word value_position);
 void fuim_DrawString(img_storage_id_t img_id);
 
-fuimColourStruct  *fuim_DynamicColours ( Byte index );
+fuimColourStruct  *fuim_DynamicColours(Byte index);
 
 #endif /* _HFUIM_H */

@@ -40,11 +40,11 @@ typedef enum
 } log_level_t;
 
 
-#define FSLOG_ERROR(...)    log_printf(LOG_LEVEL_ERROR, __VA_ARGS__)
-#define FSLOG_WARNING(...)  log_printf(LOG_LEVEL_WARN,  __VA_ARGS__)
-#define FSLOG_INFO(...)     log_printf(LOG_LEVEL_INFO,  __VA_ARGS__)
-#define FSLOG_DEBUG(...)    log_printf(LOG_LEVEL_DEBUG, __VA_ARGS__)
-#define FSLOG_ALL(...)      log_printf(LOG_LEVEL_ALL, __VA_ARGS__)
+#define FSLOG_ERROR(...)    fslog_printf(LOG_LEVEL_ERROR, __VA_ARGS__)
+#define FSLOG_WARNING(...)  fslog_printf(LOG_LEVEL_WARN,  __VA_ARGS__)
+#define FSLOG_INFO(...)     fslog_printf(LOG_LEVEL_INFO,  __VA_ARGS__)
+#define FSLOG_DEBUG(...)    fslog_printf(LOG_LEVEL_DEBUG, __VA_ARGS__)
+#define FSLOG_ALL(...)      fslog_printf(LOG_LEVEL_ALL, __VA_ARGS__)
 
 /*******************************************************************************
  **************************   GLOBAL FUNCTIONS   *******************************
@@ -84,14 +84,14 @@ sl_status_t fs_sd_append_to_file(const char   *file_path,
 
 void fs_sd_log_init(void);
 
+
+void fslog_Init(void);
 void fslog_Update(void);
 void fslog_TurnOn(void);
 void fslog_TurnOff(void);
 bool fslog_IsEnabled(void);
 
-
 void fslog_printf(log_level_t level, const char *fmt, ...);
-
 
 
 #endif /* FILE_STORAGE_H_ */

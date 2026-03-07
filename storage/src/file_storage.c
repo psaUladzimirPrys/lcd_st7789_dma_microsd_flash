@@ -20,10 +20,10 @@
 /*=======================================================================*/
 /* L O C A L   D E F I N I T I O N S                     */
 /*=======================================================================*/
-#define FS_LOG_PRINTF_BUFFER_SIZE    128
-#define FS_LOG_RING_BUFFER_SIZE   1024
-#define FS_LOG_FLUSH_THRESHOLD     256
-#define FS_LOG_FILE_PATH          "log.txt"
+#define FS_LOG_PRINTF_BUFFER_SIZE   128
+#define FS_LOG_RING_BUFFER_SIZE     1024
+#define FS_LOG_FLUSH_THRESHOLD      256
+#define FS_LOG_FILE_PATH           "log.txt"
 
 #define FS_LOG_ENABLE          true
 #define FS_LOG_DISABLE         false
@@ -46,6 +46,8 @@ static FIL   File;                      // File object structure
 static bool sd_mounted = false;         // Mounting flag.
 
 static volatile bool g_log_enabled = FS_LOG_DISABLE; //Logging flag - Enable/Disable
+static uint8_t fslog_flush_buffer[FS_LOG_FLUSH_THRESHOLD];
+static char fslog_printf_buffer[FS_LOG_PRINTF_BUFFER_SIZE];
 
 static uint8_t ring_buffer[FS_LOG_RING_BUFFER_SIZE];
 static volatile uint16_t ring_head = 0;
@@ -132,7 +134,7 @@ void log_write(const char *str)
 {
   uint16_t len;
 
-  if (g_log_enabled == false)
+  if (!g_log_enabled)
     return;
 
   if (!sd_mounted) {
@@ -173,9 +175,7 @@ void log_write(const char *str)
  */
 void log_flush_task(void)
 {
-  uint8_t temp_buf[FS_LOG_FLUSH_THRESHOLD];
   uint16_t chunk;
-
 
   if (ring_used < FS_LOG_FLUSH_THRESHOLD) {
     return;
@@ -186,7 +186,7 @@ void log_flush_task(void)
           : ring_used;
 
   for (uint16_t i = 0; i < chunk; i++) {
-    temp_buf[i] = ring_buffer[ring_tail++];
+    fslog_flush_buffer[i] = ring_buffer[ring_tail++];
     if (ring_tail >= FS_LOG_RING_BUFFER_SIZE) {
         ring_tail = 0;
     }
@@ -200,7 +200,7 @@ void log_flush_task(void)
       return;
   }
 
-  if (fs_sd_append_to_file(FS_LOG_FILE_PATH, temp_buf, chunk) != SL_STATUS_OK) {
+  if (fs_sd_append_to_file(FS_LOG_FILE_PATH, fslog_flush_buffer, chunk) != SL_STATUS_OK) {
     app_log("Append to file: Failed\r\n");
     app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
@@ -820,7 +820,7 @@ void fslog_Update(void)
 
 void log_vprintf(log_level_t level, const char *fmt, va_list args)
 {
-  char buffer[FS_LOG_PRINTF_BUFFER_SIZE];
+
   int len;
 
   if (!g_log_enabled)
@@ -834,16 +834,16 @@ void log_vprintf(log_level_t level, const char *fmt, va_list args)
   }
 
   /* format */
-  len = vsnprintf((char *)&buffer[0], sizeof(buffer), fmt, args);
+  len = vsnprintf((char *)&fslog_printf_buffer[0], sizeof(fslog_printf_buffer), fmt, args);
   if (len <= 0) {
     return;
   }
 
-  if (len > (int)sizeof(buffer)) { /* truncate buffer[LOG_PRINTF_BUFFER_SIZE] overflow */
-    len = sizeof(buffer);
+  if (len > (int)sizeof(fslog_printf_buffer)) { /* truncate buffer[LOG_PRINTF_BUFFER_SIZE] overflow */
+    len = sizeof(fslog_printf_buffer);
   }
 
-  log_write((const char*)&buffer[0]);
+  log_write((const char*)&fslog_printf_buffer[0]);
 
 }
 
@@ -860,10 +860,10 @@ void fslog_Init(void)
 
   g_log_enabled = FS_LOG_DISABLE;
 
-// Initialize ring buffer for logging
-memset((void *)&ring_buffer[0],0x00, sizeof(ring_buffer));
-ring_head = 0;
-ring_tail = 0;
-ring_used = 0;
+  // Initialize ring buffer for logging
+  memset((void *)&ring_buffer[0],0x00, sizeof(ring_buffer));
+  ring_head = 0;
+  ring_tail = 0;
+  ring_used = 0;
 
 }

@@ -1,6 +1,6 @@
 #include "img_storage.h"
 
-const img_storage_descriptor_t img_storage_desc[] =
+const img_storage_descriptor_t img_storage_desc[IMG_MAX_IDS_STORAGE_DESC_COUNT] =
 {
     {
         .storage_address = IMG_A_ADDRESS,
@@ -237,6 +237,12 @@ const img_storage_descriptor_t img_storage_desc[] =
         .height = 33
     },
     {
+        .storage_address = IMG_PROPERTY_1_VARIANT11_5_ADDRESS,
+        .data_size = 1008,
+        .width = 18,
+        .height = 28
+    },
+    {
         .storage_address = IMG_PROPERTY_1_VARIANT11_ADDRESS,
         .data_size = 4640,
         .width = 40,
@@ -246,6 +252,12 @@ const img_storage_descriptor_t img_storage_desc[] =
         .storage_address = IMG_PROPERTY_1_VARIANT12_ADDRESS,
         .data_size = 14586,
         .width = 221,
+        .height = 33
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT13_ADDRESS,
+        .data_size = 8646,
+        .width = 131,
         .height = 33
     },
     {
@@ -639,25 +651,7 @@ const img_storage_descriptor_t img_storage_desc[] =
         .height = 32
     },
     {
-        .storage_address = IMG_UNION1_OUT_ADDRESS,
-        .data_size = 19602,
-        .width = 99,
-        .height = 99
-    },
-    {
-        .storage_address = IMG_UNION2_OUT_ADDRESS,
-        .data_size = 19602,
-        .width = 99,
-        .height = 99
-    },
-    {
         .storage_address = IMG_UNION3_OUT_ADDRESS,
-        .data_size = 19602,
-        .width = 99,
-        .height = 99
-    },
-    {
-        .storage_address = IMG_UNION4_OUT_ADDRESS,
         .data_size = 19602,
         .width = 99,
         .height = 99
@@ -670,4 +664,4 @@ const img_storage_descriptor_t img_storage_desc[] =
     },
 };
 
-const uint32_t img_storage_desc_count = IMG_ID_COUNT;
+const uint32_t img_storage_desc_count = IMG_MAX_IDS_STORAGE_DESC_COUNT;

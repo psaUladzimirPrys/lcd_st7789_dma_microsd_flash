@@ -46,7 +46,7 @@ static fuimFieldStruct *active_field_ptr;    //Pointer to the current field
 static Byte active_index_menu;               //Index of the current active menu
 /*****************************************************************************/
 static fmnu_MenuProperty  MenuDialogProperties;
-static              Byte  osd_row[ FUIM_MAX_DISPLAY_FIELDS ];
+static              Word  osd_row[ FUIM_MAX_DISPLAY_FIELDS ];
 static   fuimFieldStruct * displayed_fields[ FUIM_MAX_DISPLAY_FIELDS ];
 
 /* active_menu_handle will store the handle of the currently displayed and active menu.
@@ -85,8 +85,8 @@ void fmnu_UpdateValueField(  fuimFieldStruct *field_data_ptr, Bool Highlighted);
 
 //void fmnu_ConstructSpaser(void);
 
-void fmnu_ConstructTitle(Bool SelectPtr,  Byte width);
-void fmnu_DestroyTitle  (Bool SelectPtr,  Byte MenuWidth);
+void fmnu_ConstructTitle( Bool SelectPtr,  Word MenuWidth);
+void fmnu_DestroyTitle  (Bool SelectPtr,  Word MenuWidth);
 
 void fmnu_DestroyField(fmnu_MenuProperty *position);
 
@@ -97,7 +97,7 @@ void fmnu_ConstructValue(fuimFieldStruct *field_data_ptr, Bool Highlighted);
 //void fmnu_ConstructEmptyField(  Bool SelectPtr );
 
 
-void fmnu_ConstructMenuPrompt(fuimFieldStruct *field_data_ptr, Byte value_position);
+void fmnu_ConstructMenuPrompt(fuimFieldStruct *field_data_ptr, Word value_position);
 void fuim_ConstructNumeric(   fuimFieldStruct *field_data_ptr, Bool Highlighted);
 
 
@@ -205,12 +205,12 @@ void fmnu_ConstructMenuField(fuimFieldStruct  *field_data_ptr, Bool Highlighted 
 // Byte character;
 
  Byte   MenuValidity;
- Byte   MenuXpos  = fmnu_menu_data_ptr ->Xpos;
- Byte   MenuYpos = 0;
- Byte   MenuWidth = fmnu_menu_data_ptr ->Width;
- Byte   MenuPromptPos = fmnu_menu_data_ptr ->PromptPos;
- Byte   MenuValuePos  = fmnu_menu_data_ptr ->ValuePos;
- Byte   Count;
+ Word   MenuXpos  = fmnu_menu_data_ptr ->Xpos;
+ Word   MenuYpos = 0;
+ Word   MenuWidth = fmnu_menu_data_ptr ->Width;
+ Word   MenuPromptPos = fmnu_menu_data_ptr ->PromptPos;
+ Word   MenuValuePos  = fmnu_menu_data_ptr ->ValuePos;
+ Word   Count;
 
 #if 0
  Byte   cursor_char;
@@ -263,29 +263,29 @@ void fmnu_ConstructMenuField(fuimFieldStruct  *field_data_ptr, Bool Highlighted 
     /*************************************************************************************/
 
     ////////////////////////////////////////////Установка конца/////////////////////////////////////////
-      fuim_SetBackgroundColour( FUIM_COLOUR_TRANSPARENT, TRUE );
+      plt_CCSetBackgroundColour( FUIM_COLOUR_TRANSPARENT);
       fuim_SetAttributes( FUIM_ATTRIBUTES_NONE );
-      MY_plt_CCSetPosition(MenuYpos ,(MenuXpos+MenuWidth));
+      plt_CCSetPosition(MenuYpos ,(MenuXpos+MenuWidth));
 
     /*************************************************************************************/
     //////////////////////////////////////////////Установка начала//////////////////////////////////////
 
      // plt_CCSetRowSize(  Attribute & (FUIM_ATTRIBUTES_DOUBLEHEIGHT + FUIM_ATTRIBUTES_DOUBLEWIDTH));//, fuim_GetRowPosition() );
 
-      MY_plt_CCSetPosition(fuim_GetRowPosition(), 0);
+      plt_CCSetPosition(fuim_GetRowPosition(), 0);
 
       //plt_CCSetForegroundColour(ForeGndColour);
-      //fuim_SetBackgroundColour(BackGndColour, FALSE);
+      //plt_CCSetBackgroundColour(BackGndColour);
 
-      MY_plt_CCSetPosition(MenuYpos, MenuXpos );
+      plt_CCSetPosition(MenuYpos, MenuXpos );
 
       if(Highlighted)
       {
 
-      //plt_CCSetForegroundColour(  ForeGndColour);
-       //   fuim_SetAttributes(   Attribute);
-      //    fuim_SetBackgroundColour(   BackGndColour, TRUE);
-      MY_plt_CCSetPosition(MenuYpos, MenuXpos + 1 );
+      //plt_CCSetForegroundColour(ForeGndColour);
+      // fuim_SetAttributes(Attribute);
+      //plt_CCSetBackgroundColour(BackGndColour);
+      plt_CCSetPosition(MenuYpos, MenuXpos + 1 );
 
       fuim_SetColumnPosition(fuim_GetColumnPosition() + 1 );
 
@@ -313,17 +313,17 @@ void fmnu_ConstructMenuField(fuimFieldStruct  *field_data_ptr, Bool Highlighted 
 
 
   fuim_SetAttributes( AttributeHighLighted);
-  fuim_SetBackgroundColour( BackGndColourHighLighted,TRUE);
+  plt_CCSetBackgroundColour( BackGndColourHighLighted);
 
-  MY_plt_CCSetPosition(fuim_GetRowPosition() |PLT_CC_SERIAL_0_AT,MenuPromptPos);
+  plt_CCSetPosition(fuim_GetRowPosition() |PLT_CC_SERIAL_0_AT,MenuPromptPos);
 
   fuim_SetColumnPosition( MenuPromptPos+1 );
 
   plt_CCSetForegroundColour( ForeGndColourHighLighted );
 
   fuim_SetAttributes( AttributeHighLighted);
-  fuim_SetBackgroundColour( BackGndColourHighLighted,FALSE);
-  MY_plt_CCSetPosition(fuim_GetRowPosition() |PLT_CC_SERIAL_1_AFTER,fuim_GetColumnPosition());
+  plt_CCSetBackgroundColour( BackGndColourHighLighted);
+  plt_CCSetPosition(fuim_GetRowPosition() |PLT_CC_SERIAL_1_AFTER,fuim_GetColumnPosition());
   fuim_SetColumnPosition( MenuPromptPos + 2 );
 
   plt_CCSetForegroundColour( ForeGndColourHighLighted );
@@ -340,17 +340,17 @@ void fmnu_ConstructMenuField(fuimFieldStruct  *field_data_ptr, Bool Highlighted 
 
 
      //   fuim_SetAttributes( Attribute);
-      //  fuim_SetBackgroundColour( BackGndColour,TRUE);
+      //  plt_CCSetBackgroundColour( BackGndColour);
 
-        MY_plt_CCSetPosition(fuim_GetRowPosition(),fuim_GetColumnPosition());
+        plt_CCSetPosition(fuim_GetRowPosition(),fuim_GetColumnPosition());
 
         fuim_SetColumnPosition( fuim_GetColumnPosition() + 1 );
 
       //  plt_CCSetForegroundColour( ForeGndColour );
       //  fuim_SetAttributes( Attribute);
-      //  fuim_SetBackgroundColour( BackGndColour,FALSE);
+      //  plt_CCSetBackgroundColour( BackGndColour);
 
-        MY_plt_CCSetPosition(fuim_GetRowPosition() ,fuim_GetColumnPosition());
+        plt_CCSetPosition(fuim_GetRowPosition() ,fuim_GetColumnPosition());
 
         fuim_SetColumnPosition( fuim_GetColumnPosition() + 1 );
         //plt_CCSetForegroundColour( ForeGndColour);
@@ -387,7 +387,7 @@ Byte FirstPos,EndPos,length;
  FirstPos = position->FirstPos;
    EndPos = position->EndPos;
 
-  MY_plt_CCSetPosition (fuim_GetRowPosition(), FirstPos);
+  plt_CCSetPosition (fuim_GetRowPosition(), FirstPos);
   length = ( EndPos - FirstPos )  + 1;
   //fuim_DrawRepeatedCharacter (length, ' '); //Erase till end of ROWS
 
@@ -408,7 +408,7 @@ void fmnu_DrawMenuFields(Bool bDraw)
   Byte start, end;
 
 
-    visible_fields = fuim_GetMenuVisibleFields(fmnu_menu_data_ptr);
+  visible_fields = fuim_GetMenuVisibleFields(fmnu_menu_data_ptr);
   if( visible_fields != 0 )
   {
     if( MenuDialogProperties.ActiveFieldNr < (visible_fields / 2) )
@@ -448,7 +448,7 @@ void fmnu_DrawMenuFields(Bool bDraw)
     fuim_SetNextRow();
   }
 
-  for( i=start; i<end; i++)
+  for( i = start; i < end; i++)
   {
 
         osd_row[ i ] = fuim_GetRowPosition();
@@ -565,7 +565,7 @@ void fuim_ProcessMenuAction(cmdKeyNumber action)
 
 {
 
-  Byte   active_osd_row;
+  Word   active_osd_row;
   fuimDialogNavigation   *ActionPtr;
   Byte   new_action;
 
@@ -611,10 +611,10 @@ void fuim_ProcessMenuAction(cmdKeyNumber action)
 *
 **********************************************************************************/
 
-void fmnu_ConstructTitle( Bool SelectPtr,  Byte MenuWidth)
+void fmnu_ConstructTitle( Bool SelectPtr,  Word MenuWidth)
 
 {
- Byte MenuXpos, MenuYpos;
+ Word MenuXpos, MenuYpos;
  Byte MenuAttribute;
  Byte Title = FMNU_NONE_TITLE;
 
@@ -643,9 +643,9 @@ void fmnu_ConstructTitle( Bool SelectPtr,  Byte MenuWidth)
  *
  *
  **********************************************************************************/
- void fmnu_DestroyTitle( Bool SelectPtr,  Byte MenuWidth)
+ void fmnu_DestroyTitle( Bool SelectPtr,  Word MenuWidth)
  {
-  Byte MenuXpos, MenuYpos;
+  Word MenuXpos, MenuYpos;
   Byte MenuAttribute;
   Byte Title = FMNU_NONE_TITLE;
 
@@ -690,7 +690,7 @@ void fmnu_ConstructTitle( Bool SelectPtr,  Byte MenuWidth)
    {
      if (value == pList->Value)
      {
-       fuim_DrawString ((img_storage_id_t)pList->ListItem);
+       fuim_DrawString ((img_storage_id_t)fmnu_str_List[pList->ListItem]);
        break;
      }
      pList++;
@@ -837,8 +837,8 @@ void fmnu_DestroyMenu(void)
 //Byte   Movement = FALSE;
 Byte   i = 0;
 Byte   visiblefields;
-Byte   row;
-Byte   col;
+Word   row;
+Word   col;
 
   if ( ( fmnu_active_menu_handle == 0 ) || ( fmnu_active_menu_handle > FUIM_MAX_DISPLAY_MENUS ) )
   {
@@ -889,17 +889,6 @@ Byte   col;
        /*plt_CCSetPosition( */++row;//, col );
        fmnu_DestroyField( &MenuDialogProperties );
     }
-#if 0
-    if( fmnu_menu_data_ptr == &auim_Menu[AUIM_MNU_INDEX_MAIN_MENU])
-    {
-      if(!fosd_IsOsdLogoDisplayed())
-      {
-
-                fosd_RemoveLogo();
-
-      }
-    }
-#endif
 
 
   if (fmnu_menu_timer_handle != FUIM_NO_FREE_TIMER_HANDLE)
@@ -1056,7 +1045,7 @@ void fmnu_HandleCommand(void)
 
 
 **************************************************************************************/
-void fmnu_ConstructMenuPrompt(fuimFieldStruct  *field_data_ptr, Byte value_position )
+void fmnu_ConstructMenuPrompt(fuimFieldStruct  *field_data_ptr, Word value_position )
 {
 
 

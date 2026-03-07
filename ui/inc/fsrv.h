@@ -7,14 +7,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "global.h"
+#include "img_storage.h"
 
 /*=========================================================================*/
 /*   G L O B A L   D E F I N I T I O N S                                   */
 /*=========================================================================*/
 
 
-#define STATUS_GOOD  FALSE
-#define STATUS_BAD   TRUE
+#define FSRV_GAUGE_STATUS_GOOD  TRUE
+#define FSRV_GAUGE_STATUS_BAD   FALSE
+
 #define VALID_TIP_ID    FALSE
 #define INVALID_TIP_ID  TRUE
 
@@ -129,14 +131,16 @@ void fsrv_Init(void);
 
 const char*     fsrv_DS_GetFwVersion(void);
 uint32_t        fsrv_DS_GetSerialNum(void);
-st_battery_t    fsrv_DS_GetBatStatus(void);
-st_ble_connect_t fsrv_DS_GetBleStatus(void);
-st_sync_t       fsrv_DS_GetSyncStatus(void);
+
+img_storage_id_t fsrv_DS_GetBatStatus(void);
+img_storage_id_t fsrv_DS_GetChargeBatStatus(void);
+img_storage_id_t fsrv_DS_GetBleStatus(void);
+img_storage_id_t fsrv_DS_GetSyncStatus(void);
 
 // Strain Gauge
-uint32_t        fsrv_DS_GetRefNumber(void);
-bool            fsrv_DS_GetStrainGauseStat(void);
-uint16_t        fsrv_DS_GetStrainGaugeValue(void);
+uint32_t         fsrv_DS_GetRefNumber(void);
+bool      fsrv_DS_GetStrainGauseStat(void);
+uint16_t         fsrv_DS_GetStrainGaugeValue(void);
 
 // Measurement Progress
 uint32_t        fsrv_DS_GetRequiredIndentations(void);

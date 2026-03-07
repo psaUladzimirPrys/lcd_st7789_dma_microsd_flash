@@ -19,6 +19,8 @@
 #include "fuim.h"
 #include "find_api.h"
 #include "file_storage.h"
+#include "disp.h"
+
 /*=======================================================================*/
 /* G L O B A L   R E F E R E N C E S                                     */
 /*=======================================================================*/
@@ -99,13 +101,13 @@ void fpmt_HandleCommand(void)
 static void SetInStandbyState(void)
 {
   fuim_TurnOff();
-
   fslog_TurnOff();
+  disp_TurnOff();
 
   auph_SetState(AU_STANDBY_STATE);
 
   current_power_state = FPMT_STAND_BY;
-  GPIO_PinOutClear(LATCH_PORT, LATCH_PIN);
+  //GPIO_PinOutClear(LATCH_PORT, LATCH_PIN);
 }
 
 static Bool SetInPowerState(void)
@@ -115,6 +117,8 @@ static Bool SetInPowerState(void)
   fuim_Init();
   fuim_TurnOn();
   find_TurnOn();
+  disp_TurnOn();
+  fslog_TurnOn();
 
   auph_SetState(AU_STARTUP_SPLASH_STATE);
 

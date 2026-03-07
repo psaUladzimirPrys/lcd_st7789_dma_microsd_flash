@@ -7,34 +7,31 @@
 /*=======================================================================*/
 /*        G L O B A L    D E F I N I T I O N S                           */
 /*=======================================================================*/
-
-
-
-/*==========================================================================*/
-/*        L O C A L   D A T A   D E C L A R A T I O N S                     */
-/*==========================================================================*/
-static Byte  CCRows;             //Current position Row and Column
-static Byte  CCColumn; 
+/*=======================================================================*/
+/*        L O C A L   D A T A   D E C L A R A T I O N S                  */
+/*=======================================================================*/
+static Word  CCRows;             //Current position Row and Column
+static Word  CCColumn;
  
-static Byte  CCMaxRows;          //Мах values of Rows and Columns
-static Byte  CCMaxColumns;
+static Word  CCMaxRows;          //Мах values of Rows and Columns
+static Word  CCMaxColumns;
 
-/*==========================================================================*/
-/* L O C A L   F U N C T I O N   P R O T O T Y P E S                        */
-/*==========================================================================*/
+static Word  CCBackgroundColour;
+static Word  ССForegroundColour;
 
+static Byte  CCRowSize;          //Height
 /*==========================================================================*/
-/* L O C A L   F U N C T I O N                                              */
+/* L O C A L        F U N C T I O N   P R O T O T Y P E S                   */
 /*==========================================================================*/
-
+/*==========================================================================*/
+/* L O C A L        F U N C T I O N                                         */
+/*==========================================================================*/
 /*==========================================================================*/
 /* G L O B A L      F U N C T I O N                                         */
 /*==========================================================================*/
-
 /*****************************************************************************
 *
 * NAME: pltstd_CCInit
-*  
 *
 * Returns:  void
 *
@@ -43,7 +40,7 @@ static Byte  CCMaxColumns;
 * Length        IN      Required number of columns
 * Height        IN      Required number of rows
 ******************************************************************************/
-void plt_CCInit(Byte Length, Byte Height)
+void plt_CCInit(Word Length, Word Height)
 {
   CCMaxColumns = Length; // Store the requested number of columns in memory
   CCMaxRows    = Height; //  and rows
@@ -61,15 +58,13 @@ void plt_CCInit(Byte Length, Byte Height)
 * Row           IN      Start row for OSD information recording.
 * Column        IN      Start column for OSD information recording.
 ********************************************************************************/
-void plt_CCSetPosition(Byte Row, Byte Column) 
+void plt_CCSetPosition(Word Row, Word Column)
 {
-  CCRows = Row;      // Current row value
+  CCRows = Row;       // Current row value
   CCColumn = Column;  // Current column value
 }
- 
 
 /*******************************************************************************
-*
 *@begin
 * NAME: plt_CCGetPosition
 *
@@ -79,63 +74,15 @@ void plt_CCSetPosition(Byte Row, Byte Column)
 *
 * Parameter    Flow    Description
 * ------------------------------------------------------------------------------
--
 * Row           OUT     Current Row
 * Column        OUT     Current Column
-*
-* Externals    Flow    Usage
-* ------------------------------------------------------------------------------
--
-*
-* Additional information:
-*
 *@end
 ********************************************************************************/
-void plt_CCGetPosition(Byte   *Row, Byte   *Column) 
+void plt_CCGetPosition(Word *Row, Word *Column)
 {
 	* Row    = CCRows;
 	* Column = CCColumn;
 }
-
-
-/*******************************************************************************
-* NAME: plt_CCSetOverline
-*
-*  
-*
-* Returns :  void
-*
-* Parameter    Flow    Description
-* -------------------------------------------------------------------------------
-* Mode          IN       
-*
-* Externals    Flow    Usage
-* -------------------------------------------------------------------------------
-********************************/
-
-void plt_CCSetOverline(Bool Mode)
-{
-  Mode  = Mode;
-}
-/*******************************************************************************
-* NAME: plt_CCSetUnderline
-*
-*  
-*
-* Returns :  void
-*
-* Parameter    Flow    Description
-* -------------------------------------------------------------------------------
-* Mode          IN       
-*
-* Externals    Flow    Usage
-* -------------------------------------------------------------------------------
-********************************/
-void plt_CCSetUnderline(Bool Mode)
-{
-  Mode = Mode;
-}
-
 
 /********************************************************************************
 * NAME: plt_CCSetBackgroundColour
@@ -146,28 +93,13 @@ void plt_CCSetUnderline(Bool Mode)
 * -------------------------------------------------------------------------------
 * BackgroundColour      IN      Color to be set as the background
 * SetAt                 IN      Flag to indicate when the attribute should take effect
-*
-* Externals    Flow    Usage
-* -------------------------------------------------------------------------------
-*
-* Additional information:
-*
-*
-*
 *@end
 **********************************************************************************/ 
-void  plt_CCSetBackgroundColour(Byte BackgroundColour, Byte SetAt) 
+void plt_CCSetBackgroundColour(Word BackgroundColour)
 {
- 	  BackgroundColour = BackgroundColour&0x0F;
-
-  if( SetAt == TRUE)/* SetAt = 1     */
- {
-    BackgroundColour = 0;
-
- }
-
- 
+  CCBackgroundColour = BackgroundColour;
 }
+
 /********************************************************************************
 *@begin
 * NAME: plt_CCSetForegroundColour
@@ -180,16 +112,11 @@ void  plt_CCSetBackgroundColour(Byte BackgroundColour, Byte SetAt)
 * -------------------------------------------------------------------------------
 * ForegroundColour      IN      Color to be set as the foreground
 *
-* Externals    Flow    Usage
-* -------------------------------------------------------------------------------
-*
-* Additional information:
-*
 *@end
 ********************************************************************************/ 
-void plt_CCSetForegroundColour(Byte ForegroundColour) 
+void plt_CCSetForegroundColour(Word ForegroundColour)
 {
-  ForegroundColour = ForegroundColour&0x7;
+  ССForegroundColour = ForegroundColour;
 }
 
 /******************************************************************************* 
@@ -198,12 +125,12 @@ void plt_CCSetForegroundColour(Byte ForegroundColour)
 *
 *
 ********************************************************************************/ 
-/*
-void plt_CCInstForegroundColour(Byte ForegroundColour) 
+void plt_CCGetForeGndBackGndColours(Word *ForeGndColour, Word *BackGndColour)
 {
-  ForegroundColour = ForegroundColour;
+  * ForeGndColour = ССForegroundColour;
+  * BackGndColour = CCBackgroundColour;
 }
-*/
+
 /*******************************************************************************
 * NAME: plt_CCDrawChar
 *
@@ -220,42 +147,25 @@ void plt_CCDrawChar(char Character)
   Character = Character;
   CCColumn++;
 }
- 
-/**********************************************************************************
-* NAME: plt_CCSetBoxBackground
+
+/*******************************************************************************
 *
-* Turns background boxing on/off
 *
-* Returns :  void
 *
-* Parameter    Flow    Description
-* -------------------------------------------------------------------------------
-* Mode          IN      Флаг, чтобы указать, боксировал ли фон.
-* SetAt         IN      Флаг, чтобы указать, когда признак должен вступить в силу
 *
-***********************************************************************************/ 
-void  plt_CCSetBoxBackground(Byte Mode, Byte SetAt)
+********************************************************************************/
+void plt_CCSetRowSize(Byte Size)
 {
-
-	Mode = Mode&0x01;
-
-  if( SetAt == TRUE )/*    SetAt  */
-   {
- Mode = 0;
-
-   }
-
- 
-} 
-
-/**********************************************************************************
-*
-*
-***********************************************************************************/
-void MY_plt_CCSetPosition(Byte Row, Byte Column)
-{
-  CCRows = Row&0x3F;     // Текущее значение строк
-  CCColumn = Column;    // Текущее значение столбцов
+  CCRowSize = Size;
 }
 
-
+/*******************************************************************************
+*
+*
+*
+*
+********************************************************************************/
+Byte plt_CCGetRowSize(void)
+{
+  return CCRowSize;
+}

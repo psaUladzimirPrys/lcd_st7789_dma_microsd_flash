@@ -72,6 +72,7 @@ typedef struct
    Byte group; /* @field function function field to be executed when the key is pressed.
                               This is an index in the 'Observer' function table */
 } auphKeyGroup;
+
 /*EMP=======================================================================*/
 
 /* AU_VIRTUAL_KEY_1  AU_KEY_PRESS_SHORT         */
@@ -120,9 +121,7 @@ static const VOID_FUNCTION_PTR direct_function_table[] =
 /*     L O C A L   S Y M B O L   D E C L A R A T I O N S                    */
 /*==========================================================================*/
 
-static auphOsteoState_enum  auph_state;
-//static Bool auph_key_repetition_allowed;
-
+static auphOsteoState_enum  auph_state = AU_STANDBY_STATE;
 
 /*=======================================================================*/
 /*========================================================================
@@ -133,7 +132,6 @@ auphOsteoState_enum auph_GetState(void)
 {
    return auph_state;
 }
-
 
 /*========================================================================
    @func   Set the new OsteoProbe state
@@ -266,6 +264,17 @@ static void HandleMenu(void)
            /* If the button is pressed for the first time or its repetition is allowed */
             switch ( auph_GetState() )
             {
+
+              case AU_STANDBY_STATE:{
+                if(aukh_FirstKeyPress())
+                {
+                  if((permission & X_IN_STANDBY)) /*Power On*/
+                  {
+                    fpmt_HandleCommand();
+                  }
+                }
+              }break;
+
               case AU_IDLE_STATE: {
                if (permission & PERMISSION_IDLE)
                {
@@ -288,7 +297,7 @@ static void HandleMenu(void)
                      }
                   }
 
-                }break;
+               }break;
 
                  case AU_DIRECT_STATE:{
 

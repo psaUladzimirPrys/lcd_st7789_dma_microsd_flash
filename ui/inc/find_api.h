@@ -24,20 +24,6 @@
 
 #define FIND_CFG_DISPLAY_PROG_NUMBER 0x2
 
-typedef enum
-    {
-  FIND_DIRECT_INDICATOR_MENU
-
- ,FIND_DIRECT_INDICATOR_BATTERY /* Battery (String)     */
- ,FIND_DIRECT_INDICATOR_BLE /* BLE (String)     */
- ,FIND_DIRECT_INDICATOR_SYNC /* Sync (String)     */
-
- ,FIND_DIRECT_INDICATOR_VOLUME
- ,FIND_DIRECT_INDICATOR_BRIGHTNESS
- ,FIND_DIRECT_INDICATOR_SATURATION
- ,FIND_DIRECT_INDICATOR_CONTRAST
- ,FIND_DIRECT_MAX_INDICATOR
-  }find_Direct_id_enum;
 
 /****************************************************************************
 Это порядковое перечисление индексов для массива всех применяемых мною
@@ -45,11 +31,14 @@ typedef enum
 *****************************************************************************/
 
 typedef enum {
-   FIND_ID_BATTERY /* Battery (String)     */
-  ,FIND_ID_BLE /* BLE (String)     */
-  ,FIND_ID_SYNC /* Sync (String)     */
-  ,FIND_ID_MUTE                    /* Mute                */
+   FIND_ID_BATTERY       /* Battery icon (String)     */
+  ,FIND_ID_BLE           /* BLE icon (String)         */
+  ,FIND_ID_SYNC          /* Sync icon (String)        */
+  ,FIND_ID_SPLASH_SCREEN /* Company logo (String)     */
+  ,FIND_ID_CHARGE_BATT   /* Charge the Battery notification (String)     */
 
+
+ ,FIND_ID_MUTE                    /* Mute                */
  ,FIND_ID_VOLUME                  /* Volume (String)     */
  ,FIND_ID_BRIGHTNESS              /* Brightness (String) */
  ,FIND_ID_SATURATION              /* Saturation (String) */
