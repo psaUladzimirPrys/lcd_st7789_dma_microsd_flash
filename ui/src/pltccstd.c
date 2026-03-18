@@ -17,7 +17,7 @@ static Word  CCMaxRows;          //Мах values of Rows and Columns
 static Word  CCMaxColumns;
 
 static Word  CCBackgroundColour;
-static Word  ССForegroundColour;
+static Word  CCForegroundColour;
 
 static Byte  CCRowSize;          //Height
 /*==========================================================================*/
@@ -116,7 +116,7 @@ void plt_CCSetBackgroundColour(Word BackgroundColour)
 ********************************************************************************/ 
 void plt_CCSetForegroundColour(Word ForegroundColour)
 {
-  ССForegroundColour = ForegroundColour;
+  CCForegroundColour = ForegroundColour;
 }
 
 /******************************************************************************* 
@@ -127,7 +127,7 @@ void plt_CCSetForegroundColour(Word ForegroundColour)
 ********************************************************************************/ 
 void plt_CCGetForeGndBackGndColours(Word *ForeGndColour, Word *BackGndColour)
 {
-  * ForeGndColour = ССForegroundColour;
+  * ForeGndColour = CCForegroundColour;
   * BackGndColour = CCBackgroundColour;
 }
 

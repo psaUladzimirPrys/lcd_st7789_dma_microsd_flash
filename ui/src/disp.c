@@ -146,8 +146,8 @@ void disp_Init(void)
   g_context.wrap = false;
 
 
-  glib_set_color(&g_context, ST7789_WHITE, ST7789_BLACK);
-  glib_fill(&g_context, ST7789_WHITE);
+  glib_set_color(&g_context, ST7789_GREEN, ST7789_BLACK);
+  glib_fill(&g_context, ST7789_GREEN);
 
 
 }
@@ -162,21 +162,52 @@ void disp_Update(void)
 
 void disp_TurnOn(void)
 {
-  glib_enable_display(true);
+  glib_status_t status = GLIB_OK;
+
+  status = glib_fill(&g_context, ST7789_WHITE);
+  if (status != GLIB_OK)  {
+    app_assert_status(SL_STATUS_FAIL);
+  }
+
+  status = glib_enable_display(true);
+  if (status != GLIB_OK)  {
+    app_assert_status(SL_STATUS_FAIL);
+  }
+
 }
 
 void disp_TurnOff(void)
 {
-  glib_enable_display(false);
-}
+  glib_status_t status = GLIB_OK;
 
+  status = glib_enable_display(false);
+  if (status != GLIB_OK)  {
+    app_assert_status(SL_STATUS_FAIL);
+  }
+
+  status = glib_fill(&g_context, ST7789_BLACK);
+  if (status != GLIB_OK)  {
+    app_assert_status(SL_STATUS_FAIL);
+  }
+
+}
 
 void disp_DrawImage(int16_t x, int16_t y, img_storage_id_t img_id)
 {
-   adafruit_st7789_draw_rgb_bitmap_from_flash(x, y, IMG_GET_WIDTH(img_id), IMG_GET_HEIGHT(img_id), IMG_GET_ADDRESS(img_id),  true);
+  sl_status_t status = SL_STATUS_OK;
+  status = adafruit_st7789_draw_rgb_bitmap_from_flash(x, y, IMG_GET_WIDTH(img_id), IMG_GET_HEIGHT(img_id), IMG_GET_ADDRESS(img_id),  true);
+  if (status != SL_STATUS_OK)  {
+    app_assert_status(status);
+  }
 }
 
-void disp_EraseImage(int16_t x, int16_t y, img_storage_id_t img_id, uint16_t bg_color)
+void disp_EraseImage(int16_t x, int16_t y, int16_t width, int16_t height, uint16_t bg_color)
 {
-  adafruit_st7789_fill_rectangle(x, y, IMG_GET_WIDTH(img_id), IMG_GET_HEIGHT(img_id), bg_color);
+  sl_status_t status = SL_STATUS_OK;
+
+  status = adafruit_st7789_fill_rectangle(x, y, width, height, bg_color);
+  if (status != SL_STATUS_OK)  {
+    app_assert_status(status);
+  }
+
 }

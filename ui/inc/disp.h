@@ -32,12 +32,14 @@ void disp_TurnOff(void);
 
 void disp_EraseImage(int16_t x,
                      int16_t y,
-                     img_storage_id_t img_id,
+                     int16_t width,
+                     int16_t height,
                      uint16_t bg_color);
 
 void disp_DrawImage(int16_t x,
                     int16_t y,
                     img_storage_id_t img_id);
+
 
 
 

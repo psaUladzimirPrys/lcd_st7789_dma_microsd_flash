@@ -32,7 +32,7 @@ typedef enum {
    ,AU_IDLE_STATE                  //OsteoProbe Home screen: BLE status, battery, , and usage tips
 
    // --- Connectivity & Data Management ---
-   ,AU_BLE_DISCOVERABLE_STATE      //OsteoProbe Pairing mode: waiting for OsteoVault app connection
+   ,AU_PAIRING_STATE      //OsteoProbe Pairing mode: waiting for OsteoVault app connection
   //,AU_WAIT_TIP_ID_STATE         //OsteoProbe Input required: waiting for Tip ID from OsteoVault
    ,AU_CONFIGURAION_MENU_STATE
 
@@ -40,10 +40,6 @@ typedef enum {
    ,AU_PERFORMANCE_CHECK_MEASURE_STATE //OsteoProbe Performance test: verifying accuracy against limit values
    ,AU_REFERENCE_CHECK_MEASURE_STATE   //OsteoProbe Reference check: measuring a standard phantom for calibration
    ,AU_PATIENT_MEASURE_STATE           //OsteoProbe Active session: indentation counter, validity, real-time tips
-
-
-   ,AU_MENU_STATE        /* @emem OsteoProbe in Menu      */
-   ,AU_DIRECT_STATE      /* @emem OsteoProbe in Normal    */
 
    // --- Results & Notifications ---
    ,AU_BATTERY_VERYLOW_STATE     //OsteoProbe stop measure: Very low battery

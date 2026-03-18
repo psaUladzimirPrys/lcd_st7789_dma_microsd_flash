@@ -12,7 +12,7 @@
 /* G L O B A L   D E F I N I T I O N S                                   */
 /*=======================================================================*/
 
-const Byte fmnu_str_Texno_Menu_STRING[] = "1.2";
+ 
 
 const Byte fmnu_str_List[FMNU_LIST_ITEMS_LAST_STRING] =
 {
@@ -22,6 +22,18 @@ const Byte fmnu_str_List[FMNU_LIST_ITEMS_LAST_STRING] =
    ,IMG_ID_A
 };
 
+const Byte fmnu_str_Prefix[fmnu_str_PrefixLAST_STRING]=
+{
+     IMG_ID_A
+    ,IMG_ID_A
+    ,IMG_ID_A
+};
+
+const Byte fmnu_str_Suffix[fmnu_str_SuffixLAST_STRING]=
+{
+     IMG_ID_A
+    ,IMG_ID_A
+};
 
 /*=======================================================================*/
 /* L O C A L   D A T A   D E F I N I T I O N S                           */
@@ -35,8 +47,4 @@ const Byte fmnu_str_List[FMNU_LIST_ITEMS_LAST_STRING] =
 /*=============================================================================*/
 /*   G L O B A L   F U N C T I O N                                            */
 /*=============================================================================*/
-
-Byte * fmnu_str_GetVerTexnoMenu(void)
-{
-  return  (Byte * )(&fmnu_str_Texno_Menu_STRING[0]);
-}
+ 

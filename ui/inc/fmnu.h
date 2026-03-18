@@ -40,7 +40,7 @@ typedef struct {
 
     Byte Title;  //ID of the Title string
 
-    Word TitleAttribute;
+    Byte TitleAttribute;
     /* Title rendering attributes - fuim_Attributes
        Includes foreground/background color, size, shadow, etc. */
 
@@ -56,13 +56,13 @@ typedef struct {
 
     Byte TimeOut;
     // How long the menu remains active;
-    // if 0 — stays active indefinitely
+    // if 0 stays active indefinitely
+/* Pointer to structure of the Button field */
+    fuimFieldStruct const *LeftButtonField;  /* Pointer to structure of the Button field */
+/* Pointer to structure of the Button field */
+    fuimFieldStruct const *RightButtonField; /* Pointer to structure of the Button field */
 
-    fuimFixedFieldStruct const *FixedTopField;
-    /* Pointer to structure of the fixed top field */
-
-    fuimFixedFieldStruct const *FixedBottomField;
-    /* Pointer to structure of the fixed bottom field */
+ 
 
 } fmnu_MenuStruct;
 
@@ -119,7 +119,6 @@ void fmnu_HandleCommand(void);
 void fmnu_RemoveCurrentMenu(void);
 void fmnu_Activate(menu_index_enum IndexMenu);
 
-void fmnu_HandleCommand(void);
 
 
 #endif

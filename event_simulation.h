@@ -21,6 +21,8 @@ extern "C" {
 
 void sim_Init(void);
 void sim_Update(void);
+void sim_TurnOn(void);
+void sim_TurnOff(void);
 
 #ifdef __cplusplus
 }

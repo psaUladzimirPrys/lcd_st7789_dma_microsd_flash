@@ -245,9 +245,16 @@ typedef struct image_storage_desc
 extern const img_storage_descriptor_t img_storage_desc[];
 extern const uint32_t img_storage_desc_count;
 
-#define IMG_GET_WIDTH(id)     (img_storage_desc[(id)].width)
-#define IMG_GET_HEIGHT(id)    (img_storage_desc[(id)].height)
-#define IMG_GET_ADDRESS(id)   (img_storage_desc[(id)].storage_address)
-#define IMG_GET_SIZE(id)      (img_storage_desc[(id)].data_size)
+uint16_t img_get_width(img_storage_id_t id);
+uint16_t img_get_height(img_storage_id_t id);
+uint32_t img_get_address(img_storage_id_t id);
+uint32_t img_get_size(img_storage_id_t id);
+
+#define IMG_GET_WIDTH(id)     img_get_width(id)                   //(img_storage_desc[(id)].width)
+#define IMG_GET_HEIGHT(id)    img_get_height(id)                  //(img_storage_desc[(id)].height)
+#define IMG_GET_ADDRESS(id)   img_get_address(id)                  //(img_storage_desc[(id)].storage_address)
+#define IMG_GET_SIZE(id)      img_get_size(id)                    //(img_storage_desc[(id)].data_size)
+
+
 
 #endif //IMG_STORAGE_H

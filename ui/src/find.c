@@ -66,11 +66,11 @@ static Byte  find_IndicatorFocus;
 const Byte indicator_ids[] =   /*             */
 {/* Index in array  auim_OsdIndicator/<- = ->/       */
 
-    AUIM_INDEX_BATTERY_INDICATOR    /* FIND_ID_BATTERY       Volume (String)   */
-    ,AUIM_INDEX_BLE_INDICATOR       /* FIND_ID_BLE       Volume (String)       */
-    ,AUIM_INDEX_SYNC_INDICATOR      /* FIND_ID_SYNC       Volume (String)      */
+    AUIM_INDEX_BATTERY_INDICATOR    /* FIND_ID_BATTERY         (String)   */
+    ,AUIM_INDEX_BLE_INDICATOR       /* FIND_ID_BLE            (String)    */
+    ,AUIM_INDEX_SYNC_INDICATOR      /* FIND_ID_SYNC           (String)    */
     ,AUIM_INDEX_SPLASH_SCREEN       /* FIND_ID_SPLASH_SCREEN Company logo (String)     */
-    ,AUIM_INDEX_CHARGE_BATT         /* FIND_ID_CHARGE_BATT  Volume (String)     */
+    ,AUIM_INDEX_CHARGE_BATT         /* FIND_ID_CHARGE_BATT    (String)    */
 
 
  //   ,NR_OF_DOUBLE_INDICATORS
@@ -120,7 +120,7 @@ void find_TurnOn(void)
    fuim_InitIndicators();
    for (i = 0; i < FUIM_MAX_INDICATORS; i++ )
    {
-        active_indicators[i] = EMPTY_INDICATOR;
+     active_indicators[i] = EMPTY_INDICATOR;
    }
  
    find_IndicatorFocus = TRUE;
@@ -157,7 +157,6 @@ void find_RestoreIndicators(void)
      find_DisplayIndicator(FIND_ID_BATTERY);
      find_DisplayIndicator(FIND_ID_BLE);
      find_DisplayIndicator(FIND_ID_SYNC);
-     find_DisplayIndicator(FIND_ID_CHARGE_BATT);
    }
 
 
@@ -327,15 +326,15 @@ void find_UpdateIndicator(find_id_enum indicator)
 /*=======================================================================*/
 void find_IndicatorAction(fuimIndicatorStruct *indicator_data_ptr )
 {
-	   fuimFieldStruct  * field_data_ptr;
-			osdDialogHandle   handle;
+  fuimFieldStruct  * field_data_ptr;
+  osdDialogHandle   handle;
 			
     handle = fuim_GetIndicatorHandle(indicator_data_ptr);
 
     if ((handle != 0 )&&( handle < FUIM_MAX_INDICATORS))
      {  
        field_data_ptr = (fuimFieldStruct  *)indicator_data_ptr->Field;
-      // find_ProcessIndicatorAction(aukh_GetCurrentCommand(),field_data_ptr);
+       find_ProcessIndicatorAction(aukh_GetCurrentCommand(),field_data_ptr);
        fuim_UpdateIndicator (handle, TRUE);
      }
     field_data_ptr = field_data_ptr;
@@ -370,7 +369,7 @@ void RemoveEmptyIndicator(find_id_enum indicator)
 
   if (indicator_ids[ indicator ] < NR_OF_DOUBLE_INDICATORS) {
       indicator_data_ptr = (fuimIndicatorStruct *)&auim_OsdIndicator[ indicator_ids[indicator] ];
-             PassRemove &= find_IsRemoveIndicator(indicator_data_ptr  );
+             PassRemove &= find_IsRemoveIndicator(indicator_data_ptr);
   }
 
   if(PassRemove == TRUE) {

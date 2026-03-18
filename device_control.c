@@ -65,6 +65,19 @@ void prepare_to_init_device (void)
 
 }
 
+void set_device_state(device_state_t state)
+{
+  if (state != device_state_curr) {
+    device_state_curr = state;
+  }
+}
+
+
+device_state_t get_device_state(void)
+{
+   return device_state_curr;
+}
+
 static uint16_t crc16_ccitt(const uint8_t *data, uint16_t len)
 {
     uint16_t crc = 0xFFFF;
@@ -126,14 +139,10 @@ void device_working_loop(void)
   {
     case DEVICE_STARTUP:
       device_state_curr = DEVICE_LOADING;
-
+      reset_device_params();
     break;
 
     case DEVICE_LOADING:
-      reset_device_params();
-
-
-      device_state_curr = DEVICE_IDLE;
     break;
 
     case DEVICE_IDLE:
@@ -156,8 +165,15 @@ void device_working_loop(void)
 
     break;
 
+    case DEVICE_CONFIGURATION:
+
+    break;
+
     case DEVICE_ERROR:
 
+      break;
+
+    case DEVICE_STANDBY:
       break;
 
     default:

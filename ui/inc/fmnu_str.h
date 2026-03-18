@@ -13,27 +13,6 @@
 #define FMNU_CHAR_SEPARATOR  0xB5
 #define FMNU_CHAR_CURSOR     0xB6
 
-enum {
-
-  FMNU_Menu = 0,
-
-  FMNU_Picture,
-  FMNU_Brightness,
-  FMNU_Saturation,
-
-  Main_Lang_menu_LAST_STRING
-
-};
-
-enum {
-
-  FMNU_TEXNO_MENU_CONSTRUCT_PROMPT = Main_Lang_menu_LAST_STRING + 1,
-  FMNU_Texno,
-  FMNU_Geometry,
-  FMNU_Adjustment,
-  fmnu_str_Texno_Menu_LAST_STRING
-
-};
 
 enum {
 
@@ -41,7 +20,7 @@ enum {
   ,FMNU_LIST_ITEMS_BAD
 
   ,FMNU_LIST_ITEMS_ERROR
-	,FMNU_LIST_ITEMS_LAST_STRING
+  ,FMNU_LIST_ITEMS_LAST_STRING
 
 };
  
@@ -63,9 +42,11 @@ enum {
 
 };
 
-extern  Byte const fmnu_str_List[FMNU_LIST_ITEMS_LAST_STRING];
+extern const Byte fmnu_str_List[FMNU_LIST_ITEMS_LAST_STRING];
+extern const Byte fmnu_str_Prefix[fmnu_str_PrefixLAST_STRING];
+extern const Byte fmnu_str_Suffix[fmnu_str_SuffixLAST_STRING];
 
-extern  Byte * fmnu_str_GetVerTexnoMenu(void);
+ 
 
 #endif
 

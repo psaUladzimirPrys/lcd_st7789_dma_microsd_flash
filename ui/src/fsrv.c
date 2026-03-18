@@ -23,17 +23,19 @@ fsrv_display_datastore_t fsrv_display_datastore = {0};
 void fsrv_Init(void)
 {
 
- fsrv_display_datastore.fw_version = "1.30";
- fsrv_display_datastore.serial_num = 1234;
+ fsrv_display_datastore.fw_version = 01;
+ fsrv_display_datastore.serial_num = 12;
  fsrv_display_datastore.bat_status = BAT_NORMAL;
  fsrv_display_datastore.ble_status = BLE_DISCONNECTED;
  fsrv_display_datastore.sync_status = SYNC_IDLE;
 
-     // strain gauge parameters
 
- fsrv_display_datastore.ref_number = 987;
+ fsrv_display_datastore.calibration_const = 3;
+
+ // strain gauge parameters
+ fsrv_display_datastore.ref_number = 98;
  fsrv_display_datastore.strain_gause_stat = FSRV_GAUGE_STATUS_GOOD;  // good/bad
- fsrv_display_datastore.strain_gauge_value = 111; // current value
+ fsrv_display_datastore.strain_gauge_value = 11; // current value
 
      // for measurement mode
  fsrv_display_datastore.required_indentations = 8;
@@ -42,7 +44,7 @@ void fsrv_Init(void)
 
  fsrv_display_datastore.measurement_status = MEAS_IDLE;
  fsrv_display_datastore.measurement_mode = MODE_NONE;
- fsrv_display_datastore.tip_id_stat = INVALID_TIP_ID;           //Valid \ Invalid  Tip ID
+ fsrv_display_datastore.tip_id_stat = TIP_ID_WAITING;           // Waiting - \ - Valid - \ Invalid - Tip ID
 
 
      // Results
@@ -56,7 +58,7 @@ void fsrv_Init(void)
 
 /* ================= GET FUNCTIONS IMPLEMENTATION ================= */
 
-const char* fsrv_DS_GetFwVersion(void) {
+uint32_t fsrv_DS_GetFwVersion(void) {
     return fsrv_display_datastore.fw_version;
 }
 
@@ -134,12 +136,46 @@ uint32_t fsrv_DS_GetRefNumber(void) {
     return fsrv_display_datastore.ref_number;
 }
 
+float fsrv_DS_GetCalibrationConst(void)
+{
+  return fsrv_display_datastore.calibration_const;
+}
+
 bool fsrv_DS_GetStrainGauseStat(void) {
 
   if (fsrv_display_datastore.strain_gause_stat == FSRV_GAUGE_STATUS_GOOD) {
    return FSRV_GAUGE_STATUS_GOOD;
   }
    return FSRV_GAUGE_STATUS_BAD;
+}
+
+img_storage_id_t fsrv_DS_GetWaitingStat(void) {
+
+  st_ble_connect_t ble_status  = fsrv_display_datastore.ble_status;
+  st_tip_id_t tip_id_stat = fsrv_display_datastore.tip_id_stat;
+  img_storage_id_t storage_id = IMG_MAX_IDS_STORAGE_DESC_COUNT;
+ 
+
+  if (   (BLE_NOT_PAIRING == ble_status)
+      || (BLE_ERROR == ble_status)
+     )
+  {
+     storage_id = IMG_ID_PROPERTY_1_VARIANT13; //Not Paired
+  } else if (  (BLE_DISCONNECTED == ble_status)
+            || (BLE_ADVERTISING  == ble_status)
+            || (BLE_PAIRING      == ble_status)
+           )
+  {
+      storage_id = IMG_ID_PROPERTY_1_DEFAULT_7; //Waiting for connect
+  } else if(BLE_CONNECTED  == ble_status) {
+    if (TIP_ID_WAITING == tip_id_stat) {
+      storage_id = IMG_ID_PROPERTY_1_VARIANT2_7; //Waiting for TIP ID
+    } else {
+      storage_id = IMG_ID_PROPERTY_1_VARIANT5_6; //Validating
+    }
+  }
+
+  return storage_id;
 }
 
 uint16_t fsrv_DS_GetStrainGaugeValue(void) {
@@ -166,7 +202,7 @@ measure_mode_t fsrv_DS_GetMeasurementMode(void) {
     return fsrv_display_datastore.measurement_mode;
 }
 
-bool fsrv_DS_GetTipIdStat(void) {
+st_tip_id_t fsrv_DS_GetTipIdStat(void) {
     return fsrv_display_datastore.tip_id_stat;
 }
 
@@ -186,9 +222,14 @@ err_code_t fsrv_DS_GetErrorCode(void) {
     return fsrv_display_datastore.error_code;
 }
 
+uint16_t fsrv_GetPairingCode(void) {
+    return (uint16_t)1911;
+}
+
+
 /* ================= SET FUNCTIONS IMPLEMENTATION ================= */
 
-void fsrv_DS_SetFwVersion(const char* ver) {
+void fsrv_DS_SetFwVersion(uint32_t ver) {
     fsrv_display_datastore.fw_version = ver;
 }
 
@@ -240,7 +281,7 @@ void fsrv_DS_SetMeasurementMode(measure_mode_t mode) {
     fsrv_display_datastore.measurement_mode = mode;
 }
 
-void fsrv_DS_SetTipIdStat(bool stat) {
+void fsrv_DS_SetTipIdStat(st_tip_id_t stat) {
     fsrv_display_datastore.tip_id_stat = stat;
 }
 

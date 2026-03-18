@@ -38,24 +38,7 @@ typedef enum {
   ,FIND_ID_CHARGE_BATT   /* Charge the Battery notification (String)     */
 
 
- ,FIND_ID_MUTE                    /* Mute                */
- ,FIND_ID_VOLUME                  /* Volume (String)     */
- ,FIND_ID_BRIGHTNESS              /* Brightness (String) */
- ,FIND_ID_SATURATION              /* Saturation (String) */
- ,FIND_ID_CONTRAST              /* Contrast (String) */
- ,FIND_ID_MENU            /* Показывает надпись Меню с мерцанием */
- ,FIND_ID_STATUS                  /* Status              */
- ,FIND_ID_SOURCE                  /* Selected program    */
- ,FIND_ID_NO_SIGNALS              /* Нет сигнала         */
- ,FIND_ID_NO_ALL_PROGRAM              /*  Не настроенны программы-ма         */
- ,FIND_ID_NO_PROGRAM              /*  Не настроенны программа         */
- ,FIND_ID_IMAGE_PRESET            /* image preset        */
- ,FIND_ID_CLOCK                   /* Time                */
- ,FIND_ID_SLEEP                   /* Sleep timer         */
- ,FIND_ID_SLEEP_EXP               /* Sleep timer         */
-
-
- // ,FIND_NUMBER_OF_IDS /* оследняя строчка указывает на размер массива под индикаторы */
+ // ,FIND_NUMBER_OF_IDS /* */
   }find_id_enum;
 
 /*=======================================================================*/

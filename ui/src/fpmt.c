@@ -20,6 +20,8 @@
 #include "find_api.h"
 #include "file_storage.h"
 #include "disp.h"
+#include "event_simulation.h"
+
 
 /*=======================================================================*/
 /* G L O B A L   R E F E R E N C E S                                     */
@@ -100,9 +102,12 @@ void fpmt_HandleCommand(void)
 
 static void SetInStandbyState(void)
 {
+
   fuim_TurnOff();
   fslog_TurnOff();
   disp_TurnOff();
+
+  sim_TurnOff();//Sumulator Debug
 
   auph_SetState(AU_STANDBY_STATE);
 
@@ -113,8 +118,10 @@ static void SetInStandbyState(void)
 static Bool SetInPowerState(void)
 {
   //GPIO_PinOutSet(LATCH_PORT, LATCH_PIN);
+  sim_TurnOn(); //Sumulator Debug
 
   fuim_Init();
+
   fuim_TurnOn();
   find_TurnOn();
   disp_TurnOn();

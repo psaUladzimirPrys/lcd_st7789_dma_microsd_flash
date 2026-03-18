@@ -1,4 +1,6 @@
 #include "img_storage.h"
+#include "app_log.h"
+#include "app_assert.h"
 
 const img_storage_descriptor_t img_storage_desc[IMG_MAX_IDS_STORAGE_DESC_COUNT] =
 {
@@ -665,3 +667,42 @@ const img_storage_descriptor_t img_storage_desc[IMG_MAX_IDS_STORAGE_DESC_COUNT] 
 };
 
 const uint32_t img_storage_desc_count = IMG_MAX_IDS_STORAGE_DESC_COUNT;
+
+
+uint16_t img_get_width(img_storage_id_t id)   
+{                                             
+    if (!(id < IMG_MAX_IDS_STORAGE_DESC_COUNT)) {  
+      _app_assert_log_status(id, APP_ASSERT_TEXT);       
+      _app_assert_abort();                           
+    } 
+                                        
+    return (img_storage_desc[(id)].width);              
+}
+
+uint16_t img_get_height(img_storage_id_t id)   
+{                                             
+  if (!(id < IMG_MAX_IDS_STORAGE_DESC_COUNT)) {  
+    _app_assert_log_status(id, APP_ASSERT_TEXT);       
+    _app_assert_abort();                           
+  } 
+  
+  return (img_storage_desc[(id)].height);              
+}
+
+uint32_t img_get_address(img_storage_id_t id)
+{  
+  if (!(id < IMG_MAX_IDS_STORAGE_DESC_COUNT)) {  
+    _app_assert_log_status(id, APP_ASSERT_TEXT);       
+    _app_assert_abort();                           
+  }
+  return (img_storage_desc[(id)].storage_address);
+}
+
+uint32_t img_get_size(img_storage_id_t id)
+{  
+  if (!(id < IMG_MAX_IDS_STORAGE_DESC_COUNT)) {  
+    _app_assert_log_status(id, APP_ASSERT_TEXT);       
+    _app_assert_abort();                           
+  }
+  return (img_storage_desc[(id)].data_size);
+}

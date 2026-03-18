@@ -30,6 +30,8 @@ typedef enum
   DEVICE_PATIENT_MEASURE_SIMULATE,
   DEVICE_PERFORMANCE_CHECK,
   DEVICE_PERFORMANCE_CHECK_SIMULATE,
+  DEVICE_CONFIGURATION,
+  DEVICE_STANDBY,
   DEVICE_ERROR
 } device_state_t;
 
@@ -57,7 +59,7 @@ typedef enum
   BLE_ADVERTISING,
   BLE_PAIRING,
   BLE_CONNECTED,
-  BLE_SYNCING,
+  BLE_NOT_PAIRING,
   BLE_ERROR
 } st_ble_connect_t;
 
@@ -90,16 +92,23 @@ typedef enum
   MODE_REFERENCE
 } measure_mode_t;
 
+typedef enum 
+{
+  TIP_ID_VALID,
+  TIP_ID_INVALID,
+  TIP_ID_WAITING
+}st_tip_id_t;
+
 typedef struct
 {
-  const char*      fw_version;
+  uint32_t         fw_version;
   uint32_t         serial_num;
   st_battery_t     bat_status;
   st_ble_connect_t ble_status;
   st_sync_t        sync_status;
 
   // strain gauge parameters
-  //float            calibration_const;
+  float            calibration_const;
   uint32_t         ref_number;
   bool             strain_gause_stat;  // good/bad
   uint16_t         strain_gauge_value; // current value
@@ -111,7 +120,7 @@ typedef struct
 
   st_measure_t     measurement_status;
   measure_mode_t   measurement_mode;
-  bool             tip_id_stat;           //Valid \ Invalid  Tip ID
+  st_tip_id_t           tip_id_stat;           //Valid \ Invalid  Tip ID
 
 
   // Results
@@ -129,7 +138,7 @@ void fsrv_Init(void);
 
 /* ================= GET FUNCTIONS ================= */
 
-const char*     fsrv_DS_GetFwVersion(void);
+uint32_t     fsrv_DS_GetFwVersion(void);
 uint32_t        fsrv_DS_GetSerialNum(void);
 
 img_storage_id_t fsrv_DS_GetBatStatus(void);
@@ -137,10 +146,15 @@ img_storage_id_t fsrv_DS_GetChargeBatStatus(void);
 img_storage_id_t fsrv_DS_GetBleStatus(void);
 img_storage_id_t fsrv_DS_GetSyncStatus(void);
 
+float           fsrv_DS_GetCalibrationConst(void);
+
 // Strain Gauge
 uint32_t         fsrv_DS_GetRefNumber(void);
 bool      fsrv_DS_GetStrainGauseStat(void);
 uint16_t         fsrv_DS_GetStrainGaugeValue(void);
+
+//Getting status of Waiting to connect or Waiting to TIP ID values 
+img_storage_id_t fsrv_DS_GetWaitingStat(void);
 
 // Measurement Progress
 uint32_t        fsrv_DS_GetRequiredIndentations(void);
@@ -148,17 +162,18 @@ uint32_t        fsrv_DS_GetPerformedIndentations(void);
 uint32_t        fsrv_DS_GetValidIndentations(void);
 st_measure_t    fsrv_DS_GetMeasurementStatus(void);
 measure_mode_t  fsrv_DS_GetMeasurementMode(void);
-bool            fsrv_DS_GetTipIdStat(void);
+st_tip_id_t     fsrv_DS_GetTipIdStat(void);
 
 // Results
 float           fsrv_DS_GetBoneScore(void);
 float           fsrv_DS_GetUserScorePatientStddev(void);
 float           fsrv_DS_GetUserScoreReferenceStddev(void);
 err_code_t      fsrv_DS_GetErrorCode(void);
+uint16_t        fsrv_GetPairingCode(void);
 
 /* ================= SET FUNCTIONS ================= */
 
-void fsrv_DS_SetFwVersion(const char* ver);
+void fsrv_DS_SetFwVersion(uint32_t ver);
 void fsrv_DS_SetSerialNum(uint32_t num);
 void fsrv_DS_SetBatStatus(st_battery_t status);
 void fsrv_DS_SetBleStatus(st_ble_connect_t status);
@@ -175,7 +190,7 @@ void fsrv_DS_SetPerformedIndentations(uint32_t val);
 void fsrv_DS_SetValidIndentations(uint32_t val);
 void fsrv_DS_SetMeasurementStatus(st_measure_t status);
 void fsrv_DS_SetMeasurementMode(measure_mode_t mode);
-void fsrv_DS_SetTipIdStat(bool stat);
+void fsrv_DS_SetTipIdStat(st_tip_id_t stat);
 
 // Results
 void fsrv_DS_SetBoneScore(float score);
@@ -183,7 +198,8 @@ void fsrv_DS_SetUserScorePatientStddev(float val);
 void fsrv_DS_SetUserScoreReferenceStddev(float val);
 void fsrv_DS_SetErrorCode(err_code_t code);
 
-
+void set_device_state(device_state_t state);
+device_state_t get_device_state(void);
 
 
 #endif /* FSRV_DATASTORE_H_ */

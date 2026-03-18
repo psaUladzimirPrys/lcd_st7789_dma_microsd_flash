@@ -8,6 +8,8 @@
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
+#include "app_log.h"
+#include "app_assert.h"
 #include "sl_sleeptimer.h"
 #include "pltccstd.h"
 #include "fuim.h"
@@ -17,7 +19,7 @@
 #include "auim_api.h"
 #include "rbsc_api.h"
 #include "disp.h"
-
+#include "fmnu_str.h"
 
 /*============================================================================*/
 /*    G L O B A L  S Y M B O L    D E C L A R A T I O N S                     */
@@ -63,39 +65,78 @@ static const font_array_ptr_t font_lut[FUIM_MAX_FONT_SIZE][FUIM_MAX_FONT_COLOR] 
 
 const fuimColourStruct MainMenuPromptColor =
 {
-   FUIM_COLOUR_4,       /* Foreground colour             */
-   FUIM_COLOUR_3,       /* Background colour             */
-   FUIM_COLOUR_4,       /* Foreground highlighted colour */
-   FUIM_COLOUR_3,       /* Background highlighted colour */
-   FUIM_ATTRIBUTES_DOUBLEHEIGHT + FUIM_ATTRIBUTES_SHADOWED,/* No attributes                 */
-   FUIM_ATTRIBUTES_DOUBLEHEIGHT + FUIM_ATTRIBUTES_SHADOWED /* attributes highlighted     */
+   FUIM_COLOUR_8,       /* Foreground colour             */
+   FUIM_COLOUR_1,       /* Background colour             */
+   FUIM_COLOUR_8,       /* Foreground highlighted colour */
+   FUIM_COLOUR_TRANSPARENT,       /* Background highlighted colour */
+   FUIM_TOP_ROW_SIZE + FUIM_ATTRIBUTES_NONE,/* No attributes                 */
+   FUIM_ATTRIBUTES_NONE /* attributes highlighted     */
 
 };
+
+
+/*****************************************************************************
+
+*****************************************************************************/
+
+const fuimColourStruct ButtonPromptColour =
+{
+   FUIM_COLOUR_8,                       /* Foreground colour             */
+   FUIM_COLOUR_2,                       /* Background colour             */
+   FUIM_COLOUR_8,                       /* Foreground highlighted colour */
+   FUIM_COLOUR_TRANSPARENT,              /* Background highlighted colour */
+   FUIM_BOTTOM_ROW_SIZE + FUIM_ATTRIBUTES_NONE, /* With shadowing   */
+   FUIM_ATTRIBUTES_NONE         /*attributes highlighted */
+};
+
 
 /*****************************************************************************
 
 *****************************************************************************/
 const fuimColourStruct IndicatorPromptColour =
 {
-   FUIM_COLOUR_2,                       /* Foreground colour             */
-   FUIM_COLOUR_0,                   /* Background colour             */
-   FUIM_COLOUR_7,                       /* Foreground highlighted colour */
-   FUIM_COLOUR_TRANSPARENT,             /* Background highlighted colour */
-   FUIM_ATTRIBUTES_DOUBLEHEIGHT+FUIM_ATTRIBUTES_SHADOWED, /* With shadowing   */
+   FUIM_COLOUR_8,                       /* Foreground colour             */
+   FUIM_COLOUR_1,                       /* Background colour             */
+   FUIM_COLOUR_8,                       /* Foreground highlighted colour */
+   FUIM_COLOUR_TRANSPARENT,              /* Background highlighted colour */
+   FUIM_TOP_ROW_SIZE + FUIM_ATTRIBUTES_NONE, /* With shadowing   */
    FUIM_ATTRIBUTES_NONE         /*attributes highlighted */
 };
+
+
+const fuimColourStruct IndicatorModalPromptColour =
+{
+   FUIM_COLOUR_8,                       /* Foreground colour             */
+   FUIM_COLOUR_0,                       /* Background colour             */
+   FUIM_COLOUR_8,                       /* Foreground highlighted colour */
+   FUIM_COLOUR_TRANSPARENT,             /* Background highlighted colour */
+   FUIM_NOTIFICATION_ROW_SIZE + FUIM_ATTRIBUTES_NONE, /* With shadowing   */
+   FUIM_ATTRIBUTES_NONE         /*attributes highlighted */
+};
+
+const fuimColourStruct IndicatorSplashScreenColour =
+{
+  FUIM_COLOUR_8,                       /* Foreground colour             */
+  FUIM_COLOUR_9,                       /* Background colour             */
+  FUIM_COLOUR_8,                       /* Foreground highlighted colour */
+  FUIM_COLOUR_TRANSPARENT,             /* Background highlighted colour */
+  FUIM_SPLASH_SCREEN_ROW_SIZE + FUIM_ATTRIBUTES_NONE, /* With shadowing   */
+  FUIM_ATTRIBUTES_NONE         /*attributes highlighted */
+};
+
+
 
 /*****************************************************************************
 
 *****************************************************************************/
 const fuimColourStruct NormalMenuPromptColour =
 {
-   FUIM_COLOUR_7,       /* Foreground colour             */
-   FUIM_COLOUR_0,       /* Background colour             */
-   FUIM_COLOUR_7,       /* Foreground highlighted colour */
-   FUIM_COLOUR_4,       /* Background highlighted colour */
-   FUIM_ATTRIBUTES_SHADOWED,/* No attributes                 */
-   FUIM_ATTRIBUTES_SHADOWED /* attributes highlighted      */
+   FUIM_COLOUR_8,       /* Foreground colour             */
+   FUIM_COLOUR_9,       /* Background colour             */
+   FUIM_COLOUR_8,       /* Foreground highlighted colour */
+   FUIM_COLOUR_TRANSPARENT,       /* Background highlighted colour */
+   FUIM_MENU_ROW_SIZE + FUIM_ATTRIBUTES_NONE,/* No attributes                 */
+   FUIM_ATTRIBUTES_NONE /* attributes highlighted      */
 };
 
 #define FUIM_PERIODIC_TIMER_DELAY_64MS  64
@@ -121,8 +162,14 @@ void fuim_UpdateTimer064ms(void);
 void fuim_TimerFunction(Byte index, osdDialogHandle hDialog);
 
 Word fuim_GetIndicatorFieldValueLength(fuimFieldStruct *field_data_ptr);
-Word fuim_DigitToFontAssetId(char c, fuim_FontSize size, uint8_t color_idx);
-
+static inline Word fuim_DigitToFontAssetId(char c, fuim_FontSize size, fuim_FontColor color_idx);
+void fuim_DrawNumeric( osdFieldValue GetFunction,
+                       Byte FieldScalingNumeric,
+                       Byte FieldSizeNumeric,
+                       fuim_FontSize  size,
+                       fuim_FontColor color,
+                       fuim_Alignment align
+                      );
 
 /*==========================================================================*/
 /*    L O C A L   F U N C T I O N                                           */
@@ -130,7 +177,7 @@ Word fuim_DigitToFontAssetId(char c, fuim_FontSize size, uint8_t color_idx);
 /*==========================================================================*
 * @brief Get the font resource ID by dereferencing the pointer to the array.
 */
-Word fuim_DigitToFontAssetId(char c, fuim_FontSize size, uint8_t color_idx)
+static inline Word fuim_DigitToFontAssetId(char c, fuim_FontSize size, fuim_FontColor color_idx)
 {
 
   Byte char_idx;
@@ -186,20 +233,18 @@ static void SetupPeriodicTimer (Byte timeOutInTicks)
 
 
 **********************************************************************************/
-void fuim_DrawTitle(img_storage_id_t img_id, Word width, Word bg_color, Bool remove)
+void fuim_DrawTitle(img_storage_id_t img_id)
 {
-
   uint16_t draw_x;
   uint16_t draw_y;
 
+  if (img_id >= IMG_MAX_IDS_STORAGE_DESC_COUNT) {
+      app_log("img storage ID: %d Failed\r\n", img_id);
+      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
   plt_CCGetPosition(&draw_y, &draw_x);
-
-  if (!remove)
-     disp_DrawImage(draw_x, draw_y, img_id);
-  else
-     disp_EraseImage(draw_x, draw_y, img_id, bg_color);
-
-  width = width;
+  disp_DrawImage(draw_x, draw_y, img_id);
 }
 
 /*********************************************************************************
@@ -208,12 +253,17 @@ void fuim_DrawTitle(img_storage_id_t img_id, Word width, Word bg_color, Bool rem
 **********************************************************************************/
 void fuim_DrawString(img_storage_id_t img_id)
 {
-
   uint16_t draw_x;
   uint16_t draw_y;
 
-  plt_CCGetPosition(&draw_y, &draw_x);
-  disp_DrawImage(draw_x, draw_y, img_id);
+  if (img_id >= IMG_MAX_IDS_STORAGE_DESC_COUNT) {
+      app_log("img storage ID: %d Failed\r\n", img_id);
+      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+    plt_CCGetPosition(&draw_y, &draw_x);
+    disp_DrawImage(draw_x, draw_y, img_id);
+    plt_CCSetPosition(draw_y, (draw_x + IMG_GET_WIDTH(img_id)));
 
 }
 
@@ -225,12 +275,12 @@ void fuim_EraseField( Word FirstPos, Word EndPos, fuim_FieldType Type )
 {
   Word  length;
 
-  plt_CCSetPosition (fuim_GetRowPosition(), FirstPos);
-  length = EndPos - FirstPos + 1;
-  //fuim_DrawRepeatedCharacter (length, ' ');
+  length = EndPos - FirstPos;
+  fuim_DrawRepeatedCharacter(length);
 
-    Type = Type;
-    length = length;
+  Type = Type;
+  length = length;
+
 }
 
 /*********************************************************************************
@@ -265,6 +315,8 @@ void fuim_InitIndicators(void)
 		fuim_Indicators[i] = NULL ;			
 		indicator_timer_handle[i] = FUIM_NO_FREE_TIMER_HANDLE ;
 	}
+
+  return;
 }
 
 
@@ -318,6 +370,10 @@ Word fuim_GetIndicatorFieldValueLength(fuimFieldStruct *field_data_ptr)
       }
     }break;
 
+    case FUIM_FIELDTYPE_SPACER:
+      length = 0;
+      break;
+
     default:
       length = 0;
      break;
@@ -336,8 +392,50 @@ Status of the field, TRUE when highlighted colours need to be used, FALSE for no
 ******************************************************************************************/
 void fuim_ConstructString(fuimFieldStruct  *field_data_ptr, Bool Highlighted)
 {
-    Highlighted = Highlighted;
-    field_data_ptr = field_data_ptr;
+
+  img_storage_id_t img_id = (img_storage_id_t) fuim_Observer (field_data_ptr->GetFunction);
+ 
+ if (img_id == IMG_MAX_IDS_STORAGE_DESC_COUNT) {  //There is NOT string ID to display
+     return;  
+  }
+ 
+  fuim_DrawString(img_id);
+
+  (void)Highlighted;
+
+}
+
+/*********************************************************************************
+
+
+**********************************************************************************/
+void fuim_DrawRepeatedCharacter(Word width)
+{
+  Word x_poz;
+  Word y_poz;
+  Word height;
+  Word bg_color;
+  Word fg_color;
+
+  if (width == 0) return;
+
+  plt_CCGetPosition(&y_poz, &x_poz);
+
+  if(width + x_poz > FUIM_MENU_WIDTH) {
+      app_log("width + x_poz > FUIM_MENU_WIDTH  %d Failed\r\n", width);
+      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
+
+
+
+  plt_CCGetForeGndBackGndColours(&fg_color, &bg_color);
+
+  height = plt_CCGetRowSize();
+
+  disp_EraseImage(x_poz, y_poz, width, height, bg_color);
+  
+  plt_CCSetPosition(y_poz, (x_poz + width));
+                    
 }
 
 /*********************************************************************************
@@ -346,17 +444,11 @@ void fuim_ConstructString(fuimFieldStruct  *field_data_ptr, Bool Highlighted)
 **********************************************************************************/
 void fuim_ConstructIndicatorValue( fuimFieldStruct  *field_data_ptr )
 {
- Byte  ForeGndColour;
 
- if((fuim_ValidityFunction( field_data_ptr -> ValidityFunction))== FUIM_VALIDITY_GRAYEDOUT)
- {
-     ForeGndColour = FUIM_GRAYED_OUT_COLOUR;
- }
- else
- {
-     ForeGndColour = FUIM_GRAYED_OUT_COLOUR;//fuim_GetFieldPromptColour( field_data_ptr) -> ForeGndColour  ;
- }
-
+  if((fuim_ValidityFunction( field_data_ptr -> ValidityFunction)) == FUIM_VALIDITY_NOTPRESENT)
+  {
+    return;
+  }
 
   switch( field_data_ptr->Type )
   {
@@ -365,7 +457,7 @@ void fuim_ConstructIndicatorValue( fuimFieldStruct  *field_data_ptr )
       break;
 
       case FUIM_FIELDTYPE_STRING_ID:
-        fuim_DrawString( (img_storage_id_t) fuim_Observer (field_data_ptr->GetFunction));
+        fuim_ConstructString( field_data_ptr, TRUE);//fuim_DrawString( (img_storage_id_t) fuim_Observer (field_data_ptr->GetFunction));
       break;
 
       case FUIM_FIELDTYPE_STRING:
@@ -378,23 +470,28 @@ void fuim_ConstructIndicatorValue( fuimFieldStruct  *field_data_ptr )
 
   }
 
-  ForeGndColour = ForeGndColour;
-
 }
+
+
 
 /*********************************************************************************
 
 
 **********************************************************************************/
-void fuim_ConstructIndicatorPrompt(fuimFieldStruct *field_data_ptr,  Word value_position )
+void fuim_ConstructIndicatorPrompt(fuimFieldStruct *field_data_ptr)
 {
-  Byte  PromptID = (field_data_ptr->Prompt);
+  Byte  PromptID;
+  Word  width;
 
-  value_position = value_position;
+  PromptID = (field_data_ptr->Prompt);
 
-  if(( PromptID ) !=  FMNU_NONE_PROMPT) {
-      fuim_DrawString((img_storage_id_t) PromptID);
+  if (( PromptID ) ==  FMNU_NONE_PROMPT) {
+    return;
   }
+
+  fuim_DrawString((img_storage_id_t) PromptID);
+
+  (void)width;
 
 }
 
@@ -405,90 +502,91 @@ void fuim_ConstructIndicatorPrompt(fuimFieldStruct *field_data_ptr,  Word value_
 void fuim_ConstructIndicatorField( fuimFieldStruct         *field_data_ptr,
                                    fuim_IndicatorProperty  *position )
 {
-
-  Byte  ForeGndColour = 0;
-  Byte  BackGndColour = 0;
-  Byte  Attribute = 0;
+  Word  ForeGndColour = 0;
+  Word  BackGndColour = 0;
+  Word  Attribute = 0;
   Word  value_length;
   Word  value_delta = 0;
+  fuim_Validity   validity;
 
+  Word VertLocation = fuim_GetRowPosition();
 
-  Attribute     = fuim_GetFieldPromptColour(field_data_ptr) -> Attribute;
-  ForeGndColour = fuim_GetFieldPromptColour(field_data_ptr) -> ForeGndColour;
-  BackGndColour = fuim_GetFieldPromptColour(field_data_ptr) -> BackGndColour;
+  validity = fuim_ValidityFunction(field_data_ptr-> ValidityFunction);
 
+  (void)validity;
   /************************************************************
   *   Prepare setting from the end of field
   *************************************************************/
-
   value_length = fuim_GetIndicatorFieldValueLength( field_data_ptr );
-
   if( (position->EndPos) != (position -> ValuePos + value_length) )
   {
-      if( (position->EndPos) > (position -> ValuePos + value_length) )
-      {
-          value_delta = (position->EndPos) - ( (position -> ValuePos) + value_length);
-      }
-
+    if( (position->EndPos) > (position -> ValuePos + value_length) )
+    {
+      value_delta = (position->EndPos) - ( (position -> ValuePos) + value_length);
+    }   
+    
     position->EndPos      = position -> ValuePos + value_length ;
     position->FieldWidth  = position -> EndPos - position -> FirstPos;
-
+    
   }
 
   /************************************************************
   *   The indicator is drawn starting from the END position.
   *************************************************************/
 
-  plt_CCSetBackgroundColour( FUIM_COLOUR_TRANSPARENT);
-  fuim_SetAttributes( FUIM_ATTRIBUTES_NONE );
+  Attribute     = fuim_GetFieldPromptColour(field_data_ptr) -> Attribute;
+  ForeGndColour = fuim_GetFieldPromptColour(field_data_ptr) -> ForeGndColour;
+  BackGndColour = fuim_GetFieldPromptColour(field_data_ptr) -> BackGndColour;
 
-  plt_CCSetRowSize( Attribute & (FUIM_ATTRIBUTES_DOUBLEHEIGHT + FUIM_ATTRIBUTES_DOUBLEWIDTH));
+  plt_CCSetBackgroundColour(BackGndColour);
+  plt_CCSetForegroundColour(ForeGndColour);
+
+  fuim_SetAttributes(FUIM_ATTRIBUTES_NONE);
+  plt_CCSetRowSize((Byte)(Attribute & (FUIM_ATTRIBUTES_ROW_SIZE)));
+  //fuim_SetRowPosition(VertLocation + position->MarginTop);
 
 
-  plt_CCSetPosition( fuim_GetRowPosition() , ( position->EndPos ) );
-
-  if(value_delta != 0) // Erase previous content
+  if(value_delta != 0) //Start erase from the end position, Erase previous old value
   {
-    fuim_SetColumnPosition( ( position->EndPos ) + 1 );
-   //fuim_DrawRepeatedCharacter (value_delta, ' ');
+    fuim_SetColumnPosition(position->EndPos);
+    fuim_DrawRepeatedCharacter (value_delta);	
   }
 
+//Erase between FirstPos and PromptPos
+  plt_CCSetPosition(VertLocation, (position->FirstPos));
+  value_delta = ((position->PromptPos ) > (position -> FirstPos)) ? (position->PromptPos -  position -> FirstPos) : (0);
+  fuim_DrawRepeatedCharacter (value_delta);
 
-/*************************************************************************************/
+//test string
+  if (fuim_GetColumnPosition() != position -> PromptPos)
+  {
+    app_log("Ind prompt != Position  %d Failed\r\n", position -> PromptPos);
+    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+  }
 
+  fuim_SetRowPosition(VertLocation + position->MarginTop);
 
+//Draw from PromptPos
+  fuim_SetColumnPosition(position -> PromptPos);
+  fuim_ConstructIndicatorPrompt(field_data_ptr);
 
-   plt_CCSetPosition( fuim_GetRowPosition() , ( position->FirstPos ) );
+  fuim_SetRowPosition(VertLocation); //Restore Vertical location
+  value_delta = (fuim_GetColumnPosition() < (position -> ValuePos)) ? ((position -> ValuePos) - fuim_GetColumnPosition() ) : (0);
+  fuim_DrawRepeatedCharacter (value_delta);
 
-   plt_CCSetForegroundColour(ForeGndColour);
-   plt_CCSetBackgroundColour(BackGndColour);
-   fuim_SetAttributes( Attribute);
+//Draw from ValuePos
+  fuim_SetRowPosition(VertLocation + position->MarginTop);
+  fuim_SetColumnPosition(position -> ValuePos);
+  fuim_ConstructIndicatorValue(field_data_ptr);
 
-   plt_CCSetPosition( fuim_GetRowPosition(), ( position->FirstPos ) + 1 );
+//Erase untill the end 
+  fuim_SetRowPosition(VertLocation); //Restore Vertical location
 
-   fuim_SetColumnPosition( position ->PromptPos);
-
-
-   /*************************************************************************************/
-   fuim_ConstructIndicatorPrompt( field_data_ptr, position->ValuePos );
-   /*************************************************************************************/
-
-   fuim_SetColumnPosition(position  -> ValuePos);
-
-//остановился на позиции ValuePos
-
-
-   plt_CCSetForegroundColour( ForeGndColour);
-
-   /*************************************************************************************/
-   fuim_ConstructIndicatorValue(field_data_ptr );
-   /*************************************************************************************/
-
-  // Затерание предыдущего конца
-
-  // fuim_DrawRepeatedCharacter ((position->FirstPos + position->FieldWidth) - fuim_GetColumnPosition(), ' ');
-
-
+  if (fuim_GetColumnPosition() < FUIM_MENU_WIDTH)
+  {
+    value_delta = (fuim_GetColumnPosition() < (position->FirstPos + position->FieldWidth)) ? ((position->FirstPos + position->FieldWidth) - fuim_GetColumnPosition()) : (0);
+    fuim_DrawRepeatedCharacter(value_delta);
+  }
 }
 
 
@@ -498,16 +596,29 @@ void fuim_ConstructIndicatorField( fuimFieldStruct         *field_data_ptr,
 **********************************************************************************/
 void fuim_DestroyIndicatorField( fuimFieldStruct  *field_data_ptr, fuim_IndicatorProperty *position)
 {
-   Word   RowPos;
+  Word  BackGndColour = 0;
+  Word  Attribute = 0;
+//  Word  value_length;
+//  Word  value_delta = 0;
 
-   fuim_EraseField( position->FirstPos, position->EndPos, field_data_ptr->Type);
-   RowPos = fuim_GetRowPosition();
-   plt_CCSetPosition(RowPos, 0 );
- //  plt_CCSetRowSize(FUIM_ATTRIBUTES_DOUBLEHEIGHT);
-  // grf_FlyBackSync();
-   plt_CCSetPosition(RowPos, 0);
-   position->EndPos = 0; // - это связанно с вычислением  value_delta != 0  Затерание предыдущего конца
-   return;
+  Attribute     = fuim_GetFieldPromptColour(field_data_ptr) -> Attribute;
+  BackGndColour = fuim_GetFieldPromptColour(field_data_ptr) -> BackGndColour;
+
+ if(field_data_ptr ->Type == FUIM_FIELDTYPE_MODAL_NOTIFICATION)
+ {
+   BackGndColour = fuim_GetFieldPromptColour(field_data_ptr) -> BackGndHighLighted;
+ }
+
+
+  plt_CCSetBackgroundColour(BackGndColour);
+  fuim_SetAttributes(FUIM_ATTRIBUTES_NONE);
+  plt_CCSetRowSize((Byte)(Attribute & (FUIM_ATTRIBUTES_ROW_SIZE)));
+
+  fuim_EraseField(position->FirstPos, position->EndPos, field_data_ptr->Type);
+   
+  position->EndPos = 0; // - this is related to the calculation of value_delta != 0 Deleting the previous end
+
+  return;
 }
 
 /*********************************************************************************
@@ -519,6 +630,7 @@ osdDialogHandle fuim_ConstructIndicator(fuimIndicatorStruct *indicator_data_ptr)
   osdDialogHandle          handle;
   fuimFieldStruct        * field_data_ptr;
   fuim_IndicatorProperty * properties;
+  fuim_Validity            validity;
 
   handle = 0 ;
 
@@ -530,7 +642,8 @@ osdDialogHandle fuim_ConstructIndicator(fuimIndicatorStruct *indicator_data_ptr)
     return  (osdDialogHandle)0;
   } else {
     field_data_ptr = (fuimFieldStruct *)indicator_data_ptr->Field;
-    if(fuim_ValidityFunction(field_data_ptr-> ValidityFunction) == FUIM_VALIDITY_NOTPRESENT) {
+    validity = fuim_ValidityFunction(field_data_ptr-> ValidityFunction);
+    if(validity == FUIM_VALIDITY_NOTPRESENT) {
         return  (osdDialogHandle)0;
     } else {
         fuim_Indicators[ handle ] = indicator_data_ptr ;
@@ -540,10 +653,11 @@ osdDialogHandle fuim_ConstructIndicator(fuimIndicatorStruct *indicator_data_ptr)
   properties = &fuim_indicator_properties [handle];
 
   properties->FirstPos  = fuim_GetIndicatorHorLocation(indicator_data_ptr);
-  properties->PromptPos = fuim_GetIndicatorHorLocation(indicator_data_ptr);
+  properties->PromptPos = fuim_GetIndicatorPromptPos(indicator_data_ptr);
   properties->ValuePos  = fuim_GetIndicatorValuePos(indicator_data_ptr);
+  properties-> MarginTop = fuim_GetIndicatorVertMaginTop(indicator_data_ptr);
 
-    /*  Set Row Position in pixels   */
+      /*  Set Row Position in pixels   */
 
   fuim_SetRowPosition (fuim_GetIndicatorVertLocation(indicator_data_ptr));
   fuim_ConstructIndicatorField (field_data_ptr, properties);
@@ -753,7 +867,7 @@ void fuim_TimerFunction( Byte index,  osdDialogHandle hDialog )
 
     case MENU_TIMER_FUNCTION: {
       fmnu_RemoveCurrentMenu();
-      auph_SetState(AU_DIRECT_STATE);
+      auph_SetState(AU_IDLE_STATE);
     } break;
 
     default:
@@ -784,6 +898,8 @@ void fuim_UpdateTimers(void)
       }
     }
   }
+
+  return;
 }
 
 /*****************************************************************************
@@ -794,7 +910,7 @@ void fuim_Init(void)
   bool is_timer64ms_running = false;
 
 
-  plt_CCInit( FUIM_MAX_NR_OF_COLS, FUIM_MAX_NR_OF_ROWS);//, TRUE );
+  plt_CCInit( FUIM_MAX_NR_OF_COLS, FUIM_MAX_NR_OF_ROWS);
   fuim_InitTimers();
   fmnu_InitMenus();
   fuim_InitIndicators();
@@ -820,7 +936,11 @@ void fuim_Init(void)
 *****************************************************************************/
 void fuim_TurnOn(void)
 {
-    SetupPeriodicTimer(FUIM_PERIODIC_TIMEOUT);
+  fuim_InitIndicators();
+  fuim_InitTimers();
+  fmnu_InitMenus();
+
+  SetupPeriodicTimer(FUIM_PERIODIC_TIMEOUT);
 }
 
 /*****************************************************************************
@@ -828,7 +948,7 @@ void fuim_TurnOn(void)
 *****************************************************************************/
 void fuim_TurnOff(void)
 {
-    fuim_InitTimers();
+  fuim_InitTimers();
 }
 
 /*********************************************************************************
@@ -877,7 +997,7 @@ void fuim_SetRowPosition(Word row)
 **********************************************************************************/
 void fuim_SetColumnPosition(Word column)
 {
-  plt_CCSetPosition( fuim_GetRowPosition(), column );
+  plt_CCSetPosition(fuim_GetRowPosition(), column);
 }
 
 
@@ -885,18 +1005,15 @@ void fuim_SetColumnPosition(Word column)
 
 
 **********************************************************************************/
-void fuim_SetAttributes(Byte Attributes)
+void fuim_SetAttributes(Word Attributes)
 {
-//  Bool Mode = TRUE;
 
   if (Attributes == FUIM_ATTRIBUTES_NONE)
   {
-    Attributes = 0xFF;
- //   Mode = FALSE;
+    Attributes = Attributes;
   }
 
 }
-
 
 /*********************************************************************************
 
@@ -918,7 +1035,7 @@ void fuim_SetIndicatorTimeOut (osdDialogHandle hDialog,  Byte TimeOutInSeconds)
 **********************************************************************************/
 void fuim_SetNextRow(void)
 {
-    plt_CCSetPosition( fuim_GetRowPosition() + 1, fuim_GetColumnPosition() );
+    plt_CCSetPosition( fuim_GetRowPosition() + plt_CCGetRowSize(), fuim_GetColumnPosition() );
 }
 
 
@@ -932,24 +1049,242 @@ void fuim_SetNextRow(void)
 fuimColourStruct  *fuim_DynamicColours ( Byte index )/* @parm function ID */
 /*EMP=======================================================================*/
 {
-   switch (index)
-   {
-     case AUIM_MAIN_MENU_COLOUR:
-         return ((fuimColourStruct  *)&MainMenuPromptColor);
-         break;
+  switch (index)
+  {
+    case AUIM_MAIN_MENU_COLOUR:
+         return ((fuimColourStruct *)&MainMenuPromptColor);
+    break;
 
-     case  AUIM_INDICATOR_COLOUR:
-         return ((fuimColourStruct  *)&IndicatorPromptColour);
-         break;
+    case AUIM_MENU_FIELD_COLOUR:
+        return ((fuimColourStruct *)&NormalMenuPromptColour);
+    break;
 
-      case AUIM_MENU_FIELD_COLOUR:
-         return ((fuimColourStruct  *)&NormalMenuPromptColour);
-         break;
+    case AUIM_BUTTON_FIELD_COLOUR:
+        return ((fuimColourStruct *)&ButtonPromptColour);
+    break;
+
+    case AUIM_INDICATOR_COLOUR:
+        return ((fuimColourStruct *)&IndicatorPromptColour);
+    break;
+
+    case AUIM_BLANK_INDICATOR_COLOUR:
+        return ((fuimColourStruct *)&IndicatorPromptColour);
+    break;
+
+    case AUIM_MODAL_INDICATOR_COLOUR:
+        return ((fuimColourStruct *)&IndicatorModalPromptColour);
+    break;
+
+    case AUIM_SPLASH_SCREEN_COLOUR:
+        return ((fuimColourStruct *)&IndicatorSplashScreenColour);
+    break;
 
     default:
-         return ((fuimColourStruct  *)&IndicatorPromptColour);
-         break;
+        return ((fuimColourStruct *)&IndicatorPromptColour);
+    break;
 
   }
 
 }
+
+
+/**
+ * @brief Draws a numeric value with safe formatting and alignment control.
+ * * @param value               Numeric value to display (float or integer).
+ * @param FieldScalingNumeric Number of decimal places (precision).
+ * @param FieldSizeNumeric    Total field width in characters.
+ * @param align               Alignment type (Left, Center, Right).
+ * @param size                Font size (Small/Large).
+ * @param color           Color index for the LUT.
+ * @param x, y                Base coordinates for the field start.
+ */
+void fuim_DrawNumeric( osdFieldValue GetFunction,
+                      Byte FieldScalingNumeric,
+                      Byte FieldSizeNumeric,
+                      fuim_FontSize size,
+                      fuim_FontColor color,
+                      fuim_Alignment align)
+{
+    /* Buffer size: digits + optional minus + decimal point + null terminator */
+      char str_buf[FUIM_MAX_NUMERIC_LENGTH + 1];
+      uint16_t char_width = (size == FUIM_FONT_SIZE_LARGE) ? 40 : 18;
+
+      float value = fuim_Observer(GetFunction);
+
+      /* 1. Safe string formatting.
+           * %.*f uses the first argument for precision and the second for the value.
+       */
+      int printed = snprintf(str_buf, sizeof(str_buf), "%.*f", (int)FieldScalingNumeric, value);
+
+      if (printed < 0) return;
+
+      /* Safety check: if the string exceeds the field size, truncate it. */
+      Byte actual_len = (Byte)printed;
+      if (actual_len > FieldSizeNumeric) {
+          actual_len = FieldSizeNumeric;
+          str_buf[actual_len] = '\0';
+      }
+
+      /* 2. Alignment calculation.
+           * Calculate the pixel offset within a box of 'FieldSizeNumeric' width.
+           */
+      uint16_t total_field_px = FieldSizeNumeric * char_width;
+      uint16_t text_width_px  = actual_len * char_width;
+      uint16_t current_x = fuim_GetColumnPosition();
+
+      if (total_field_px > text_width_px) {
+          switch (align) {
+              case FUIM_ALIGNMENT_RIGHT:
+                  current_x += (total_field_px - text_width_px);
+                  break;
+              case FUIM_ALIGNMENT_CENTRE:
+                  current_x += (total_field_px - text_width_px) / 2;
+                  break;
+              case FUIM_ALIGNMENT_LEFT:
+              default:
+                /* current_x remains at start x */
+                  break;
+          }
+      }
+
+      /* 3. Character rendering loop via Asset ID system. */
+      for (Byte i = 0; str_buf[i] != '\0'; i++) {
+          /* Retrieve the specific Asset ID for the character. */
+          Word asset_id = fuim_DigitToFontAssetId(str_buf[i], size, color);
+
+          fuim_SetColumnPosition(current_x);
+          /* Render if the symbol (digit, dot, or minus) exists in the table. */
+          if (asset_id != IMG_MAX_IDS_STORAGE_DESC_COUNT) {
+              fuim_DrawString(asset_id);
+          }
+
+          /* Shift the cursor by one character width. */
+          current_x += char_width;
+      }
+
+}
+
+/*********************************************************************************
+
+#define FUIM_MAX_NUMERIC_LENGTH 5
+#define DIGIT_BUFFER_SIZE FUIM_MAX_NUMERIC_LENGTH
+**********************************************************************************/
+/*
+void fuim_DrawNumeric(char  *NumericCharacter,
+                      osdFieldValue GetFunction,
+                      Byte FieldScalingNumeric,
+                      Byte FieldSizeNumeric,
+                      Bool Highlighted )
+
+{
+    Byte   Digits, Decimals, Strlen, i ;
+    Byte   string [ FUIM_MAX_NUMERIC_LENGTH + 1 ];
+    Byte   tempstr[ FUIM_MAX_NUMERIC_LENGTH + 2 ];
+
+  if( Highlighted && (fuim_GetNrOfDigits() != 0 ))
+  {
+
+    fuim_GetDigitBufferString( string , NumericCharacter[1] );
+    Strlen = FieldSizeNumeric;
+  }
+  else
+  {
+    fuim_itoa(fuim_Observer(GetFunction) , string );
+    Strlen = fuim_GetStringLength (string);
+  }
+
+
+  Decimals = FieldScalingNumeric;
+  Digits   = FieldSizeNumeric;
+
+  if (Decimals == 0)
+  {
+
+
+
+    string [Digits] = '\0';
+    fuim_DrawString ( string );
+
+
+      if (Strlen < Digits)
+      {
+        fuim_DrawRepeatedCharacter (Digits - Strlen, ' ');
+      }
+  }
+  else
+  {
+
+
+
+    for (i = 0; i < Digits - Decimals - 1; i++)
+    {
+      tempstr[i] = ' ' ;
+    }
+
+
+    for ( ; i < Digits + 1; i++)
+    {
+      tempstr[i] = '0';
+    }
+
+
+    tempstr [Digits - Decimals] = NumericCharacter[0];
+
+    tempstr [i] = '\0';
+
+
+    while( Strlen > 0 )
+    {
+      i--;
+      if ( i == Digits - Decimals )
+      {
+        i--;
+      }
+      tempstr[i] = string[--Strlen] ;
+    }
+    fuim_DrawString( tempstr );
+  }
+} */
+
+
+/*********************************************************************************
+
+
+**********************************************************************************/
+void fuim_ConstructNumeric(fuimFieldStruct  *field_data_ptr,
+                           Bool Highlighted )
+{
+
+Byte Prefix, Suffix;
+
+Prefix = field_data_ptr->Prefix;
+Suffix = field_data_ptr->Suffix;
+
+ if(Prefix > 0)
+ {
+
+   if(fuim_Observer(field_data_ptr->GetFunction) != FMNU_PREFIX_NONE )
+   {
+       fuim_DrawString ( fmnu_str_Prefix[Prefix]);
+   }
+
+ }
+
+ Highlighted = Highlighted;
+
+ fuim_DrawNumeric( field_data_ptr->GetFunction,
+                   field_data_ptr->FieldScaling.Numeric,
+                   field_data_ptr->FieldSize.Numeric,
+                   field_data_ptr->FieldCharacters.NumericFont.size,
+                   field_data_ptr->FieldCharacters.NumericFont.color,
+                   field_data_ptr->Alignment
+);
+
+ if(Suffix > 0 )
+ {
+    fuim_DrawString (fmnu_str_Suffix[Suffix]);
+ }
+
+}
+
+

@@ -8,7 +8,7 @@
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
-
+#include "app_log.h"
 #include "rbsc_api.h"
 #include "aukh.h"
 #include "auph.h"
@@ -36,13 +36,13 @@ typedef void (* VOID_FUNCTION_PTR)(void);
 #define X_IN_SERVICE             0x80
 
 
-#define PERMISSION_STANDBY            X_IN_STANDBY + X_IN_MENU + X_IN_SERVICE
-#define PERMISSION_DIRECT             X_IN_IDLE + X_IN_MENU
-#define PERMISSION_IDLE               X_IN_IDLE
-#define PERMISSION_MENU               X_REPEAT + X_NOT_IN_TEXT + X_IN_MENU  
-#define PERMISSION_DIRECT_MENU        X_IN_TEXT
-#define PERMISSION_SERVICE            X_IN_IDLE
-#define PERMISSION_PROTECTION         X_ALWAYS
+#define PERMISSION_STANDBY            (X_IN_STANDBY)
+#define PERMISSION_DIRECT             (X_IN_IDLE + X_IN_MENU)
+#define PERMISSION_IDLE               (X_REPEAT + X_IN_IDLE + X_IN_MENU + X_NOT_IN_MENU)
+#define PERMISSION_MENU               (X_REPEAT + X_NOT_IN_TEXT + X_IN_MENU)
+#define PERMISSION_DIRECT_MENU        (X_IN_TEXT)
+#define PERMISSION_SERVICE            (X_IN_IDLE)
+#define PERMISSION_PROTECTION         (X_ALWAYS)
 
 
 #define LENGTH_KEY_GROUPCODE_TABLE  ( sizeof(key_groupcode_table) / \
@@ -89,7 +89,7 @@ static auphKeyGroup const key_groupcode_table[] = {
 ,{ AU_VIRTUAL_KEY_4, AU_GROUP_IDLE        }
 ,{ AU_VIRTUAL_KEY_3, AU_GROUP_STANDBY     }
 ,{ AU_KEY_MENU,      AU_GROUP_MENU        }
-,{ AU_VIRTUAL_KEY_5, AU_GROUP_SERVICE     }
+,{ AU_VIRTUAL_KEY_5, AU_GROUP_IDLE        }
 
 };
 
@@ -153,7 +153,7 @@ static void HandleStandby(void)
 
    if (aukh_FirstKeyPress())
    {
-      if( ( aukh_GetCurrentCommand() == AU_KEY_STANDBY )&&
+      if( ( aukh_GetCurrentCommand() == AU_VIRTUAL_KEY_3) && //AU_KEY_STANDBY )&&
           ( fpmt_GetPowerState() == FPMT_POWER_ON )      )
       {
         fpmt_SetPowerState(FPMT_STAND_BY);
@@ -203,23 +203,12 @@ static void HandleService(void)
 static void HandleMenu(void)
 {
 
-
  if (aukh_FirstKeyPress()) {
 
    fmnu_Activate(AUIM_MNU_INDEX_CONFIG_MENU);
    auph_SetState(AU_CONFIGURAION_MENU_STATE);
  }
-/* else
- {
-     if(aukh_FirstKeyPress())
-       {
 
-  find_DirectIndicators(rbsc_ChangeControlAround(find_GetIndicatorFocus(),
-                                                  0,
-                                                 (FIND_DIRECT_MAX_INDICATOR - 1),
-                                                  0));
-       }
-   }*/
 }
 
 /*************************************************************************
@@ -259,6 +248,8 @@ static void HandleMenu(void)
 
       permission = permission_table[key_groupcode_table[index].group];
 
+      app_log("Key %d, Group %d, Permission 0x%X\r\n",key_groupcode_table[index].key, key_groupcode_table[index].group, permission);
+
        if ((permission & X_REPEAT) || aukh_FirstKeyPress())/*Checks if the entered key is pressed for the first time*/
        {
            /* If the button is pressed for the first time or its repetition is allowed */
@@ -276,38 +267,47 @@ static void HandleMenu(void)
               }break;
 
               case AU_IDLE_STATE: {
-               if (permission & PERMISSION_IDLE)
+/*               if (permission & PERMISSION_IDLE)
                {
                    HandleDirectKey(key_groupcode_table[index].group);
-               }
+               }*/
+                if (permission & X_IN_MENU)
+                {
+               /*  Menu is active, and the key is allowed in menu   */
+                  fmnu_HandleCommand();
+
+                 } else
+                 {
+                    if (!(permission & X_NOT_IN_MENU))
+                    { /*Not a menu key but allowed in menu*/
+                     /* Not a menu key but allowed in menu       */
+                     HandleDirectKey(key_groupcode_table[index].group);
+                    }
+                 }
+
               } break;
 
-              case AU_MENU_STATE:{
-                 if (permission & X_IN_MENU)
-                 {
-                /*  Menu is active, and the key is allowed in menu   */
-                   fmnu_HandleCommand();
+              case AU_PAIRING_STATE:
+              {
+                if (permission & X_IN_SERVICE)
+                {
+               /*  Menu is active, and the key is allowed in menu   */
+                  fmnu_HandleCommand();
 
-                  } else
-                  {
-                     if (!(permission & X_NOT_IN_MENU))
-                     { /*Not a menu key but allowed in menu*/
-                      /* Not a menu key but allowed in menu       */
-                      HandleDirectKey(key_groupcode_table[index].group);
+                } else
+                {
+                   if (!(permission & X_NOT_IN_MENU))
+                   { /*Not a menu key but allowed in menu*/
+                    /* Not a menu key but allowed in menu       */
+                    HandleDirectKey(key_groupcode_table[index].group);
+                   }
+                }
+
+              } break;
+
+             default:{
+                 ; /* No action, because the key is NOT allowed in the current state */
                      }
-                  }
-
-               }break;
-
-                 case AU_DIRECT_STATE:{
-
-                   HandleDirectKey(key_groupcode_table[index].group);
-
-                 }break;
-
-                  default:{
-                            ; /* No action, because the key is NOT allowed in the current state */
-                           }
 
              }//End brace of switch(auph_GetState)
 
