@@ -26,6 +26,17 @@
 #include <stdbool.h>
 #include "em_device.h"
 
+#include "app_log.h"
+#include "em_core.h"
+
+#include "em_eusart.h"
+#include "em_usart.h"
+#include "em_device.h"
+#include "em_cmu.h"
+#include <stdio.h>
+
+#include "helpers.h"
+
 #if defined(BOOTLOADER_ENABLE)
 #include "api/btl_interface.h"
 
@@ -95,7 +106,7 @@ void Default_Handler(void);
  *----------------------------------------------------------------------------*/
 /* Cortex-M Processor Exceptions */
 void NMI_Handler(void) __attribute__ ((weak, alias("Default_Handler")));
-void HardFault_Handler(void) __attribute__ ((weak, alias("Default_Handler")));
+//void HardFault_Handler(void) __attribute__ ((weak, alias("Default_Handler")));
 void MemManage_Handler(void) __attribute__ ((weak, alias("Default_Handler")));
 void BusFault_Handler(void) __attribute__ ((weak, alias("Default_Handler")));
 void UsageFault_Handler(void) __attribute__ ((weak, alias("Default_Handler")));
@@ -405,11 +416,133 @@ __NO_RETURN void Reset_Handler(void)
 /*----------------------------------------------------------------------------
  * Default Handler for Exceptions / Interrupts
  *----------------------------------------------------------------------------*/
+//volatile uint32_t g_default_handler_irq = 0;
+
+
+
+/* ================================================================
+ * HardFault Handler — naked функция
+ *
+ * ВАЖНО: naked означает что компилятор НЕ генерирует
+ *        пролог/эпилог — стек остаётся нетронутым
+ *
+ * Определяет какой стек активен (MSP или PSP)
+ * и передаёт указатель на него в HardFault_dump
+ * ================================================================ */
+__attribute__((naked)) void HardFault_Handler(void)
+{
+    __asm volatile(
+        /* Проверяем бит 2 LR (EXC_RETURN):
+         * 0 = MSP использовался до исключения
+         * 1 = PSP использовался до исключения */
+        "tst lr, #4              \n"
+        "ite eq                  \n"
+        "mrseq r0, msp           \n"  /* если бит 2 = 0 -> MSP в R0 */
+        "mrsne r0, psp           \n"  /* если бит 2 = 1 -> PSP в R0 */
+        /* Прыгаем в C-функцию с SP как аргументом */
+        "ldr r1, =HardFault_dump \n"
+        "bx  r1                  \n"
+    );
+}
+
+/* ================================================================
+ * Default Handler
+ *
+ * Вызывается для любого необработанного прерывания
+ * Выводит номер IRQ и состояние NVIC
+ * ================================================================ */
 void Default_Handler(void)
 {
-  while (true) {
-    // Default behavior is halting execution.
-  }
+    __disable_irq();
+
+    /* Читаем регистры немедленно */
+    const uint32_t ipsr_val = __get_IPSR();
+    const uint32_t iabr0    = NVIC->IABR[0];
+    const uint32_t iabr1    = NVIC->IABR[1];
+    const uint32_t iser0    = NVIC->ISER[0];
+    const uint32_t iser1    = NVIC->ISER[1];
+    const uint32_t ispr0    = NVIC->ISPR[0];
+    const uint32_t ispr1    = NVIC->ISPR[1];
+    const uint32_t msp      = __get_MSP();
+    const uint32_t psp      = __get_PSP();
+
+    FaultUART_Init();
+
+    fault_puts("\r\n");
+    fault_puts("**************************************************\r\n");
+    fault_puts("**        !!! DEFAULT HANDLER !!!             **\r\n");
+    fault_puts("** Unhandled interrupt — no ISR registered    **\r\n");
+    fault_puts("**************************************************\r\n");
+
+    /* ---- Номер прерывания ---- */
+    fault_section("1. INTERRUPT INFO");
+    fault_reg("IPSR      ", ipsr_val);
+    fault_puts("  Exception number: "); fault_dec(ipsr_val & 0x1FF);
+    fault_puts("\r\n");
+    fault_puts("  IRQn:             "); fault_dec((int32_t)(ipsr_val & 0x1FF) - 16);
+    fault_puts("\r\n");
+
+    /* ---- NVIC состояние ---- */
+    fault_section("2. NVIC STATE");
+
+    fault_puts("  -- Active (IABR) -- \r\n");
+    fault_puts("  IABR[0] = "); fault_hex32(iabr0);
+    fault_puts("  <-- currently active IRQs\r\n");
+    fault_puts("  IABR[1] = "); fault_hex32(iabr1);
+    fault_puts("\r\n");
+
+    fault_puts("  -- Enabled (ISER) --\r\n");
+    fault_puts("  ISER[0] = "); fault_hex32(iser0);
+    fault_puts("  <-- enabled IRQs\r\n");
+    fault_puts("  ISER[1] = "); fault_hex32(iser1);
+    fault_puts("\r\n");
+
+    fault_puts("  -- Pending (ISPR) --\r\n");
+    fault_puts("  ISPR[0] = "); fault_hex32(ispr0);
+    fault_puts("  <-- pending IRQs\r\n");
+    fault_puts("  ISPR[1] = "); fault_hex32(ispr1);
+    fault_puts("\r\n");
+
+    /* ---- Поиск активного бита в IABR ---- */
+    fault_section("3. ACTIVE IRQ DECODE");
+    int found = 0;
+    for (int i = 0; i < 32; i++) {
+        if (iabr0 & (1u << i)) {
+            fault_puts("  [!] Active IRQ: "); fault_dec(i);
+            fault_puts("  (IABR[0] bit "); fault_dec(i); fault_puts(")\r\n");
+            found++;
+        }
+    }
+    for (int i = 0; i < 32; i++) {
+        if (iabr1 & (1u << i)) {
+            fault_puts("  [!] Active IRQ: "); fault_dec(i + 32);
+            fault_puts("  (IABR[1] bit "); fault_dec(i); fault_puts(")\r\n");
+            found++;
+        }
+    }
+    if (!found)
+        fault_puts("  (no active IRQ bits in IABR)\r\n");
+
+    /* ---- Стек ---- */
+    fault_section("4. STACK POINTERS");
+    fault_reg("MSP", msp);
+    fault_reg("PSP", psp);
+    if (msp < 0x20000000 || msp > 0x2007FFFF)
+        fault_puts("  [!!] WARNING: MSP outside RAM — stack overflow?\r\n");
+
+    /* ---- Итог ---- */
+    fault_puts("\r\n");
+    fault_puts("**************************************************\r\n");
+    fault_puts("** HOW TO DEBUG:                               **\r\n");
+    fault_puts("**  1. Find IRQn in device header file         **\r\n");
+    fault_puts("**     e.g. bgm220sc22wga2.h                   **\r\n");
+    fault_puts("**  2. Check IABR for active IRQ bit           **\r\n");
+    fault_puts("**  3. Verify IRQ handler is implemented       **\r\n");
+    fault_puts("**  4. Check NVIC_SetVector() calls            **\r\n");
+    fault_puts("**  5. Check startup file vector table         **\r\n");
+    fault_puts("**************************************************\r\n");
+
+    while (1);
 }
 
 #if defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)

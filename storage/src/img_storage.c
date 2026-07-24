@@ -245,6 +245,12 @@ const img_storage_descriptor_t img_storage_desc[IMG_MAX_IDS_STORAGE_DESC_COUNT] 
         .height = 28
     },
     {
+        .storage_address = IMG_PROPERTY_1_VARIANT11_6_ADDRESS,
+        .data_size = 4640,
+        .width = 40,
+        .height = 58
+    },
+    {
         .storage_address = IMG_PROPERTY_1_VARIANT11_ADDRESS,
         .data_size = 4640,
         .width = 40,
@@ -260,6 +266,42 @@ const img_storage_descriptor_t img_storage_desc[IMG_MAX_IDS_STORAGE_DESC_COUNT] 
         .storage_address = IMG_PROPERTY_1_VARIANT13_ADDRESS,
         .data_size = 8646,
         .width = 131,
+        .height = 33
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT14_ADDRESS,
+        .data_size = 8118,
+        .width = 123,
+        .height = 33
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT15_ADDRESS,
+        .data_size = 18944,
+        .width = 296,
+        .height = 32
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT16_ADDRESS,
+        .data_size = 6858,
+        .width = 127,
+        .height = 27
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT17_ADDRESS,
+        .data_size = 2700,
+        .width = 50,
+        .height = 27
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT18_ADDRESS,
+        .data_size = 4554,
+        .width = 69,
+        .height = 33
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT19_ADDRESS,
+        .data_size = 4884,
+        .width = 74,
         .height = 33
     },
     {
@@ -315,6 +357,30 @@ const img_storage_descriptor_t img_storage_desc[IMG_MAX_IDS_STORAGE_DESC_COUNT] 
         .data_size = 11584,
         .width = 181,
         .height = 32
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT20_1_ADDRESS,
+        .data_size = 1008,
+        .width = 18,
+        .height = 28
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT20_2_ADDRESS,
+        .data_size = 1008,
+        .width = 18,
+        .height = 28
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT20_3_ADDRESS,
+        .data_size = 1960,
+        .width = 35,
+        .height = 28
+    },
+    {
+        .storage_address = IMG_PROPERTY_1_VARIANT20_4_ADDRESS,
+        .data_size = 1960,
+        .width = 35,
+        .height = 28
     },
     {
         .storage_address = IMG_PROPERTY_1_VARIANT3_1_ADDRESS,
@@ -522,8 +588,8 @@ const img_storage_descriptor_t img_storage_desc[IMG_MAX_IDS_STORAGE_DESC_COUNT] 
     },
     {
         .storage_address = IMG_PROPERTY_1_VARIANT6_ADDRESS,
-        .data_size = 8576,
-        .width = 134,
+        .data_size = 17344,
+        .width = 271,
         .height = 32
     },
     {
@@ -647,6 +713,12 @@ const img_storage_descriptor_t img_storage_desc[IMG_MAX_IDS_STORAGE_DESC_COUNT] 
         .height = 33
     },
     {
+        .storage_address = IMG_PROPERTY_1_VARIANT9_7_ADDRESS,
+        .data_size = 1008,
+        .width = 18,
+        .height = 28
+    },
+    {
         .storage_address = IMG_PROPERTY_1_VARIANT9_ADDRESS,
         .data_size = 12480,
         .width = 195,
@@ -664,6 +736,13 @@ const img_storage_descriptor_t img_storage_desc[IMG_MAX_IDS_STORAGE_DESC_COUNT] 
         .width = 73,
         .height = 73
     },
+    {
+        .storage_address = IMG_X_LNK_ADDRESS,
+        .data_size = 1008,
+        .width = 18,
+        .height = 28
+    },
+
 };
 
 const uint32_t img_storage_desc_count = IMG_MAX_IDS_STORAGE_DESC_COUNT;

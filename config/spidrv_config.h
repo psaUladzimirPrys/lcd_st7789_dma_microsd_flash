@@ -36,8 +36,8 @@
  ******************************************************************************/
 
 /// SPIDRV configuration option. Use this define to include the slave part of the SPIDRV API.
-#define EMDRV_SPIDRV_INCLUDE_SLAVE
-
+//There is NO SLAVE  @Commented out by UP
+// @Commented out by UP #define EMDRV_SPIDRV_INCLUDE_SLAVE
 /** @} (end addtogroup spidrv) */
 
 #endif /* __SILICON_LABS_SPIDRV_CONFIG_H__ */

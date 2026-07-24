@@ -49,7 +49,6 @@ typedef enum
 /*=======================================================================*/
 /* L O C A L   D A T A   D E F I N I T I O N S                           */
 /*=======================================================================*/
-
 static Word   key_repetition_count;/* Counter for key repetition
                                        increments while the key is pressed,
                                         resets when a new key is pressed. */
@@ -75,35 +74,7 @@ static AU_COMMAND   previous;   /* Previous command. Used to detect
 
 static Byte   au_simulated_key; /* Variable for simulating a key press */
 
-
-
- /* Translation table for local keyboard. */
-/*
-static Byte const LOCAL_KEYBOARD_TABLE[] =
-{
-   AU_KEY_INVALID
-  ,AU_KEY_START
-  ,AU_KEY_NO
-  ,AU_KEY_CLOSE
-  ,AU_KEY_PERF_CHK
-  ,AU_KEY_NEXT
-  ,AU_KEY_CANCEL
-  ,AU_KEY_YES
-  ,AU_KEY_PARAMS
-
-  ,AU_KEY_MENU
-};
-*/
-
-/*
-AU_KEY_PRESS_INVALID = 0
-,AU_KEY_PRESS_SHORT
-,AU_KEY_PRESS_LONG
-,AU_KEY_PRESS_VERY_LONG
-,AU_KEY_PRESS_MULTI_3_TIME
-,AU_KEY_PRESS_MULTI_5_TIME
-*/
-
+/* Translation table for local keyboard. */
 static Byte const LOCAL_KEYBOARD_TABLE[] =
 {
    AU_KEY_INVALID
@@ -112,6 +83,7 @@ static Byte const LOCAL_KEYBOARD_TABLE[] =
   ,AU_VIRTUAL_KEY_3
   ,AU_VIRTUAL_KEY_4
   ,AU_VIRTUAL_KEY_5
+  ,AU_VIRTUAL_KEY_6
   ,AU_KEY_PROCESSED
 };
 
@@ -126,7 +98,7 @@ static Byte GetLocalKey(void);
 
 
 /*=======================================================================*/
-/*                                                                       */
+/* L O C A L   F U N C T I O N S                                         */
 /*=======================================================================*/
 static Byte GetLocalKey(void)
 {
@@ -134,6 +106,29 @@ static Byte GetLocalKey(void)
   value = local_key_buffer;
   local_key_buffer = 0;
   return (value);
+}
+
+/*************************************************************************
+           Checks the key for repetition and increments the counter if
+           the key is pressed again. Resets the counter if a different key
+           is detected.
+
+           Pre condition  : previous                au_current
+                            key_repetition_count   current repetition count
+
+           Module name: aukh
+****************************************************************************/
+static void CheckKeyRepetition(Byte command)
+{
+   if ((command == previous.command)) {
+      key_hold_count++;
+      key_repetition_count++;
+
+   } else {
+      key_hold_count       = AU_KEY_PRESSED_FIRST_TIME;
+      key_repetition_count = AU_KEY_PRESSED_FIRST_TIME;
+   }
+   previous.command = command;
 }
 
 
@@ -148,9 +143,34 @@ static Byte GetLocalKey(void)
 **************************************************************************/
 void aukh_Init(void)
 {
-   au_simulated_key   = AU_KEY_INVALID;
-   previous.command   = AU_KEY_INVALID;
-   au_current.command = AU_KEY_INVALID;
+   au_simulated_key     = AU_KEY_INVALID;
+   previous.command     = AU_KEY_INVALID;
+   au_current.command   = AU_KEY_INVALID;
+
+   key_hold_count       = AU_KEY_PRESSED_FIRST_TIME;
+   key_repetition_count = AU_KEY_PRESSED_FIRST_TIME;
+}
+
+/*************************************************************************
+   Set internal variables for the AUKH module.
+   Set internal variables to initial state on TurnOn .
+
+   Module name: aukh
+**************************************************************************/
+void aukh_TurnOn(void)
+{
+  previous.command     = AU_KEY_INVALID;
+}
+
+/*************************************************************************
+   Reset internal variables for the AUKH module.
+   Reset internal variables to initial state on TurnOff .
+
+   Module name: aukh
+**************************************************************************/
+void aukh_TurnOff(void)
+{
+  previous.command     = AU_KEY_INVALID;
 }
 
 /*************************************************************************
@@ -184,29 +204,21 @@ Bool aukh_ReadCommand (void)
           KEY_UNION   new_key;
    key_origin_enum    new_key_detected = KEY_NONE;
 
-   if ((new_key.key_data.key_code = GetLocalKey()) != 0)
-   {
-
+   if ((new_key.key_data.key_code = GetLocalKey()) != 0) {
       /* ***************************************************************************/
       /*           Press of a local key detected  Mapping local key code           */
       /* ***************************************************************************/
-
       new_key_detected = KEY_LOCAL;
 
       au_current.command = LOCAL_KEYBOARD_TABLE[new_key.key_data.key_code];
 
-
-    }
-    else if (au_simulated_key != AU_KEY_INVALID)
-    {
+    } else if (au_simulated_key != AU_KEY_INVALID) {
       /* *****************************************************************************/
       /*                Simulated key press detected                                 */
       /* *****************************************************************************/
-
       new_key_detected     = KEY_SIMUL;
 
       au_current.command   = au_simulated_key;
-
 
       key_hold_count       = AU_KEY_PRESSED_FIRST_TIME;
       key_repetition_count = AU_KEY_PRESSED_FIRST_TIME;
@@ -214,8 +226,7 @@ Bool aukh_ReadCommand (void)
 
     }
 
-   if (new_key_detected == KEY_LOCAL)
-   {
+   if (new_key_detected == KEY_LOCAL) {
   /*===========================================================================*/
   /*    If   a  new  key  is  detected (au_current.command changes),          */
   /*   save new_key.key_data.key_code for comparison.          */
@@ -256,14 +267,10 @@ Bool aukh_FirstKeyPress(void)
 ****************************************************************************/
 Bool aukh_RepeatEvery(Byte repeat_time)
 {
-
-   if (key_repetition_count == (Word)repeat_time)
-   {
+   if (key_repetition_count == (Word)repeat_time) {
       key_repetition_count = AU_KEY_PRESSED_FIRST_TIME;
       return TRUE;
-   }
-   else
-   {
+   } else {
       return FALSE;
    }
 }
@@ -337,37 +344,9 @@ void aukh_SetSimulatedKey(Byte simulate_key)
   au_simulated_key = simulate_key;
 }
 
-/*=======================================================================*/
-/* L O C A L   F U N C T I O N S                                         */
-/*=======================================================================*/
-/*************************************************************************
-           Checks the key for repetition and increments the counter if
-           the key is pressed again. Resets the counter if a different key
-           is detected.
+/**************************************************************************
 
-           Pre condition  : previous = au_current
-                            key_repetition_count = current repetition count
-
-           Module name: aukh
-****************************************************************************/
-static void CheckKeyRepetition(Byte command)
-{
-   if ((command == previous.command))
-   {
-      key_hold_count++;
-      key_repetition_count++;
-
-   }
-   else
-   {
-      key_hold_count       = AU_KEY_PRESSED_FIRST_TIME;
-      key_repetition_count = AU_KEY_PRESSED_FIRST_TIME;
-
-   }
-
-
-   previous.command = command;
-}
+***************************************************************************/
 
 void aukh_PostButtonEvent(auphKeyPressType_enum type)
 {

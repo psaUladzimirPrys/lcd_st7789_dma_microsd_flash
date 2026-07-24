@@ -56,7 +56,7 @@ extern "C"
 // <i>
 // <i> If set to 0, the default bitrate of SPI is used
 // <i> Default: 0
-#define MIKROE_MICROSD_MMC_FAST_CLOCK         38000000
+#define MIKROE_MICROSD_MMC_FAST_CLOCK         9600000
 // </h>
 // <<< end of configuration section >>>
 
@@ -65,7 +65,7 @@ extern "C"
 // <gpio optional=true> MIKROE_MICROSD_MMC_CD
 // $[GPIO_MIKROE_MICROSD_MMC_CD]
 #ifndef MIKROE_MICROSD_MMC_CD_PORT              
-#define MIKROE_MICROSD_MMC_CD_PORT               SL_GPIO_PORT_A
+#define MIKROE_MICROSD_MMC_CD_PORT               SL_GPIO_PORT_B
 #endif
 #ifndef MIKROE_MICROSD_MMC_CD_PIN               
 #define MIKROE_MICROSD_MMC_CD_PIN                0

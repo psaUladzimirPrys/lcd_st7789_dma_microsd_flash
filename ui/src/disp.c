@@ -1,7 +1,7 @@
 /*
  * ui_display.c
  *
- *  Created on: 30 янв. 2026 г.
+ *  Created on: 30 Jan. 2026
  *      Author: priss
  */
 
@@ -28,13 +28,13 @@
 /* L O C A L   S Y M B O L   D E C L A R A T I O N S                     */
 /*=======================================================================*/
 
+/*--- Global/Static variables ---*/
 /*=======================================================================*/
-/* UP Display configuration section declaration  variables         */
+/* GLIB drawing context: holds viewport, colors, text settings     */
 /*=======================================================================*/
-
 static glib_context_t g_context;
 
-
+/* ST7789 SPI interface configuration */
 MIPI_DBI_SPI_INTERFACE_DEFINE(st7789_config,
                               ADAFRUIT_ST7789_PERIPHERAL,
                               ADAFRUIT_ST7789_PERIPHERAL_NO,
@@ -52,8 +52,10 @@ MIPI_DBI_SPI_INTERFACE_DEFINE(st7789_config,
                               ADAFRUIT_ST7789_DC_PORT,
                               ADAFRUIT_ST7789_DC_PIN);
 
-static volatile bool disp_timer_expire = false;
+/* Periodic sleeptimer handle used for display refresh scheduling */
 static sl_sleeptimer_timer_handle_t disp_timer;
+/* Flag set by sleeptimer callback to indicate timer expiration */
+static volatile bool disp_timer_expire = false;
 
 
 /*=======================================================================*/
@@ -80,9 +82,24 @@ static inline uint32_t micros_start(void)
 #endif
 
 
-/*=======================================================================*/
-/*    L O C A L   F U N C T I O N                                        */
-/*=======================================================================*/
+/*=================================================================================
+*   Function:    disp_timer_callback
+*   Description: Sleeptimer callback that signals timer expiration to the display loop.
+*
+*   Arguments:
+*   Parameter    Flow    Description
+*   ------------------------------------------------------------------------------
+*   timer    IN    Sleeptimer handle that expired (unused)
+*   data     IN    User data pointer (unused)
+*
+*   Externals    Flow    Usage
+*   ------------------------------------------------------------------------------
+*   disp_timer_expire OUT  Set to true to notify main loop
+*
+*   @return void
+*
+*   @note Called from SL sleeptimer ISR context. Sets volatile flag only; no heavy processing.
+===================================================================================*/
 static void disp_timer_callback(sl_sleeptimer_timer_handle_t *timer, void *data)
 {
   (void)timer;
@@ -92,10 +109,23 @@ static void disp_timer_callback(sl_sleeptimer_timer_handle_t *timer, void *data)
 }
 
 
-/*=======================================================================*/
-/* F U N C T I O N S                                                     */
-/*=======================================================================*/
-
+/*=================================================================================
+*   Function:    disp_Init
+*   Description: Initializes the ST7789 TFT display, GLIB graphics context, and the
+*                periodic sleeptimer for display refresh scheduling.
+*
+*   Arguments:        None
+*
+*   Externals    Flow    Usage
+*   ------------------------------------------------------------------------------
+*   g_context      OUT  Initialized by glib_init(), configured with colors and text size
+*   disp_timer     OUT  Periodic timer handle started with DISP_TIMER_SMALL
+*   st7789_config  IN   SPI interface configuration passed to driver init
+*
+*   @return void
+*
+*   @note Asserts on any hardware init failure. Display output is disabled until disp_TurnOn().
+===================================================================================*/
 void disp_Init(void)
 {
 
@@ -152,14 +182,39 @@ void disp_Init(void)
 
 }
 
-/***************************************************************************//**
- * Display ticking function.
- ******************************************************************************/
+/*=================================================================================
+*   Function:    disp_Update
+*   Description: Display tick placeholder. Intended for per-tick display refresh work.
+*
+*   Arguments:        None
+*
+*   Externals    Flow    Usage
+*   ------------------------------------------------------------------------------
+*   disp_timer_expire IN  Volatile flag checked for timer expiration
+*
+*   @return void
+*
+*   @note Currently empty; reserved for future display refresh logic.
+===================================================================================*/
 void disp_Update(void)
 {
 
 }
 
+/*=================================================================================
+*   Function:    disp_TurnOn
+*   Description: Enables the ST7789 display output and fills the screen with white.
+*
+*   Arguments:        None
+*
+*   Externals    Flow    Usage
+*   ------------------------------------------------------------------------------
+*   g_context IN  Passed to glib_fill() and glib_enable_display()
+*
+*   @return void
+*
+*   @note Asserts on GLIB error. Requires prior disp_Init().
+===================================================================================*/
 void disp_TurnOn(void)
 {
   glib_status_t status = GLIB_OK;
@@ -176,6 +231,20 @@ void disp_TurnOn(void)
 
 }
 
+/*=================================================================================
+*   Function:    disp_TurnOff
+*   Description: Fills the screen with black and disables the ST7789 display output.
+*
+*   Arguments:        None
+*
+*   Externals    Flow    Usage
+*   ------------------------------------------------------------------------------
+*   g_context IN  Passed to glib_fill() and glib_enable_display()
+*
+*   @return void
+*
+*   @note Asserts on GLIB error. Requires prior disp_Init().
+===================================================================================*/
 void disp_TurnOff(void)
 {
   glib_status_t status = GLIB_OK;
@@ -192,6 +261,25 @@ void disp_TurnOff(void)
 
 }
 
+/*=================================================================================
+*   Function:    disp_DrawImage
+*   Description: Draws an RGB bitmap from flash storage to the ST7789 display.
+*
+*   Arguments:
+*   Parameter    Flow    Description
+*   ------------------------------------------------------------------------------
+*   x        IN   X coordinate of top-left corner
+*   y        IN   Y coordinate of top-left corner
+*   img_id   IN   Image storage ID used to obtain width, height, and flash address
+*
+*   Externals    Flow    Usage
+*   ------------------------------------------------------------------------------
+*   None
+*
+*   @return void
+*
+*   @note Asserts on driver error. Image data is read directly from flash via IMG_GET_* macros.
+===================================================================================*/
 void disp_DrawImage(int16_t x, int16_t y, img_storage_id_t img_id)
 {
   sl_status_t status = SL_STATUS_OK;
@@ -201,6 +289,27 @@ void disp_DrawImage(int16_t x, int16_t y, img_storage_id_t img_id)
   }
 }
 
+/*=================================================================================
+*   Function:    disp_EraseImage
+*   Description: Fills a rectangular region on the ST7789 display with the specified background color.
+*
+*   Arguments:
+*   Parameter    Flow    Description
+*   ------------------------------------------------------------------------------
+*   x         IN   X coordinate of top-left corner
+*   y         IN   Y coordinate of top-left corner
+*   width     IN   Rectangle width in pixels
+*   height    IN   Rectangle height in pixels
+*   bg_color  IN   Background color value (16-bit RGB565)
+*
+*   Externals    Flow    Usage
+*   ------------------------------------------------------------------------------
+*   None
+*
+*   @return void
+*
+*   @note Asserts on driver error. Useful for clearing previously drawn image areas.
+===================================================================================*/
 void disp_EraseImage(int16_t x, int16_t y, int16_t width, int16_t height, uint16_t bg_color)
 {
   sl_status_t status = SL_STATUS_OK;
@@ -208,6 +317,34 @@ void disp_EraseImage(int16_t x, int16_t y, int16_t width, int16_t height, uint16
   status = adafruit_st7789_fill_rectangle(x, y, width, height, bg_color);
   if (status != SL_STATUS_OK)  {
     app_assert_status(status);
+  }
+
+}
+
+/*=================================================================================
+*   Function:    disp_FillScreen
+*   Description: Fills the entire display with the specified solid color using GLIB.
+*
+*   Arguments:
+*   Parameter    Flow    Description
+*   ------------------------------------------------------------------------------
+*   color    IN   16-bit RGB565 color value
+*
+*   Externals    Flow    Usage
+*   ------------------------------------------------------------------------------
+*   g_context IN  Passed to glib_fill() to perform full-screen fill
+*
+*   @return void
+*
+*   @note Asserts on GLIB error. Requires prior disp_Init().
+===================================================================================*/
+void disp_FillScreen(int16_t color)
+{
+  glib_status_t status = GLIB_OK;
+
+  status = glib_fill(&g_context, color);
+  if (status != GLIB_OK)  {
+    app_assert_status(SL_STATUS_FAIL);
   }
 
 }

@@ -46,7 +46,7 @@ extern "C"
 
 // <o ADAFRUIT_ST7789_BITRATE> ST7789 SPI bitrate
 // <i> Default: 20000000
-#define ADAFRUIT_ST7789_BITRATE                 38400000
+#define ADAFRUIT_ST7789_BITRATE              9600000UL //19200000UL   //38400000
 
 // <o ADAFRUIT_ST7789_CLOCK_MODE> SPI clock mode
 // <spidrvClockMode0=> SPI mode 0: CLKPOL=0, CLKPHA=0
@@ -97,22 +97,22 @@ extern "C"
 #define ADAFRUIT_ST7789_CLK_PIN                  2
 #endif
 
-// USART0 CS on PC06
+// USART0 CS on PC05
 #ifndef ADAFRUIT_ST7789_CS_PORT                 
 #define ADAFRUIT_ST7789_CS_PORT                  SL_GPIO_PORT_C
 #endif
 #ifndef ADAFRUIT_ST7789_CS_PIN                  
-#define ADAFRUIT_ST7789_CS_PIN                   6
+#define ADAFRUIT_ST7789_CS_PIN                   5
 #endif
 // [USART_ADAFRUIT_ST7789]$
 
 // <gpio optional=true> ADAFRUIT_ST7789_DC
 // $[GPIO_ADAFRUIT_ST7789_DC]
 #ifndef ADAFRUIT_ST7789_DC_PORT                 
-#define ADAFRUIT_ST7789_DC_PORT                  SL_GPIO_PORT_D
+#define ADAFRUIT_ST7789_DC_PORT                  SL_GPIO_PORT_B
 #endif
 #ifndef ADAFRUIT_ST7789_DC_PIN                  
-#define ADAFRUIT_ST7789_DC_PIN                   2
+#define ADAFRUIT_ST7789_DC_PIN                   3
 #endif
 // [GPIO_ADAFRUIT_ST7789_DC]$
 

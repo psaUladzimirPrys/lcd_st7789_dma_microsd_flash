@@ -49,17 +49,6 @@ void plt_CCInit(Word Length, Word Height);
 void plt_CCSetPosition(Word Row, Word Column);
 
 
-/*******************************************************************************
-* NAME: plt_CCDrawChar
-* Displays the symbol on the screen
-* Returns :  void
-*
-* Externals    Flow    Usage
-* ------------------------------------------------------------------------------
-* Character     IN      Symbol recorded for display
-*
-********************************/
-void plt_CCDrawChar(char Character);
 
 /********************************************************************************
 * NAME: plt_CCSetBackgroundColour

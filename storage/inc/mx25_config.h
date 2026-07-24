@@ -44,8 +44,8 @@ extern "C" {
  *   SPIDRV_HandleData_t mx25_spi_handle;
  *
  *   SPIDRV_Init_t initData = {
- *     .port            = USART1,
- *     .bitRate         = 8000000,
+ *     .port            = USART0,
+ *     .bitRate         = 9600000UL,  //19200000UL,
  *     .frameLength     = 8,
  *     .dummyTxValue    = 0xFF,
  *     .type            = spidrvMaster,
@@ -136,10 +136,10 @@ extern SPIDRV_HandleData_t mx25_spi_handle_data;
  * ========================================================================== */
 
 /* Maximum supported SPI clock for MX25L/MX25R */
-#define MX25_SPI_MAX_FREQ       38400000UL
+#define MX25_SPI_MAX_FREQ       9600000UL  //19200000UL//38400000UL
 
 /* Recommended default */
-#define MX25_SPI_DEFAULT_FREQ   MX25_SPI_MAX_FREQ    //19200000UL
+#define MX25_SPI_DEFAULT_FREQ   MX25_SPI_MAX_FREQ
 
 /* ============================================================================
  * Driver behavior configuration
@@ -171,7 +171,7 @@ extern SPIDRV_HandleData_t mx25_spi_handle_data;
  * #define MX25_DELAY_HOOK()  __NOP()
  */ 
 #ifndef MX25_DELAY_HOOK 
- #define MX25_DELAY_HOOK()  do {} while (0)
+ #define MX25_DELAY_HOOK()  do {;} while (0)
 //#define MX25_DELAY_HOOK()  sl_sleeptimer_delay_millisecond(10)
 //#define MX25_DELAY_HOOK()
 #endif

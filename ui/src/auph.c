@@ -16,6 +16,10 @@
 #include "auim_mnu.h"
 #include "find_api.h"
 #include "fpmt_api.h"
+#include "fsrv.h"
+#include "disp.h"
+#include "aevs.h"
+
 
 /*==========================================================================*/
 /*     G L O B A L   D E F I N I T I O N S                                  */
@@ -28,7 +32,7 @@ typedef void (* VOID_FUNCTION_PTR)(void);
 #define X_ALWAYS                 0x00 
 #define X_REPEAT                 0x01 
 #define X_IN_TEXT                0x02
-#define X_NOT_IN_TEXT            0x04
+#define X_NOT_IN_DIRECT          0x04
 #define X_IN_MENU                0x08
 #define X_NOT_IN_MENU            0x10
 #define X_IN_STANDBY             0x20
@@ -36,13 +40,13 @@ typedef void (* VOID_FUNCTION_PTR)(void);
 #define X_IN_SERVICE             0x80
 
 
-#define PERMISSION_STANDBY            (X_IN_STANDBY)
-#define PERMISSION_DIRECT             (X_IN_IDLE + X_IN_MENU)
-#define PERMISSION_IDLE               (X_REPEAT + X_IN_IDLE + X_IN_MENU + X_NOT_IN_MENU)
-#define PERMISSION_MENU               (X_REPEAT + X_NOT_IN_TEXT + X_IN_MENU)
-#define PERMISSION_DIRECT_MENU        (X_IN_TEXT)
-#define PERMISSION_SERVICE            (X_IN_IDLE)
-#define PERMISSION_PROTECTION         (X_ALWAYS)
+#define PERMISSION_IDLE          (X_REPEAT | X_IN_IDLE | X_IN_MENU | X_NOT_IN_MENU)
+#define PERMISSION_STANDBY       (X_IN_STANDBY)
+#define PERMISSION_DIRECT        (X_IN_IDLE)
+#define PERMISSION_MENU          (X_REPEAT | X_IN_MENU | X_NOT_IN_MENU)
+#define PERMISSION_ERROR         (X_ALWAYS)
+
+//#define PERMISSION_DIRECT_MENU   (X_NOT_IN_DIRECT)
 
 
 #define LENGTH_KEY_GROUPCODE_TABLE  ( sizeof(key_groupcode_table) / \
@@ -55,22 +59,22 @@ static void HandleIdleKey(void);
 static void HandleStandby(void);
 static void HandleMenu(void);
 static void HandleDirectKey(Byte key_group);
-static void HandleService(void);
+static void HandleError(void);
 static void HandleDirect(void);
 
 
 /*==========================================================================*/
 /*     L O C A L   D A T A   D E F I N I T I O N S                          */
 /*==========================================================================*/
-/******************************************************************************
+/*===========================================================================
     @struct auphKeyGroup | In the structure, the first field contains the key code.
             The second field contains the group code to which the key belongs.
-******************************************************************************/
+===========================================================================*/
 typedef struct
 {
    Byte key;   /* @field action action field (key number) */
-   Byte group; /* @field function function field to be executed when the key is pressed.
-                              This is an index in the 'Observer' function table */
+   Byte group; /* @field function function field to be executed when the key is pressed. */
+               /* This is an index in the 'Observer' function table */
 } auphKeyGroup;
 
 /*EMP=======================================================================*/
@@ -80,20 +84,49 @@ typedef struct
 /* AU_VIRTUAL_KEY_3  AU_KEY_PRESS_VERY_LONG     */
 /* AU_VIRTUAL_KEY_4  AU_KEY_PRESS_MULTI_3_TIME  */
 /* AU_VIRTUAL_KEY_5  AU_KEY_PRESS_MULTI_5_TIME  */
+/* AU_VIRTUAL_KEY_6  AU_KEY_PRESS_MULTI_2_TIME  */
 
+/*=======================================================================*/
 /* ROM table containing the code group for each key code. */
 static auphKeyGroup const key_groupcode_table[] = {
 
- { AU_VIRTUAL_KEY_1, AU_GROUP_DIRECT      }
-,{ AU_VIRTUAL_KEY_2, AU_GROUP_MENU        }
-,{ AU_VIRTUAL_KEY_4, AU_GROUP_IDLE        }
-,{ AU_VIRTUAL_KEY_3, AU_GROUP_STANDBY     }
-,{ AU_KEY_MENU,      AU_GROUP_MENU        }
-,{ AU_VIRTUAL_KEY_5, AU_GROUP_IDLE        }
+ { AU_VIRTUAL_KEY_1,                       AU_GROUP_MENU }
+,{ AU_VIRTUAL_KEY_2,                       AU_GROUP_MENU }
+,{ AU_VIRTUAL_KEY_4,                       AU_GROUP_IDLE }
+,{ AU_VIRTUAL_KEY_3,                    AU_GROUP_STANDBY }
+,{ AU_VIRTUAL_KEY_5,                       AU_GROUP_IDLE }
+,{ AU_VIRTUAL_KEY_6,                       AU_GROUP_IDLE }
+
+// AU_ERROR_STATE
+,{ AU_ERROR_STATE_SET,                    AU_GROUP_ERROR }
+// AU_GROUP_PAIRING
+,{ AU_PAIRING_MENU_OK,                     AU_GROUP_MENU }
+,{ AU_PAIRING_MENU_FAILED,                 AU_GROUP_MENU }
+// AU_GROUP_PERFORMANCE
+,{ AU_PERFORMANCE_MENU_START,              AU_GROUP_MENU }
+,{ AU_PERFORMANCE_MENU_FINISHED,           AU_GROUP_MENU }
+,{ AU_PERFORMANCE_MENU_CHECK_END,          AU_GROUP_MENU }
+// AU_GROUP_REFERENCE
+,{ AU_REFERENCE_MENU_START,                AU_GROUP_MENU }
+,{ AU_REFERENCE_MENU_FINISHED,             AU_GROUP_MENU }
+,{ AU_REFERENCE_PERFORM_MENU_REPEAT_START, AU_GROUP_MENU }
+,{ AU_REFERENCE_PATIENT_MENU_REPEAT_START, AU_GROUP_MENU }
+ // AU_GROUP_PATIENT
+,{ AU_PATIENT_MENU_START,                  AU_GROUP_MENU }
+,{ AU_PATIENT_MENU_FINISHED,               AU_GROUP_MENU }
+,{ AU_PATIENT_MENU_CHECK_END,              AU_GROUP_MENU }
+,{ AU_PATIENT_MENU_FAILED,                 AU_GROUP_MENU }
+,{ AU_PATIENT_MENU_VALIDATING,             AU_GROUP_MENU }
+,{ AU_PATIENT_MENU_VALIDATING_RESULT,      AU_GROUP_MENU }
+
+,{ AU_IDLE_MENU_START,                   AU_GROUP_DIRECT }
+
+,{ AU_MENU_CHARGE_BATTERY_ENTER,           AU_GROUP_IDLE }
+,{ AU_MENU_CHARGE_BATTERY_CANCELED,        AU_GROUP_MENU }
 
 };
 
-
+/*=======================================================================*/
 /* ROM table containing permissions for each key group code. */
 static Byte const permission_table[] =
 {
@@ -102,11 +135,11 @@ static Byte const permission_table[] =
    PERMISSION_STANDBY,            /* AU_GROUP_STANDBY            */
    PERMISSION_DIRECT,             /* AU_GROUP_DIRECT             */
    PERMISSION_MENU,               /* AU_GROUP_MENU               */
-   PERMISSION_SERVICE,            /* AU_GROUP_SERVICE            */
+   PERMISSION_ERROR,              /* AU_GROUP_ERROR              */
 
 };
 
-
+/*=======================================================================*/
 /* ROM table containing function pointers for each key group code. */
 static const VOID_FUNCTION_PTR direct_function_table[] =
 {
@@ -114,7 +147,7 @@ static const VOID_FUNCTION_PTR direct_function_table[] =
    HandleStandby,                /* AU_GROUP_STANDBY              */
    HandleDirect,                 /* AU_GROUP_DIRECT               */
    HandleMenu,                   /* AU_GROUP_MENU                 */
-   HandleService,                /* AU_GROUP_SERVICE              */
+   HandleError,                  /* AU_GROUP_ERROR                */
 };
 
 /*==========================================================================*/
@@ -123,7 +156,7 @@ static const VOID_FUNCTION_PTR direct_function_table[] =
 
 static auphOsteoState_enum  auph_state = AU_STANDBY_STATE;
 
-/*=======================================================================*/
+
 /*========================================================================
    @func   Returns the current OsteoProbe state
    @comm   Function belongs to component: auph
@@ -144,23 +177,14 @@ void auph_SetState(auphOsteoState_enum new_state)
 
 
 /*========================================================================
-          Function processes standby command
-          Returns nothing
-          Belongs to component: auph
+  Function processes standby command
+  Returns nothing
+  Belongs to component: auph
 ========================================================================*/
 static void HandleStandby(void)
 {
-
-   if (aukh_FirstKeyPress())
-   {
-      if( ( aukh_GetCurrentCommand() == AU_VIRTUAL_KEY_3) && //AU_KEY_STANDBY )&&
-          ( fpmt_GetPowerState() == FPMT_POWER_ON )      )
-      {
-        fpmt_SetPowerState(FPMT_STAND_BY);
-      }
-   }
-
-  return;
+   app_log("UI HandleStandby\r\n");
+   fpmt_HandleCommand();
 }
 
 /*========================================================================
@@ -170,7 +194,15 @@ static void HandleStandby(void)
 ========================================================================**/
 static void HandleIdleKey(void)
 {
-  return;
+  app_log("UI HandleIdleKey\r\n");
+//  if (aukh_FirstKeyPress()) {
+//    if (   ( fpmt_GetPowerState() == FPMT_POWER_ON )
+//        && ( aukh_GetCurrentCommand() == AU_MENU_CHARGE_BATTERY_ENTER)
+//    ) {
+//        fmnu_Activate(AUIM_MNU_INDEX_CHARGE_BATTERY_MENU);
+//    }
+//  }
+
 }
 
 /*========================================================================
@@ -180,38 +212,68 @@ static void HandleIdleKey(void)
 ========================================================================**/
 static void HandleDirect(void)
 {
-  return;
+ app_log("UI HandleDirect\r\n");
+ if ( fpmt_GetPowerState() == FPMT_POWER_ON )
+   if (aukh_FirstKeyPress()) {
+      if( aukh_GetCurrentCommand() == AU_IDLE_MENU_START) {
+         find_RemoveAllNotificationIndicators();
+         fmnu_Activate(AUIM_MNU_INDEX_IDLE_MENU);
+         auph_SetState(AU_IDLE_STATE);
+      }
+  }
+
 }
 /*========================================================================
-  Empty function with no action for future use
+  @brief Error state handler - executed via AU_ERROR_STATE_SET
+  
+  Triggered by fsrv_ErrorManager through aukh_SetSimulatedKey(AU_ERROR_STATE_SET).
+  Executes ONCE on first key press via aukh_FirstKeyPress() check in auph_ProcessKey().
+  
+  Sets critical error state and clears UI (find_RemoveAllIndicators, 
+  fmnu_RemoveCurrentMenu, find_DisplayIndicator(FIND_ID_ERROR)).
+  
+  System remains in fatal error state until power cycle.
+  
   Returns nothing
   Belongs to component: auph
 ========================================================================**/
-static void HandleService(void)
+static void HandleError(void)
 {
-  return;
+
+  app_log("UI HandleError\r\n");
+  if (aukh_FirstKeyPress()) {
+
+      /* Clear all UI */
+    find_RemoveAllIndicators();
+    fmnu_RemoveCurrentMenu();
+    disp_FillScreen(ST7789_WHITE);
+
+    /* Display error indicator */
+    find_DisplayIndicator(FIND_ID_ERROR);
+
+    /* Clear source error code after Displaying error indicator for next cycle */
+    fsrv_DS_SetErrorCode(ERR_CODE_NONE);
+
+    /* Set critical error state */
+    fpmt_SetPowerState(FPMT_ERROR);
+  }
 }
 
-/*******************************************************************************
+/*========================================================================
    @func   This function handles the Menu command
 
    @rdesc  Nothing is returned by this function
 
    @comm   Function belongs to component: auph
 
-******************************************************************************/
+========================================================================*/
 static void HandleMenu(void)
 {
-
- if (aukh_FirstKeyPress()) {
-
-   fmnu_Activate(AUIM_MNU_INDEX_CONFIG_MENU);
-   auph_SetState(AU_CONFIGURAION_MENU_STATE);
- }
-
+  app_log("UI HandleMenu\r\n");
+  return;
 }
 
-/*************************************************************************
+/*========================================================================
    Processing of user keys when not in:<nl>
       - standby mode<nl>
       - menu mode<nl>
@@ -220,16 +282,19 @@ static void HandleMenu(void)
 
    Returns nothing
    Belongs to component: auph
-***************************************************************************/
-
- static void HandleDirectKey(Byte key_group)
-{
+========================================================================*/
+static void HandleDirectKey(Byte key_group) {
    direct_function_table[key_group]();
 }
 
 
-/******************************************************************************
-******************************************************************************/
+/*========================================================================
+ *
+ *
+ *
+ *
+ *
+========================================================================*/
  void auph_ProcessKey(void)
  {
     Byte permission;
@@ -253,58 +318,46 @@ static void HandleMenu(void)
        if ((permission & X_REPEAT) || aukh_FirstKeyPress())/*Checks if the entered key is pressed for the first time*/
        {
            /* If the button is pressed for the first time or its repetition is allowed */
-            switch ( auph_GetState() )
-            {
+           switch ( auph_GetState() )
+           {
 
-              case AU_STANDBY_STATE:{
+             case AU_STANDBY_STATE: {
                 if(aukh_FirstKeyPress())
                 {
                   if((permission & X_IN_STANDBY)) /*Power On*/
                   {
-                    fpmt_HandleCommand();
+                      HandleDirectKey(key_groupcode_table[index].group);
                   }
                 }
-              }break;
+             } break;
 
-              case AU_IDLE_STATE: {
-/*               if (permission & PERMISSION_IDLE)
-               {
-                   HandleDirectKey(key_groupcode_table[index].group);
-               }*/
-                if (permission & X_IN_MENU)
-                {
+            case AU_IDLE_STATE: {
+                if (permission & X_IN_MENU) {
                /*  Menu is active, and the key is allowed in menu   */
                   fmnu_HandleCommand();
 
-                 } else
-                 {
-                    if (!(permission & X_NOT_IN_MENU))
-                    { /*Not a menu key but allowed in menu*/
+                 } else {
+                    if (!(permission & X_NOT_IN_MENU)) {
                      /* Not a menu key but allowed in menu       */
                      HandleDirectKey(key_groupcode_table[index].group);
                     }
                  }
 
-              } break;
+            } break;
 
-              case AU_PAIRING_STATE:
-              {
-                if (permission & X_IN_SERVICE)
-                {
+            case AU_MENU_STATE: {
+                if (permission & X_IN_MENU) {
                /*  Menu is active, and the key is allowed in menu   */
                   fmnu_HandleCommand();
 
-                } else
-                {
-                   if (!(permission & X_NOT_IN_MENU))
-                   { /*Not a menu key but allowed in menu*/
-                    /* Not a menu key but allowed in menu       */
-                    HandleDirectKey(key_groupcode_table[index].group);
-                   }
-                }
+                 } else {
+                    if (!(permission & X_NOT_IN_MENU)) {
+                     /* Not a menu key but allowed in menu       */
+                     HandleDirectKey(key_groupcode_table[index].group);
+                    }
+                 }
 
-              } break;
-
+             } break;
              default:{
                  ; /* No action, because the key is NOT allowed in the current state */
                      }

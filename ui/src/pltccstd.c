@@ -10,16 +10,19 @@
 /*=======================================================================*/
 /*        L O C A L   D A T A   D E C L A R A T I O N S                  */
 /*=======================================================================*/
-static Word  CCRows;             //Current position Row and Column
-static Word  CCColumn;
+
+/*--- Global/Static variables ---*/
+
+static Word  CCRows;             /* Current row position */
+static Word  CCColumn;           /* Current column position */
  
-static Word  CCMaxRows;          //Мах values of Rows and Columns
+static Word  CCMaxRows;          /* Max values for rows and columns */
 static Word  CCMaxColumns;
 
-static Word  CCBackgroundColour;
-static Word  CCForegroundColour;
+static Word  CCBackgroundColour; /* Current background color */
+static Word  CCForegroundColour; /* Current foreground color */
 
-static Byte  CCRowSize;          //Height
+static Byte  CCRowSize;          /* Height/row size in pixels/units */
 /*==========================================================================*/
 /* L O C A L        F U N C T I O N   P R O T O T Y P E S                   */
 /*==========================================================================*/
@@ -29,142 +32,191 @@ static Byte  CCRowSize;          //Height
 /*==========================================================================*/
 /* G L O B A L      F U N C T I O N                                         */
 /*==========================================================================*/
-/*****************************************************************************
+/*=================================================================================
+*   Function:    plt_CCInit
+*   Description: Initializes the character-cell display driver by setting the
+*                maximum allowed rows and columns for subsequent positioning.
 *
-* NAME: pltstd_CCInit
-*
-* Returns:  void
-*
+* Arguments:
 * Parameter    Flow    Description
-* --------------------------------------------------------------------------
-* Length        IN      Required number of columns
-* Height        IN      Required number of rows
-******************************************************************************/
+* ------------------------------------------------------------------------------
+* Length       IN      Requested number of columns
+* Height       IN      Requested number of rows
+*
+* Externals    Flow    Usage
+* ------------------------------------------------------------------------------
+* CCMaxColumns   OUT  Set to Length
+* CCMaxRows      OUT  Set to Height
+*
+* @return void
+*
+* @note Does not perform bounds checking on Length/Height values.
+===================================================================================*/
 void plt_CCInit(Word Length, Word Height)
 {
   CCMaxColumns = Length; // Store the requested number of columns in memory
   CCMaxRows    = Height; //  and rows
 }
 
-/*******************************************************************************
-* NAME: plt_CCSetPosition
-* Sets the display position for data recording
+/*=================================================================================
+*   Function:    plt_CCSetPosition
+*   Description: Sets the current cursor position for character-cell rendering.
 *
-* Returns :  void
-*
+* Arguments:
 * Parameter    Flow    Description
 * ------------------------------------------------------------------------------
+* Row          IN      Target row position
+* Column       IN      Target column position
 *
-* Row           IN      Start row for OSD information recording.
-* Column        IN      Start column for OSD information recording.
-********************************************************************************/
+* Externals    Flow    Usage
+* ------------------------------------------------------------------------------
+* CCRows   OUT  Updated with Row value
+* CCColumn OUT  Updated with Column value
+*
+* @return void
+*
+* @note No bounds checking against CCMaxRows/CCMaxColumns is performed.
+===================================================================================*/
 void plt_CCSetPosition(Word Row, Word Column)
 {
   CCRows = Row;       // Current row value
   CCColumn = Column;  // Current column value
 }
 
-/*******************************************************************************
-*@begin
-* NAME: plt_CCGetPosition
+/*=================================================================================
+*   Function:    plt_CCGetPosition
+*   Description: Retrieves the current cursor position for character-cell rendering.
 *
-* Gets the display position for data writes.
-*
-* Returns :  void
-*
+* Arguments:
 * Parameter    Flow    Description
 * ------------------------------------------------------------------------------
-* Row           OUT     Current Row
-* Column        OUT     Current Column
-*@end
-********************************************************************************/
+* Row          OUT     Current row position
+* Column       OUT     Current column position
+*
+* Externals    Flow    Usage
+* ------------------------------------------------------------------------------
+* CCRows   IN  Source for current row
+* CCColumn IN  Source for current column
+*
+* @return void
+*
+* @note Both Row and Column pointers must be non-NULL.
+===================================================================================*/
 void plt_CCGetPosition(Word *Row, Word *Column)
 {
-	* Row    = CCRows;
-	* Column = CCColumn;
+  * Row    = CCRows;
+  * Column = CCColumn;
 }
 
-/********************************************************************************
-* NAME: plt_CCSetBackgroundColour
+/*=================================================================================
+*   Function:    plt_CCSetBackgroundColour
+*   Description: Sets the background color used for subsequent character-cell
+*                rendering operations.
 *
-* Returns :  void
+* Arguments:
+* Parameter    Flow    Description
+* ------------------------------------------------------------------------------
+* BackgroundColour IN  Color value to set as background
 *
-* Parameter             Flow    Description
-* -------------------------------------------------------------------------------
-* BackgroundColour      IN      Color to be set as the background
-* SetAt                 IN      Flag to indicate when the attribute should take effect
-*@end
-**********************************************************************************/ 
+* Externals    Flow    Usage
+* ------------------------------------------------------------------------------
+* CCBackgroundColour   OUT  Updated with BackgroundColour value
+*
+* @return void
+*
+* @note Color value range is platform-dependent (typically ST7789 color format).
+===================================================================================*/
 void plt_CCSetBackgroundColour(Word BackgroundColour)
 {
   CCBackgroundColour = BackgroundColour;
 }
 
-/********************************************************************************
-*@begin
-* NAME: plt_CCSetForegroundColour
+/*=================================================================================
+*   Function:    plt_CCSetForegroundColour
+*   Description: Sets the foreground color used for subsequent character-cell
+*                rendering operations.
 *
-* Sets the required foreground color for characters to be written in
-*
-* Returns :  void
-*
+* Arguments:
 * Parameter    Flow    Description
-* -------------------------------------------------------------------------------
-* ForegroundColour      IN      Color to be set as the foreground
+* ------------------------------------------------------------------------------
+* ForegroundColour IN  Color value to set as foreground
 *
-*@end
-********************************************************************************/ 
+* Externals    Flow    Usage
+* ------------------------------------------------------------------------------
+* CCForegroundColour   OUT  Updated with ForegroundColour value
+*
+* @return void
+*
+* @note Color value range is platform-dependent (typically ST7789 color format).
+===================================================================================*/
 void plt_CCSetForegroundColour(Word ForegroundColour)
 {
   CCForegroundColour = ForegroundColour;
 }
 
-/******************************************************************************* 
+/*=================================================================================
+*   Function:    plt_CCGetForeGndBackGndColours
+*   Description: Retrieves the currently set foreground and background colors.
 *
+* Arguments:
+* Parameter    Flow    Description
+* ------------------------------------------------------------------------------
+* ForeGndColour   OUT  Current foreground color value
+* BackGndColour   OUT  Current background color value
 *
+* Externals    Flow    Usage
+* ------------------------------------------------------------------------------
+* CCForegroundColour   IN  Source for foreground color
+* CCBackgroundColour   IN  Source for background color
 *
+* @return void
 *
-********************************************************************************/ 
+* @note Both pointers must be non-NULL.
+===================================================================================*/
 void plt_CCGetForeGndBackGndColours(Word *ForeGndColour, Word *BackGndColour)
 {
   * ForeGndColour = CCForegroundColour;
   * BackGndColour = CCBackgroundColour;
 }
 
-/*******************************************************************************
-* NAME: plt_CCDrawChar
+
+/*=================================================================================
+*   Function:    plt_CCSetRowSize
+*   Description: Sets the row height (in pixels/units) for subsequent character-cell
+*                rendering operations.
 *
-* Returns :  void
-*
+* Arguments:
 * Parameter    Flow    Description
 * ------------------------------------------------------------------------------
-* Character     IN
+* Size         IN      Row height value to set
 *
 * Externals    Flow    Usage
-*******************************************************************************/
-void plt_CCDrawChar(char Character)    
-{
-  Character = Character;
-  CCColumn++;
-}
-
-/*******************************************************************************
+* ------------------------------------------------------------------------------
+* CCRowSize   OUT  Updated with Size value
 *
+* @return void
 *
-*
-*
-********************************************************************************/
+* @note Typically callers AND Size with FUIM_ATTRIBUTES_ROW_SIZE mask before calling.
+===================================================================================*/
 void plt_CCSetRowSize(Byte Size)
 {
   CCRowSize = Size;
 }
 
-/*******************************************************************************
+/*=================================================================================
+*   Function:    plt_CCGetRowSize
+*   Description: Retrieves the currently set row height value.
 *
+* Arguments:        None
 *
+* Externals    Flow    Usage
+* ------------------------------------------------------------------------------
+* CCRowSize   IN  Source for current row size
 *
+* @return Current row size as Byte
 *
-********************************************************************************/
+* @note Value is typically ANDed with FUIM_ATTRIBUTES_ROW_SIZE by callers.
+===================================================================================*/
 Byte plt_CCGetRowSize(void)
 {
   return CCRowSize;

@@ -222,10 +222,7 @@ typedef struct {
 /// @brief I/O Steam RX (L)DMA Context
 typedef struct {
   sl_iostream_dma_config_t cfg;                       ///< DMA Configuration
-  uint8_t channel;                                    ///< DMA Channel
-  LDMA_Descriptor_t rx_resume_desc;                   ///< DMA reception resume descriptor
-  LDMA_Descriptor_t wrap_desc;                        ///< DMA wrap descriptor
-  LDMA_Descriptor_t data_detect_desc;                 ///< DMA data detect descriptor
+  uint8_t channel;                                    ///< DMA Channel (kept for reference, RX now software-managed)
 } sl_iostream_rx_dma_context_t;
 
 /// @brief I/O Steam TX (L)DMA Context
@@ -275,8 +272,9 @@ typedef struct {
   sl_iostream_rx_dma_context_t rx_dma;      ///< RX DMA Context
   uint8_t *rx_buffer;                       ///< UART Rx Buffer
   size_t rx_buffer_len;                     ///< UART Rx Buffer length
-  uint8_t *rx_read_ptr;                     ///< Address of the next byte to be read
-  bool rx_empty;                            ///< Flag used to indicate if reception buffer is empty
+  uint8_t *rx_read_ptr;                     ///< Address of the next byte to be read (tail pointer)
+  uint8_t *rx_write_ptr;                    ///< Address where next byte will be written (head pointer)
+  bool rx_data_pending;                     ///< Flag used to indicate if reception buffer has data (true = data available)
   sl_iostream_uart_rx_subscriber_t rx_subscriber; ///< Subscriber for new data on RX
   sli_iostream_uart_periph_t *uart_periph;  ///< Pointer to UART Peripheral context
 
@@ -292,9 +290,7 @@ typedef struct {
   bool enable_high_frequency;               ///< Indicates if high frequency mode is enabled
 #endif
   bool lf_to_crlf;                          ///< lf_to_crlf
-  bool sw_flow_control;                     ///< software flow control
-  uint8_t *ctrl_char_scan_ptr;              ///< Pointer to where the last control character scan ended
-  volatile bool xon;                        ///< Transmitter enabled
+
 
 #if defined(SL_CATALOG_KERNEL_PRESENT)
   bool block;                                ///< block. Available only when kernel present.

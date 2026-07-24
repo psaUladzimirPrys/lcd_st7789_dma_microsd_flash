@@ -78,7 +78,7 @@
 // <i> This option switches f_mkfs() function. (0:Disable or 1:Enable)
 
 // <q FF_USE_FASTSEEK> Enable fast seek function. <0-1>
-#define FF_USE_FASTSEEK 0
+#define FF_USE_FASTSEEK 1
 // <i> This option switches fast seek function. (0:Disable or 1:Enable)
 
 // <q FF_USE_EXPAND> Enable f_expand() function. <0-1>

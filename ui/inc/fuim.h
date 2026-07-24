@@ -12,39 +12,62 @@
 
 /*=======================================================================*/
 /*        G L O B A L   D A T A   D E C L A R A T I O N S                */
-
 /*=======================================================================*/
 #define FUIM_MENU_HEIGHT        172   //px
 #define FUIM_MENU_WIDTH         320   //px
 
 /*Definition values for positioning the Menu Title and the width and height of the MENU  in pixels */
+#define FUIM_TITLE_X_POS           0
+#define FUIM_TITLE_Y_POS           0
 #define FUIM_TITLE_TOP_MARGIN      9   //px
 #define FUIM_TITLE_RIGHT_MARGIN   21   //px
 #define FUIM_TITLE_LEFT_MARGIN   116   //px
 
 
-#define FUIM_BUTTON_PROMPT_TOP_MARGIN      15  //px
+#define FUIM_BUTTON_PROMPT_TOP_MARGIN      13  //px //15
 #define FUIM_BUTTON_PROMPT_TO_NAME_PADDING  8  //px
 #define FUIM_BUTTON_NAME_TOP_MARGIN         6  //px
 
 
+#define FUIM_MENU_SINGLE_ROW_PROMPT_TO_VALUE_PADDING  4  //px
+
 #define FUIM_TOP_FIELD_HEIGHT                44   //px
 #define FUIM_BOTTOM_FIELD_HEIGHT             35   //px
-#define FUIM_MENU_FIELD_NORMAL_HEIGHT        33   //px
-#define FUIM_MENU_FIELD_LARGE_HEIGHT         58   //px
-#define FUIM_MENU_FIELD_NOTIFICATION_HEIGHT  48   //px
+#define FUIM_MENU_FIELD_NORMAL_HEIGHT        38   //px
+#define FUIM_MENU_FIELD_LARGE_HEIGHT         ( FUIM_MENU_FIELD_NORMAL_HEIGHT * 2 )   //px
+
+/*Definition values for positioning the Menu Notification field of the MENU  in pixels */
+#define FUIM_MENU_FIELD_NOTIFICATION_HEIGHT         48   //px
+#define FUIM_MENU_FIELD_NOTIFICATION_X_POS           0
+#define FUIM_MENU_FIELD_NOTIFICATION_Y_POS           (FUIM_MENU_HEIGHT - FUIM_MENU_FIELD_NOTIFICATION_HEIGHT - FUIM_BOTTOM_FIELD_HEIGHT)
+#define FUIM_MENU_FIELD_NOTIFICATION_TOP_MARGIN      9   //px
 
 
 #define FUIM_TOP_ROW_SIZE           FUIM_TOP_FIELD_HEIGHT
 #define FUIM_BOTTOM_ROW_SIZE        FUIM_BOTTOM_FIELD_HEIGHT
-#define FUIM_NOTIFICATION_ROW_SIZE  FUIM_MENU_FIELD_NOTIFICATION_HEIGHT
 
-#define FUIM_MENU_FIELD_TOP_MARGIN      (FUIM_TOP_FIELD_HEIGHT + (FUIM_TOP_FIELD_HEIGHT / 2))
+//Menu Top/Bottom margin
+#define FUIM_MENU_FIELD_TOP_MARGIN      FUIM_TOP_FIELD_HEIGHT   
 #define FUIM_MENU_FIELD_BOTTOM_MARGIN   FUIM_BOTTOM_FIELD_HEIGHT
 
+#define FUIM_MENU_FIELD_NORMAL_TOP_MARGIN  ( FUIM_MENU_FIELD_TOP_MARGIN + 29 )
+#define FUIM_MENU_FIELD_LARGE_TOP_MARGIN   ( FUIM_MENU_FIELD_TOP_MARGIN + 8  )
+
+//Menu single/double row size
 #define FUIM_MENU_ROW_SIZE          FUIM_MENU_FIELD_NORMAL_HEIGHT
 #define FUIM_MENU_ROW_DOUBLE_SIZE   FUIM_MENU_FIELD_LARGE_HEIGHT
+#define FUIM_NOTIFICATION_ROW_SIZE  FUIM_MENU_FIELD_NOTIFICATION_HEIGHT
+/* Split row offsets for FUIM_ATTRIBUTES_SPLITROW */
+#define FUIM_SPLIT_FIRST_ROW_OFFSET  (FUIM_MENU_FIELD_TOP_MARGIN + 6 )
+#define FUIM_SPLIT_SECOND_ROW_OFFSET (FUIM_SPLIT_FIRST_ROW_OFFSET + FUIM_MENU_ROW_SIZE + 6 ) 
+
+
 #define FUIM_SPLASH_SCREEN_ROW_SIZE 99
+
+
+/* Constants for digit character widths */
+#define FUIM_DIGITS_CHAR_WIDTH_LARGE   40  /* Width of a large font digit */
+#define FUIM_DIGITS_CHAR_WIDTH_SMALL   18  /* Width of a small font digit */
 
 /*=======================================================================*/
 /* @Macro General | Integer | The multiply of FUIM_MAX_NR_OF_ROWS and FUIM_MAX_NR_OF_COLS must not exceed 544. */
@@ -55,16 +78,16 @@
 #define FUIM_MAX_NR_OF_COLS 16
 
 /*=======================================================================*/
-#define FUIM_MAX_INDICATORS 6 /*Maximum number of indicators allowed to be displayed on the screen simultaneously */
+#define FUIM_MAX_INDICATORS 7 /*Maximum number of indicators allowed to be displayed on the screen simultaneously */
 #define FUIM_MAX_DISPLAY_MENUS  1
 
 /* @Macro General | Integer | 10 10 1 25 |Max number of fields in a menu. Does not affect the number of fields in an overview. */
-#define FUIM_MAX_DISPLAY_FIELDS 3
+#define FUIM_MAX_DISPLAY_FIELDS 10
 
 /* @Macro General | Integer | 6 6 2 15 |Maximum length of string field. */
 #define MAX_STRING_LENGTH 7
 
-#define FUIM_MAX_NUMERIC_LENGTH 5
+#define FUIM_MAX_NUMERIC_LENGTH 6
 #define DIGIT_BUFFER_SIZE FUIM_MAX_NUMERIC_LENGTH
 
 
@@ -90,18 +113,32 @@
 
 /*=======================================================================*/
 
+
 #define fuim_GetFieldPromptColour(pField) (fuim_DynamicColours(pField->PromptColour))
 #define fuim_GetFieldValidity(pField)     (fuim_Observer(pField->ValidityFunction))
 #define fuim_GetFieldPrefix(pField)       (fuim_Observer(pField->Prefix))
 #define fuim_GetFieldSuffix(pField)        pField->Suffix
 
 /*=======================================================================*/
+#define FUIM_MENU_FIELD_XPOS_MASK 0x1FF
+#define FUIM_MENU_FIELD_VERT_MARGIN_MASK 0xFE00
+
+#define FUIM_MENU_MARGIN(margin)    ((Word)((Word)(margin) << 9)&FUIM_MENU_FIELD_VERT_MARGIN_MASK)
 
 #define fuim_GetMenuVisibleFields(pMenu)          pMenu->VisibleFields
 #define fuim_GetMenuVertLocation(pMenu)           pMenu->VertLocation
+
+#define fuim_GetMenuPromptVertMaginTop(pMenu)     (((pMenu->PromptPos)&FUIM_MENU_FIELD_VERT_MARGIN_MASK) >> 9)
+#define fuim_GetMenuValueVertMaginTop(pMenu)      (((pMenu->ValuePos) &FUIM_MENU_FIELD_VERT_MARGIN_MASK) >> 9)
+
+#define fuim_GetMenuPromptXpos(pMenu)             ((pMenu->PromptPos)&FUIM_MENU_FIELD_XPOS_MASK)
+#define fuim_GetMenuValueXpos(pMenu)              ((pMenu->ValuePos) &FUIM_MENU_FIELD_XPOS_MASK)
+
 #define fuim_GetLeftButtonField(pMenu)            pMenu->LeftButtonField
 #define fuim_GetRightBottonField(pMenu)           pMenu->RightButtonField
 #define fuim_GetMenuHorLocation(pMenu)            pMenu->HorLocation
+
+#define fuim_GetFixedBottomField(pMenu)           pMenu->FixedBottomField
 
 /*=======================================================================*/
 
@@ -110,7 +147,7 @@
 /*=======================================================================*/
 
 typedef Byte osdStringID;
-typedef LongLong osdFieldValue;
+typedef Long osdFieldValue;
 typedef Byte osdDialogHandle;
 typedef Byte osdLanguage;
 typedef Byte osdTimerHandle;
@@ -133,9 +170,11 @@ typedef Byte cmdKeyNumber;
 /*Value in seconds indicating after how long the entered numbers will be accepted (0 = no timeout) */
 #define FUIM_NUMERIC_TIMEOUT 4
 
-#define FUIM_MENU_TIMEOUT      10
-#define FUIM_FIELD_NO_TIMEOUT  0
+#define FUIM_MENU_TIMEOUT      4
+#define FUIM_MENU_NO_TIMEOUT   0
+
 #define FUIM_FIELD_TIMEOUT     1
+#define FUIM_FIELD_NO_TIMEOUT  0
 
 /*=======================================================================*/
 typedef struct {
@@ -166,18 +205,16 @@ enum Timer_ID {
 
 /*=======================================================================*/
 typedef enum  {
-  FUIM_FIELDTYPE_MODAL_NOTIFICATION,         //String
+  FUIM_FIELDTYPE_MODAL_NOTIFICATION,   //String
   FUIM_FIELDTYPE_STRING,
   FUIM_FIELDTYPE_STRING_VALUE,  // STRING  Non-editable
-  FUIM_FIELDTYPE_STRING_ID,     //String by ID
   FUIM_FIELDTYPE_NUMERIC,
   FUIM_FIELDTYPE_NUMERIC_VALUE, // NUMERIC Non-editable
   FUIM_FIELDTYPE_BUTTON,
   FUIM_FIELDTYPE_SPACER,
   FUIM_FIELDTYPE_LIST,
-  FUIM_FIELDTYPE_ONOFFLIST,
   FUIM_FIELDTYPE_SEPARATOR,
-  FUIM_FIELDTYPE_STRING_NUMERIC_VALUE  // NUMERIC string of numbers in the format --:--
+  FUIM_FIELDTYPE_STRING_NUMERIC_VALUE  // NUMERIC string of numbers in the format 00.2.11.2
 
 } fuim_FieldType;
 
@@ -292,8 +329,8 @@ typedef struct {
     Byte ValidityFunction;
     // ID of the review function that returns the field status
 
-    osdStringID Prompt;
-    // ID of the string displayed as a prompt
+    Byte Prompt;
+    // ID of the function that returns string displayed as a prompt
 
     Byte PromptColour;
     // ID of the function that returns a pointer to the color structure
@@ -385,25 +422,26 @@ typedef struct {
 /*MPF=======================================================================*/
  typedef struct
 {
-  Byte        PromptColour;    /* @field Colour ID of function which returns pointer to a colour struct (FUIM_FIELD_DYNAMIC_COLOURS_SWITCH = GTV_ALWAYS) or pointer to colour struct used when displaying the field of this field as specified in fuimColourStruct (FUIM_FIELD_DYNAMIC_COLOURS_SWITCH = GTV_NEVER). */
-  Byte        GetFunction; /* @field Observer ID of function which will return the text of the field. */
-  Byte        Alignment;   /* @field Alignment of text in field as specified in fuim_Alignment */
+  Byte  ValidityFunction;   // ID of the review function that returns the field status
+  Byte  PromptColour;    /* @field Colour ID of function which returns pointer to a colour struct (FUIM_FIELD_DYNAMIC_COLOURS_SWITCH = GTV_ALWAYS) or pointer to colour struct used when displaying the field of this field as specified in fuimColourStruct (FUIM_FIELD_DYNAMIC_COLOURS_SWITCH = GTV_NEVER). */
+  Byte  Prompt; /* @field Observer ID of function which will return the text of the field. */
+  Byte  Alignment;   /* @field Alignment of text in field as specified in fuim_Alignment */
 } fuimFixedFieldStruct;
 
 
 /************************************************************************
-  Определяет каждый цвет используемый для прорисовки
+ Specifies each colour used for rendering
     field-prompt,
     field-value
-или   dialog title
+    dialog title
 *************************************************************************/
 typedef struct {
-  Word ForeGndColour;       //Значения от 0 до 7
-  Word BackGndColour;       //Значения от 0 до 15
-  Word ForeGndHighLighted;  //Значения от 0 до 7
-  Word BackGndHighLighted;  //Значения от 0 до 15
-  Word Attribute;           // перечисление enum fuim_Attributes
-  Word AttributeHighLighted;// перечисление enum fuim_Attributes
+  Word ForeGndColour;       //
+  Word BackGndColour;       //
+  Word ForeGndHighLighted;  //
+  Word BackGndHighLighted;  //
+  Word Attribute;           //  enum fuim_Attributes
+  Word AttributeHighLighted;//  enum fuim_Attributes
 } fuimColourStruct;
 
 /*EMP=======================================================================*/
@@ -417,7 +455,7 @@ enum fuim_Attributes {
   FUIM_ATTRIBUTES_FLASHING = 0x800,
   FUIM_ATTRIBUTES_ITALIC = 0x1000,
   FUIM_ATTRIBUTES_SHADOWED = 0x2000,
-  FUIM_ATTRIBUTES_OVERLINED = 0x4000,
+  FUIM_ATTRIBUTES_SPLITROW = 0x4000,
   FUIM_ATTRIBUTES_UNDERLINED = 0x8000
 };
 
@@ -431,10 +469,10 @@ enum fuim_Attributes {
 #define FUIM_COLOUR_1 0xF79E   //Status Gray0 Top field color
 #define FUIM_COLOUR_2 0xCE79   //Button Gray1 Bottom field color
 #define FUIM_COLOUR_3 0xFE79   //Notification Red field color
-#define FUIM_COLOUR_4 0xCE79   //Notification Green field color
-#define FUIM_COLOUR_5 0xCE79   //Notification Blue field color
-#define FUIM_COLOUR_6 0xCE79   //Notification Light Blue field color
-#define FUIM_COLOUR_7 0xCE79   //Notification Purple field color
+#define FUIM_COLOUR_4 0xCFF9   //Notification Green field color
+#define FUIM_COLOUR_5 0x9E7F   //Notification Blue field color
+#define FUIM_COLOUR_6 0xCFFF   //Notification Light Blue field color
+#define FUIM_COLOUR_7 0xCE7F   //Notification Purple field color
 #define FUIM_COLOUR_8           ST7789_BLACK      /* @emem Foreground Black  */
 #define FUIM_COLOUR_9           ST7789_WHITE      /* @emem Background White  */
 #define FUIM_COLOUR_TRANSPARENT ST7789_WHITE      /* @emem Background Transparent  */
@@ -486,7 +524,7 @@ void fuim_DestroyIndicator(osdDialogHandle indicator);
 
 
 
-osdDialogHandle fuim_GetIndicatorHandle(fuimIndicatorStruct   *indicator_data_ptr);
+osdDialogHandle fuim_GetIndicatorHandle(const fuimIndicatorStruct   *indicator_data_ptr);
 void fuim_SetIndicatorTimeOut(osdDialogHandle hDialog,  Byte TimeOutInSeconds);
 
 void fuim_SetColumnPosition(Word column);
@@ -498,15 +536,21 @@ void fuim_SetNextRow(void);
 
 void fuim_SetAttributes(Word Attributes);
 
-void fuim_ConstructString(fuimFieldStruct  *field_data_ptr, Bool Highlighted);
-void fuim_ConstructIndicatorValue(fuimFieldStruct  * field_data_ptr);
-void fuim_ConstructIndicatorPrompt(fuimFieldStruct * field_data_ptr);
+void fuim_ConstructString(fuimFieldStruct  *field_data_ptr, Byte margin_top);
+void fuim_ConstructStringNumeric(fuimFieldStruct  *field_data_ptr, Byte margin_top);
+void fuim_ConstructIndicatorValue(fuimFieldStruct  * field_data_ptr, fuim_IndicatorProperty  *position );
+void fuim_ConstructIndicatorPrompt(fuimFieldStruct * field_data_ptr, fuim_IndicatorProperty  *position );
+void fuim_ConstructStringVerticalMargin(img_storage_id_t img_id, Byte  MarginTop, Word Xpos );
 void fuim_DrawString(img_storage_id_t img_id);
 
 
-void fuim_ConstructNumeric(   fuimFieldStruct *field_data_ptr, Bool Highlighted);
+void fuim_ConstructNumeric(fuimFieldStruct *field_data_ptr, Byte margin_top, Bool Highlighted);
+Word fuim_GetFieldValueLength(const fuimFieldStruct *field_data_ptr, Bool isPrompt);
+img_storage_id_t fuim_GetPromptStringId(Byte index);
 
 fuimColourStruct  *fuim_DynamicColours(Byte index);
+
 void fuim_DrawRepeatedCharacter(Word width);
+Bool fuim_IsModalIndicatorActive(void);
 
 #endif /* _HFUIM_H */

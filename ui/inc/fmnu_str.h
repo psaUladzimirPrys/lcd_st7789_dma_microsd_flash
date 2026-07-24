@@ -16,7 +16,7 @@
 
 enum {
 
-   FMNU_LIST_ITEMS_GOOD
+   FMNU_LIST_ITEMS_GOOD = 0
   ,FMNU_LIST_ITEMS_BAD
 
   ,FMNU_LIST_ITEMS_ERROR
@@ -27,19 +27,20 @@ enum {
 
 enum {
 
-   FMNU_PREFIX_NONE = 0,
-   FMNU_PREFIX_ID_Minus,
-   FMNU_PREFIX_ID_Plus,
-   fmnu_str_PrefixLAST_STRING
+    FMNU_PREFIX_NONE = 0
+   ,FMNU_PREFIX_ID_Minus
+   ,FMNU_PREFIX_ID_Plus
 
+   ,fmnu_str_PrefixLAST_STRING
 };
 
 enum {
 
-   FMNU_SUFFIX_NONE = 0,
-   FMNU_SUFFIX_ID_db,
-   fmnu_str_SuffixLAST_STRING
+   FMNU_SUFFIX_NONE = 0
+  ,FMNU_SUFFIX_ID_AM
+  ,FMNU_SUFFIX_ID_PM
 
+  ,fmnu_str_SuffixLAST_STRING
 };
 
 extern const Byte fmnu_str_List[FMNU_LIST_ITEMS_LAST_STRING];

@@ -38,7 +38,7 @@
 
 // <o SL_SPIDRV_MIKROE_BITRATE> SPI bitrate
 // <i> Default: 1000000
-#define SL_SPIDRV_MIKROE_BITRATE           38400000
+#define SL_SPIDRV_MIKROE_BITRATE           9600000UL  //19200000UL//38400000
 
 // <o SL_SPIDRV_MIKROE_FRAME_LENGTH> SPI frame length <4-16>
 // <i> Default: 8
@@ -108,12 +108,12 @@
 #define SL_SPIDRV_MIKROE_CLK_PIN                 2
 #endif
 
-// USART0 CS on PB00
+// USART0 CS on PC04
 #ifndef SL_SPIDRV_MIKROE_CS_PORT                
-#define SL_SPIDRV_MIKROE_CS_PORT                 SL_GPIO_PORT_B
+#define SL_SPIDRV_MIKROE_CS_PORT                 SL_GPIO_PORT_C
 #endif
 #ifndef SL_SPIDRV_MIKROE_CS_PIN                 
-#define SL_SPIDRV_MIKROE_CS_PIN                  0
+#define SL_SPIDRV_MIKROE_CS_PIN                  4
 #endif
 // [USART_SL_SPIDRV_MIKROE]$
 // <<< sl:end pin_tool >>>

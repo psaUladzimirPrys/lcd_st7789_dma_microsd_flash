@@ -1,7 +1,7 @@
 /*
  * sl_constants.h
  *
- *  Created on: 26 янв. 2026 г.
+ *  Created on: 26 jan. 2026 г.
  *      Author: priss
  */
 

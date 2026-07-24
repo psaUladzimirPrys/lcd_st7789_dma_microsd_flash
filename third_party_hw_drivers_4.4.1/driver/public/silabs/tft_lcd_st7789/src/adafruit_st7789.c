@@ -45,7 +45,7 @@
 #include "sl_component_catalog.h"
 #include "adafruit_st7789.h"
 #include "flash_storage.h"
-
+#include "app_assert.h"
 
 // -----------------------------------------------------------------------------
 //                       Macros
@@ -838,7 +838,7 @@ sl_status_t adafruit_st7789_draw_rgb_bitmap_from_flash(int16_t x,
       }
 
       // mipi_dbi_device.api->select(&mipi_dbi_device);
-      status = write_display(dma_buffer, size * 2, NULL);
+      status = write_display(dma_buffer, (size * 2), NULL);
       // mipi_dbi_device.api->deselect(&mipi_dbi_device);
 
       if (SL_STATUS_OK != status) {

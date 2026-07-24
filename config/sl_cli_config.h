@@ -105,7 +105,7 @@
 // <o SL_CLI_NUM_HISTORY_BYTES> Max number of bytes of history <0-4096>
 // <i> Default: 512
 // <i> Define the number of bytes of history that are saved.
-#define SL_CLI_NUM_HISTORY_BYTES           512
+#define SL_CLI_NUM_HISTORY_BYTES           128
 // </h>
 
 #if SL_CLI_NUM_HISTORY_BYTES < SL_CLI_INPUT_BUFFER_SIZE && SL_CLI_NUM_HISTORY_BYTES != 0

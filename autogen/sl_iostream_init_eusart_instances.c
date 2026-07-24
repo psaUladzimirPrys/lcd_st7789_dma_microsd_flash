@@ -12,8 +12,6 @@
 #include "sl_clock_manager_tree_config.h"
  
 
-
-#include "sl_cos.h"
  
 // Include instance config 
  #include "sl_iostream_eusart_vcom_config.h"
@@ -83,6 +81,18 @@
 
  
 
+
+// EM Events
+#define SLEEP_EM_EVENT_MASK      (SL_POWER_MANAGER_EVENT_TRANSITION_ENTERING_EM0 \
+                                  | SL_POWER_MANAGER_EVENT_TRANSITION_LEAVING_EM0)
+static void events_handler(sl_power_manager_em_t from,
+                           sl_power_manager_em_t to);
+static sl_power_manager_em_transition_event_info_t events_info =
+{
+  .event_mask = SLEEP_EM_EVENT_MASK,
+  .on_event = events_handler,
+};
+static sl_power_manager_em_transition_event_handle_t events_handle;
  
 
 
@@ -173,32 +183,6 @@ sl_status_t sl_iostream_eusart_init_vcom(void)
                                   &context_vcom);
   EFM_ASSERT(status == SL_STATUS_OK);
 
-  
-  // Send VCOM config to WSTK
-  uint8_t flow_control = COS_CONFIG_FLOWCONTROL_NONE;
-  if (!uart_config_vcom.sw_flow_control) {
-    switch (SL_IOSTREAM_EUSART_VCOM_FLOW_CONTROL_TYPE)
-    {
-      case SL_IOSTREAM_EUSART_UART_FLOW_CTRL_NONE:
-      case SL_IOSTREAM_EUSART_UART_FLOW_CTRL_SOFT:
-        flow_control = COS_CONFIG_FLOWCONTROL_NONE;
-        break;
-      case SL_IOSTREAM_EUSART_UART_FLOW_CTRL_CTS:
-        flow_control = COS_CONFIG_FLOWCONTROL_CTS;
-        break;
-      case SL_IOSTREAM_EUSART_UART_FLOW_CTRL_RTS:
-        flow_control = COS_CONFIG_FLOWCONTROL_RTS;
-        break;
-      case SL_IOSTREAM_EUSART_UART_FLOW_CTRL_CTS_RTS:
-        flow_control = COS_CONFIG_FLOWCONTROL_CTS_RTS;
-        break;
-      default:
-        // Invalid flow control type
-        EFM_ASSERT(0);
-        break;
-    }
-  }
-  sl_cos_config_vcom((uint32_t) SL_IOSTREAM_EUSART_VCOM_BAUDRATE, flow_control);
    
 
   return status;
@@ -208,6 +192,9 @@ sl_status_t sl_iostream_eusart_init_vcom(void)
 
 void sl_iostream_eusart_init_instances(void)
 {
+  
+  // Enable power manager notifications
+  sl_power_manager_subscribe_em_transition_event(&events_handle, &events_info);
    
   // Instantiate eusart instance(s) 
   
@@ -226,4 +213,32 @@ void SL_IOSTREAM_EUSART_RX_IRQ_HANDLER(SL_IOSTREAM_EUSART_VCOM_PERIPHERAL_NO)(vo
   sl_iostream_eusart_irq_handler(&sl_iostream_vcom);
 }
 
+
+
+ 
+sl_power_manager_on_isr_exit_t sl_iostream_eusart_vcom_sleep_on_isr_exit(void)
+{
+  return sl_iostream_uart_sleep_on_isr_exit(&sl_iostream_vcom);
+}
+
+ 
+static void events_handler(sl_power_manager_em_t from,
+                           sl_power_manager_em_t to)
+{
+  (void) from;
+  if (to == SL_POWER_MANAGER_EM0) {
+    
+    if (sl_iostream_uart_vcom_handle->stream.context != NULL) {
+      sl_iostream_uart_wakeup(sl_iostream_uart_vcom_handle);
+    }
+    
+  } else if (to < SL_POWER_MANAGER_EM2){
+    // Only prepare for sleep to EM2 or less
+    
+    if (sl_iostream_uart_vcom_handle->stream.context != NULL) {
+      sl_iostream_uart_prepare_for_sleep(sl_iostream_uart_vcom_handle);
+    }
+    
+  }
+}
 

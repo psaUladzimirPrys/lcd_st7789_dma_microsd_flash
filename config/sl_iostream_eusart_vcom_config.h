@@ -95,37 +95,22 @@
 #define SL_IOSTREAM_EUSART_VCOM_PERIPHERAL_NO    0
 #endif
 
-// EUART0 TX on PA05
+// EUART0 TX on PA06
 #ifndef SL_IOSTREAM_EUSART_VCOM_TX_PORT         
 #define SL_IOSTREAM_EUSART_VCOM_TX_PORT          SL_GPIO_PORT_A
 #endif
 #ifndef SL_IOSTREAM_EUSART_VCOM_TX_PIN          
-#define SL_IOSTREAM_EUSART_VCOM_TX_PIN           5
+#define SL_IOSTREAM_EUSART_VCOM_TX_PIN           6
 #endif
 
-// EUART0 RX on PA06
+// EUART0 RX on PA05
 #ifndef SL_IOSTREAM_EUSART_VCOM_RX_PORT         
 #define SL_IOSTREAM_EUSART_VCOM_RX_PORT          SL_GPIO_PORT_A
 #endif
 #ifndef SL_IOSTREAM_EUSART_VCOM_RX_PIN          
-#define SL_IOSTREAM_EUSART_VCOM_RX_PIN           6
+#define SL_IOSTREAM_EUSART_VCOM_RX_PIN           5
 #endif
 
-// EUART0 CTS on PA08
-#ifndef SL_IOSTREAM_EUSART_VCOM_CTS_PORT        
-#define SL_IOSTREAM_EUSART_VCOM_CTS_PORT         SL_GPIO_PORT_A
-#endif
-#ifndef SL_IOSTREAM_EUSART_VCOM_CTS_PIN         
-#define SL_IOSTREAM_EUSART_VCOM_CTS_PIN          8
-#endif
-
-// EUART0 RTS on PA07
-#ifndef SL_IOSTREAM_EUSART_VCOM_RTS_PORT        
-#define SL_IOSTREAM_EUSART_VCOM_RTS_PORT         SL_GPIO_PORT_A
-#endif
-#ifndef SL_IOSTREAM_EUSART_VCOM_RTS_PIN         
-#define SL_IOSTREAM_EUSART_VCOM_RTS_PIN          7
-#endif
 // [EUSART_SL_IOSTREAM_EUSART_VCOM]$
 // <<< sl:end pin_tool >>>
 

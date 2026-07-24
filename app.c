@@ -1,46 +1,28 @@
 /***************************************************************************//**
- * @file app.c
+ * @file
  * @brief Top level application functions
  *******************************************************************************
  * # License
- * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
- ********************************************************************************
- *
- * SPDX-License-Identifier: Zlib
- *
- * The licensor of this software is Silicon Laboratories Inc.
- *
- * This software is provided \'as-is\', without any express or implied
- * warranty. In no event will the authors be held liable for any damages
- * arising from the use of this software.
- *
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
- *
- * 1. The origin of this software must not be misrepresented; you must not
- *    claim that you wrote the original software. If you use this software
- *    in a product, an acknowledgment in the product documentation would be
- *    appreciated but is not required.
- * 2. Altered source versions must be plainly marked as such, and must not be
- *    misrepresented as being the original software.
- * 3. This notice may not be removed or altered from any source distribution.
- *
+ * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
- * EVALUATION QUALITY
- * This code has been minimally tested to ensure that it builds with the
- * specified dependency versions and is suitable as a demonstration for
- * evaluation purposes only.
- * This code will be maintained at the sole discretion of Silicon Labs.
+ * The licensor of this software is Silicon Laboratories Inc. Your use of this
+ * software is governed by the terms of Silicon Labs Master Software License
+ * Agreement (MSLA) available at
+ * www.silabs.com/about-us/legal/master-software-license-agreement. This
+ * software is distributed to you in Source Code format and is governed by the
+ * sections of the MSLA applicable to Source Code.
  *
+ ******************************************************************************/
+
+/***************************************************************************//**
+ * Initialize application.
  ******************************************************************************/
 #include <string.h>
 #include "app_log.h"
 #include "app_assert.h"
-#include "sl_sleeptimer.h"
-#include "em_cmu.h"
-#include "cli.h"
+
+#include "command_line.h"
 #include "file_storage.h"
 #include "flash_storage.h"
 
@@ -51,49 +33,23 @@
 #include "fsrv.h"
 #include "fpmt_api.h"
 
+#include "aevs.h"
+#include "buzzer.h"
+#include "led.h"
+#include "pin_config.h"
+#include "protocol.h"
 #include "button.h"
-#include "device_control.h"
-#include "event_simulation.h"
+#include "params.h"
+#include "adc.h"
+#include "battery_management.h"
 
+#include "time_and_date.h"
 
 #define TEST_SD
 #define TEST_FLASH
 
 //#define TEST_FLASH_ERASE_PROG
-//#define ENABLE_FLASH_HPF_MODE
 
-
-#if defined(TEST_FLASH) && defined(TEST_FLASH_ERASE_PROG_TEST)
-
-#define IMAGE_COUNT (sizeof(image_files)/sizeof(image_files[0]))
-
-static const char *image_files[] = {
-       "U1.raw"
-      ,"U2.raw"
-      ,"U3.raw"
-      ,"U4.raw"
-      //,"image2.bmp"
-  };
-#define IMG_FILE_U1_RAW_SIZE 19602
-
-#endif
-
-void get_clocks_info(void)
-{
-  
-  uint32_t freq = SystemCoreClockGet()  / 1000000;
-  app_log("CPU=%luMHZ \r\n",freq);
-
-  uint32_t pclk = CMU_ClockFreqGet(cmuClock_PCLK);   // APB bus clock
-  app_log("APB bus=%luMHZ \r\n",pclk);
-
-  uint32_t hclk = CMU_ClockFreqGet(cmuClock_HCLK);   // AHB bus clock
-  app_log("AHB bus=%luMHZ \r\n",hclk);
-
-  uint32_t sysclk = CMU_ClockFreqGet(cmuClock_SYSCLK); // System clock
-  app_log("System clock=%luMHZ \r\n",sysclk);
-
-}
 
 /***************************************************************************//**
  * Initialize application.
@@ -102,11 +58,11 @@ void app_init(void)
 {
   sl_status_t sl_status_code = SL_STATUS_OK;
 
+  GPIO_PinModeSet(EN_BTM_PORT, EN_BTM_PIN, gpioModePushPull, 1); // enable divider for battery voltage measure
+
 
 #if defined(TEST_SD) && defined(TEST_FLASH) && defined(TEST_FLASH_ERASE_PROG)
   uint32_t address;
-  //uint32_t img_index;
-  //uint32_t image_index = 0;
   char sd_card_file_path[20] = "";
 #endif
 
@@ -116,8 +72,6 @@ void app_init(void)
 #if defined(TEST_SD)
   const char filepath[] = "HELLO.TXT";
         char test_str[] = "Initialize application.";
-
-  //uint32_t f_size;
 #endif
 
   //uint32_t f_req;
@@ -125,7 +79,7 @@ void app_init(void)
 
   get_clocks_info();
 
-  cli_app_init();
+  app_cli_setup();
 
   // Initialize DISPLAY interface
   disp_Init();
@@ -146,18 +100,6 @@ void app_init(void)
     app_log("Init Flash is Failed: %lu\r\n",sl_status_code);
     app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
-
-#ifdef ENABLE_FLASH_HPF_MODE
-  app_log("Enable Flash HPF MODE\r\n");
-  sl_status_code =  flash_storage_enable_hpf_mode();
-  if (sl_status_code != SL_STATUS_OK) {
-    app_log("HPF Flash mode is Failed: %lu\r\n",sl_status_code);
-    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-  }
-
-  //CMU_ClockDivSet(cmuClock_PCLK, 1U);
-  get_clocks_info();
-#endif
 
   sl_status_code = flash_spi_getBitRate(&bitRate);
   if (sl_status_code == SL_STATUS_OK ) {
@@ -190,116 +132,97 @@ void app_init(void)
 
 #endif //endif TEST_FLASH
 
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#if defined(TEST_SD) && defined(TEST_FLASH) && defined(TEST_FLASH_ERASE_PROG_TEST)
 
-  address = 0x080000;
-  sl_status_code = flash_storage_erase_block64(address);
+  init_buzzer();
+  led_init();
+  set_default_general_params();
+  set_default_advanced_params();
+  button_feature_init();
+  
+  app_log("Init TIP cache - Please wait\r\n");
+  sl_status_code = fs_sd_init_tip_cache();
   if (sl_status_code != SL_STATUS_OK) {
-    app_log("Erase addr=0x%lx Flash 64k is Failed: %lu\r\n", address, sl_status_code);
-    app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
+      app_log("Init TIP cache is Failed: %lu\r\n",sl_status_code);
+      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
   }
-  app_log("Erase addr=0x%lx Flash 64k is Done: %lu\r\n", address, sl_status_code);
+  // Запускаем неблокирующий поиск активного слота
+  fs_sd_historical_records_start_cache_init();
+  //fs_sd_historical_records_init_cache();
 
-#if 1
- address = 0x080000;
- for ( img_index = 0; img_index < IMAGE_COUNT; img_index++ ) {
+  init_adc_scan();
 
-   // Form the file name, for example "image0.bin" (assuming raw RGB565 files on SD)
-   snprintf(sd_card_file_path, sizeof(sd_card_file_path) ,"%s", image_files[img_index]);
 
-    sl_status_code = fs_sd_write_img_to_flash(sd_card_file_path, address);
-    if (sl_status_code != SL_STATUS_OK) {
-      app_log("Write to addr=0x%lx Flash is Failed: %lu\r\n", address, sl_status_code);
-      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-     }
+  fpmt_Init(); // function power manager
+  fsrv_Init(); // function service
+  fuim_Init(); // function user interface manager
+  aukh_Init(); // application user key handler
+  find_Init(); // function indicator
+  fslog_Init();// function storage logging
+  aevs_Init(); // application event manager
 
-    f_size = 0;
-    if (fs_sd_get_file_size(sd_card_file_path, &f_size) != SL_STATUS_OK) {
-      app_log("Getting size of file: %s Failed\r\n", sd_card_file_path);
-      app_assert_status(SL_STATUS_FAIL); // Loop forever for debugging
-    }
+  buzzer_beep(2500,250);
+  led_control(250,0);
 
-    address += f_size;
-  } 
-#endif
-
-#endif
-
- button_feature_init();
- sim_Init();
-
- fpmt_Init();
- fsrv_Init();
- fuim_Init();
- aukh_Init();
- find_Init();
- fslog_Init();
-
+  print_mcu_reset_cause();
+  //start_impact_capture(15,ADC_VREF_INTERNAL_1P21V);
+  //debug_hardware_trinity();
 }
 
 /***************************************************************************//**
  * Initialize application.
  ******************************************************************************/
-#if 0
-sl_status_t get_time(char *str_buf)
-{
-  sl_status_t sl_status_code = SL_STATUS_OK;
-
-  sl_sleeptimer_date_t date_time = {
-    .year = 122,
-    .month = 2,
-    .month_day = 1,
-    .hour = 10,
-    .min = 30,
-    .sec = 0,
-  };
-
-
-  sl_status_code = sl_sleeptimer_get_datetime(&date_time);
-  app_assert_status(sl_status_code);
-
-  sprintf(str_buf, "Current time is %02u:%02u:%02u.\r\n",
-              date_time.hour,
-              date_time.min,
-              date_time.sec);
-
-  return sl_status_code;
-}
-#endif
 /***************************************************************************//**
  * App ticking function.
  ******************************************************************************/
 void app_process_action(void)
 {
+  //Двигаем машину состояний кэша, пока он не будет готов
+  if (!fs_sd_historical_records_is_cache_ready()) {
+      sl_status_t cache_status = fs_sd_historical_records_init_cache();
+      if (cache_status == SL_STATUS_OK) {
+        app_log("Main: Historical cache is ready! System is fully functional.\r\n");
+        // Здесь можно разблокировать функции чтения/записи истории для пользователя
+      }
+      else if (cache_status == SL_STATUS_NOT_FOUND || cache_status == SL_STATUS_FAIL) {
+        app_log("Main: Failed to init cache. Check card or format database.\r\n");
+      }
+  }
+  // CLI обрабатывается автоматически в sl_system_process_action()
+  income_packet_processing();
 
-  cli_app_process_action();
+  battery_management_process();
+
+  is_stilus_connected_process();
+
+  measurement_process_loop();
+
+  button_beep_process();
+
+  repeated_start_of_transmition();
+
+  heart_beat_process();
+
+
 
 #ifdef TEST_FLASH
   /* @ToDo Workaround to prevent reading corrupted data  It was been added by UP*/
-  flash_storage_wakeup_chip(); /*This is the worst way to solve the issue*/
+  //flash_storage_wakeup_chip(); /*This is the worst way to solve the issue*/
 #endif
 
-  sl_sleeptimer_delay_millisecond(5);
-
-  sim_Update();  //Simulation Data change
-  device_working_loop();
-  button_feature_process();  /* button task */
-
   if (aukh_ReadCommand()) {
-      aukh_ProcessKey();
+    aukh_ProcessKey();
   }
 
   disp_Update();
+  fsrv_Update();
 
-  if ((auph_GetState() != AU_ERROR_STATE )) {
+  if (auph_GetState() != AU_ERROR_STATE) {
     fuim_Update();//1 The location cannot be changed.
     find_Update();//2 The location cannot be changed.
+    aevs_Update();//3 Indicator Event manager
   }
 
   fslog_Update();
   fpmt_Update();
-
-
 
 }

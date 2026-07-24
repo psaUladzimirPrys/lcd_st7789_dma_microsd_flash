@@ -548,6 +548,14 @@ sl_status_t sl_iostream_eusart_init(sl_iostream_uart_t *iostream_uart,
   // Clear the Interrupt Flag Register
   EUSART_INT_CLEAR(eusart_periph, _EUSART_IF_MASK);
 
+  // Enable RXFL interrupt for RX data reception
+  EUSART_INT_ENABLE(eusart_periph, EUSART_IF_RXFL);
+
+#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+  // Enable TX complete interrupt for power manager
+  EUSART_INT_ENABLE(eusart_periph, EUSART_IF_TXC);
+#endif
+
   // Finally, enable EUSART peripheral
   EUSART_ENABLE(eusart_periph);
 
@@ -558,24 +566,78 @@ sl_status_t sl_iostream_eusart_init(sl_iostream_uart_t *iostream_uart,
  *****************************************************************************/
 void sl_iostream_eusart_irq_handler(sl_iostream_uart_t *iostream_uart)
 {
-  (void) iostream_uart;
-  #if defined(SL_CATALOG_POWER_MANAGER_PRESENT) && !defined(SL_IOSTREAM_UART_FLUSH_TX_BUFFER)
   sl_iostream_eusart_context_t *eusart_context = (sl_iostream_eusart_context_t *) iostream_uart->stream.context;
+  sl_iostream_uart_context_t *uart_context = &eusart_context->context;
   EUSART_TypeDef* eusart_periph = sl_device_peripheral_eusart_get_base_addr(eusart_context->eusart);
+  char data = 0;
+  bool handled = false;
+  uint32_t iflags = eusart_periph->IF;
+
+  // Handle RX Data Available
+  if ( iflags & EUSART_IF_RXFL) {
+    EUSART_INT_CLEAR(eusart_periph, EUSART_IF_RXFL);
+
+      // Read all available bytes from FIFO
+    while ((EUSART_STATUS_GET(eusart_periph) & EUSART_STATUS_RXFL) != 0) {
+      // Check if buffer has space
+      uint8_t *next_write_ptr = uart_context->rx_write_ptr + 1;
+      
+      // Handle wrap-around
+      if (next_write_ptr >= (uart_context->rx_buffer + uart_context->rx_buffer_len)) {
+        next_write_ptr = uart_context->rx_buffer;
+      }
+      
+      // Read byte from EUSART FIFO
+      eusart_rx(eusart_context, &data);
+      
+      // Only store if buffer not full (drop byte if overflow)
+      if (next_write_ptr != uart_context->rx_read_ptr) {
+        *uart_context->rx_write_ptr = (uint8_t)data;
+         uart_context->rx_write_ptr = next_write_ptr;
+      }
+      // else: buffer full, byte is dropped
+
+    // Signal data availability via callback
+//    if (uart_context->rx_subscriber.callback != NULL) {
+//      uart_context->rx_subscriber.callback(uart_context->rx_subscriber.callback_data);
+//    }
+
+
+    // Set flag atomically to ensure ISR-main loop synchronization
+    CORE_DECLARE_IRQ_STATE;
+    CORE_ENTER_ATOMIC();
+    uart_context->rx_data_pending = true;
+    CORE_EXIT_ATOMIC();
+    }
+    
+    
+
+
+#if defined(SL_CATALOG_KERNEL_PRESENT)
+    // Notify kernel tasks waiting for RX data
+    if (uart_context->rx_data_flag != NULL) {
+      osEventFlagsSet(uart_context->rx_data_flag, RX_DATA_AVAILABLE_FLAG);
+    }
+#endif
+
+    handled = true;
+  }
+
+  #if defined(SL_CATALOG_POWER_MANAGER_PRESENT) && !defined(SL_IOSTREAM_UART_FLUSH_TX_BUFFER)
   // Handle Transmit Complete Events
-  if (eusart_periph->IF & EUSART_IF_TXC) {
+  if ( iflags & EUSART_IF_TXC) {
     EUSART_INT_CLEAR(eusart_periph, EUSART_IF_TXC);
     // Check if the Status register has the TXC flag as well since the flag will clean itself
     // if other transmissions are queued contrary to the IF flag
     if ((EUSART_STATUS_GET(eusart_periph) & _EUSART_STATUS_TXC_MASK) != 0) {
       sli_uart_txc(&eusart_context->context);
     }
-    return;
+    handled = true;
   }
   #endif
 
   // Unhandled IRQ Flag. Please check what bit is set in IF and open a bug report.
-  EFM_ASSERT(false);
+  EFM_ASSERT(handled);
 }
 
 /*******************************************************************************

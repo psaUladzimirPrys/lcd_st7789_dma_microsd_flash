@@ -673,8 +673,8 @@ sl_status_t sd_card_spi_init(mikroe_spi_handle_t spi_handle)
   spi_master_config_t spi_cfg;
 
   spi_master_configure_default(&spi_cfg);
-  spi_cfg.mode = SPI_MASTER_MODE_0;
-  spi_cfg.speed = 1000;/* @ToDo This line of code isn't clear  It was been added by UP*/
+  spi_cfg.mode = SPI_MASTER_MODE_3;
+  spi_cfg.speed = 9600000UL;  //19200000UL;//38400000UL;/* @ToDo This line of code isn't clear  It was been added by UP*/
   spi_cfg.default_write_data = 0xFF;
 
   sd_card.spi.handle = spi_handle;

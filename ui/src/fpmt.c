@@ -13,14 +13,17 @@
 
 #include "global.h"
 #include "fpmt_api.h"
-#include "device_control.h"
 #include "aukh.h"
 #include "auph.h"
 #include "fuim.h"
 #include "find_api.h"
 #include "file_storage.h"
 #include "disp.h"
-#include "event_simulation.h"
+#include "fsrv.h"
+
+#include "adc.h"
+
+#include "aevs.h"
 
 
 /*=======================================================================*/
@@ -63,7 +66,6 @@ void fpmt_Init(void)
 /*=======================================================================*/
 
 /*=======================================================================*/
-
 void fpmt_SetPowerState(fpmtPowerMode_enum requested_power_state)
 {
    if ( current_power_state != FPMT_ERROR) {
@@ -83,31 +85,58 @@ void fpmt_SetPowerState(fpmtPowerMode_enum requested_power_state)
 
 /*=======================================================================*/
 
+/*=======================================================================*/
 fpmtPowerMode_enum fpmt_GetPowerState(void)
 {
    return current_power_state;
 }
 
+/*=======================================================================*/
+
+/*=======================================================================*/
 void fpmt_HandleCommand(void)
 {
-   Byte command;
 
-   command = aukh_GetCurrentCommand();
+   Byte command = aukh_GetCurrentCommand();
+   fpmtPowerMode_enum state = fpmt_GetPowerState();
 
-   if ( command != AU_KEY_STANDBY ) {
-       fpmt_SetPowerState(FPMT_POWER_ON);
+   switch (state) {
+     case FPMT_STAND_BY:
+       if (command == AU_VIRTUAL_KEY_3) {
+           fpmt_SetPowerState(FPMT_POWER_ON);
+       }
+       break;
+
+     case FPMT_POWER_ON:
+       if ((command == AU_VIRTUAL_KEY_3)
+           ||(command == AU_KEY_STANDBY)) {
+           fpmt_SetPowerState(FPMT_STAND_BY);
+       }
+       break;
+
+     case FPMT_ERROR:
+     default:
+       break;
    }
+
 
 }
 
+/*=======================================================================*/
+
+/*=======================================================================*/
 static void SetInStandbyState(void)
 {
-
+  find_TurnOff();
   fuim_TurnOff();
   fslog_TurnOff();
   disp_TurnOff();
+  aukh_TurnOff();
 
-  sim_TurnOff();//Sumulator Debug
+  fsrv_BLE_TurnOffSignal();
+  fsrv_AllMeasurementsTurnOff();
+
+  aevs_TurnOff();//Sumulator Debug
 
   auph_SetState(AU_STANDBY_STATE);
 
@@ -115,10 +144,15 @@ static void SetInStandbyState(void)
   //GPIO_PinOutClear(LATCH_PORT, LATCH_PIN);
 }
 
+/*=======================================================================*/
+
+/*=======================================================================*/
 static Bool SetInPowerState(void)
 {
   //GPIO_PinOutSet(LATCH_PORT, LATCH_PIN);
-  sim_TurnOn(); //Sumulator Debug
+  aevs_TurnOn();
+
+  aukh_TurnOn();
 
   fuim_Init();
 
@@ -127,13 +161,18 @@ static Bool SetInPowerState(void)
   disp_TurnOn();
   fslog_TurnOn();
 
-  auph_SetState(AU_STARTUP_SPLASH_STATE);
+  fsrv_BLE_TurnOnSignal();
+
+  auph_SetState(AU_STARTUP_STATE);
 
   current_power_state = FPMT_POWER_ON;
 
   return POWER_UP_OK;
 }
 
+/*=======================================================================*/
+
+/*=======================================================================*/
 static void SetInErrorState(void)
 {
 
@@ -142,7 +181,9 @@ static void SetInErrorState(void)
    current_power_state = FPMT_ERROR;
 }
 
+/*=======================================================================*/
 
+/*=======================================================================*/
 void fpmt_Update(void)
 {
    if (current_power_state != FPMT_POWER_ON)
@@ -150,7 +191,7 @@ void fpmt_Update(void)
       /* Power state is Standby or Error.
        * All devices are shut down and the power-supply is put into
        * stand-by mode. It is now safe to put the MCU in idle mode.
-       * As soon as either the Remote Control or Local Keyboard is
+       * As soon as either the BLE or Local Keyboard is
        * activated, the MCU will resume processing from this point.
       */
       // drv_SetStandbyEnable();

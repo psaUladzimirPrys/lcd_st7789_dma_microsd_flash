@@ -27,10 +27,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#include <stdint.h>
 #include "sl_component_catalog.h"
 #include "sl_main_init.h"
-#include "app.h"
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 #include "sl_power_manager.h"
 #endif
@@ -40,8 +38,12 @@
 #include "sl_main_process_action.h"
 #endif // SL_CATALOG_KERNEL_PRESENT
 
+#include "helpers.h"
+
+
 int main(void)
 {
+  get_mcu_reset_cause();
 
   // Initialize Silicon Labs device, system, service(s) and protocol stack(s).
   // Note that if the kernel is present, the start task will be started and software

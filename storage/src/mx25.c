@@ -47,10 +47,12 @@ typedef struct {
 static mx25_info_t mx25_info = { 0 };
 static volatile uint16_t mx25_timeout_timer; // 100Hz decrement timer
 static sl_sleeptimer_timer_handle_t mx_25_timeout_timer_handle;
+
+#ifdef TEST_WORKAROUND
 /* TEST WORKAROUND: Buffer for read-back verification (added by UP) */
 /* WARNING: This verification doubles operation time and wears flash */
 uint8_t test_data_buf[MX25_PAGE_SIZE]; /* @ToDo This line of code for test  It was been added by UP*/
-
+#endif
 
 
 static void mx25_timer_callback(sl_sleeptimer_timer_handle_t *handle, void *data);
@@ -714,6 +716,7 @@ fresult_t mx25_page_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t
       return F_RES_WRITE_ERROR;
     }
 
+#ifdef TEST_WORKAROUND
     /* @ToDo Workaround to prevent reading corrupted data  It was been added by UP*/
     /* TEST WORKAROUND: Read back written data for verification (added by UP) */
     /* This compensates for potential data corruption but adds significant overhead */
@@ -724,7 +727,7 @@ fresult_t mx25_page_write(spi_master_t *spi_handle, uint32_t addr, const uint8_t
     if (0 != memcmp(buf, test_data_buf, chunk )) {/* @ToDo This line for testing purposes It was been added by UP*/
       return F_RES_WRITE_ERROR;
     }
-
+#endif
     /* Advance pointers and counters for next chunk */
     addr += chunk; /* Move to next address */
     buf  += chunk; /* Advance source buffer pointer */

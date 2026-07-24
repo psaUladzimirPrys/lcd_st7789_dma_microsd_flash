@@ -1,6 +1,7 @@
 #include "spidrv.h"
 #include "sl_spidrv_instances.h"
 #include "sl_assert.h"
+#include "app_assert.h"
 
 
 #include "sl_spidrv_mikroe_config.h"
@@ -42,5 +43,8 @@ SPIDRV_Init_t sl_spidrv_init_mikroe = {
 };
 
 void sl_spidrv_init_instances(void) {
-  SPIDRV_Init(sl_spidrv_mikroe_handle, &sl_spidrv_init_mikroe);
+  Ecode_t result = SPIDRV_Init(sl_spidrv_mikroe_handle, &sl_spidrv_init_mikroe);
+  if(result != ECODE_OK) {
+     app_assert_status(SL_STATUS_FAIL);
+  }
 }

@@ -35,7 +35,7 @@
 #include "sl_core.h"
 
 #include "dmadrv.h"
-
+//#include "em_gpio.h"
 #if defined(EMDRV_DMADRV_LDMA_S3)
 #include "sl_clock_manager.h"
 #endif
@@ -1044,7 +1044,7 @@ void LDMA_IRQHandler(void)
   bool stop;
   ChTable_t *ch;
   uint32_t pending, chnum, chmask;
-
+//  GPIO_PinOutSet(gpioPortC, 6);
   /* Get all pending and enabled interrupts. */
   pending  = LDMA->IF;
   pending &= LDMA->IEN;
@@ -1081,6 +1081,7 @@ void LDMA_IRQHandler(void)
       }
     }
   }
+//  GPIO_PinOutClear(gpioPortC, 6);
 }
 #endif /* defined( EMDRV_DMADRV_LDMA ) */
 

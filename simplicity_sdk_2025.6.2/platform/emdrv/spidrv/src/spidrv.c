@@ -34,6 +34,7 @@
 #include "sl_component_catalog.h"
 #endif
 
+#include "em_cmu.h"
 #include "em_device.h"
 #include "sl_clock_manager.h"
 #include "sl_core.h"
@@ -63,6 +64,11 @@
 #endif
 #include <string.h>
 
+
+#include "em_gpio.h"
+
+#include "sl_status.h"
+#include "app_assert.h"
 /// @cond DO_NOT_INCLUDE_WITH_DOXYGEN
 
 //****************************************************************************
@@ -99,6 +105,7 @@ typedef struct {
   uint8_t csPort;
   uint8_t csPin;
 } SPI_Pins_t;
+
 
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT) && defined(EUSART_PRESENT)
 static sl_power_manager_em_transition_event_handle_t on_power_manager_event_handle;
@@ -1177,6 +1184,8 @@ Ecode_t SPIDRV_MReceiveB(SPIDRV_Handle_t handle,
 
   WaitForTransferCompletion(handle);
 
+  app_assert(ECODE_OK == handle->transferStatus, "SPIDRV_MReceiveB");
+
   return handle->transferStatus;
 }
 
@@ -1269,6 +1278,8 @@ Ecode_t SPIDRV_MTransferB(SPIDRV_Handle_t handle,
 
   WaitForTransferCompletion(handle);
 
+  app_assert(ECODE_OK == handle->transferStatus, "SPIDRV_MTransferB");
+
   return handle->transferStatus;
 }
 
@@ -1322,6 +1333,8 @@ Ecode_t SPIDRV_MTransferSingleItemB(SPIDRV_Handle_t handle,
   StartTransferDMA(handle, &txValue, pRx, 1, BlockingComplete);
 
   WaitForTransferCompletion(handle);
+
+  app_assert(ECODE_OK == handle->transferStatus, "SPIDRV_MTransferSingleItemB");
 
   return handle->transferStatus;
 }
@@ -1403,6 +1416,8 @@ Ecode_t SPIDRV_MTransmitB(SPIDRV_Handle_t handle,
   StartTransmitDMA(handle, buffer, count, BlockingComplete);
 
   WaitForTransferCompletion(handle);
+
+  app_assert(ECODE_OK == handle->transferStatus, "SPIDRV_MTransmitB");
 
   return handle->transferStatus;
 }
@@ -1919,8 +1934,11 @@ static void BlockingComplete(SPIDRV_Handle_t handle,
 {
   (void)itemsTransferred;
 
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_ATOMIC();
   handle->transferStatus    = transferStatus;
   handle->blockingCompleted = true;
+  CORE_EXIT_ATOMIC();
 }
 
 /***************************************************************************//**
@@ -2126,6 +2144,7 @@ static void StartReceiveDMA(SPIDRV_Handle_t handle,
 {
   void *rxPort, *txPort;
   DMADRV_DataSize_t size;
+  Ecode_t retVal = ECODE_OK;
 
   handle->blockingCompleted  = false;
   handle->transferCount      = count;
@@ -2170,7 +2189,7 @@ static void StartReceiveDMA(SPIDRV_Handle_t handle,
   em1RequestAdd(handle);
 
   // Start receive DMA.
-  DMADRV_PeripheralMemory(handle->rxDMACh,
+  retVal = DMADRV_PeripheralMemory(handle->rxDMACh,
                           handle->rxDMASignal,
                           (void*)buffer,
                           rxPort,
@@ -2180,8 +2199,10 @@ static void StartReceiveDMA(SPIDRV_Handle_t handle,
                           RxDMAComplete,
                           handle);
 
+  app_assert(ECODE_OK == retVal, "StartReceiveDMA-DMADRV_PeripheralMemory");
+
   // Start transmit DMA.
-  DMADRV_MemoryPeripheral(handle->txDMACh,
+  retVal = DMADRV_MemoryPeripheral(handle->txDMACh,
                           handle->txDMASignal,
                           txPort,
                           (void *)&(handle->initData.dummyTxValue),
@@ -2190,6 +2211,8 @@ static void StartReceiveDMA(SPIDRV_Handle_t handle,
                           size,
                           NULL,
                           NULL);
+
+  app_assert(ECODE_OK == retVal, "StartReceiveDMA-DMADRV_MemoryPeripheral");
 }
 
 /***************************************************************************//**
@@ -2203,6 +2226,7 @@ static void StartTransferDMA(SPIDRV_Handle_t handle,
 {
   void *rxPort, *txPort;
   DMADRV_DataSize_t size;
+  Ecode_t retVal = ECODE_OK;
 
   handle->blockingCompleted  = false;
   handle->transferCount      = count;
@@ -2247,7 +2271,7 @@ static void StartTransferDMA(SPIDRV_Handle_t handle,
   em1RequestAdd(handle);
 
   // Start receive DMA.
-  DMADRV_PeripheralMemory(handle->rxDMACh,
+  retVal = DMADRV_PeripheralMemory(handle->rxDMACh,
                           handle->rxDMASignal,
                           rxBuffer,
                           rxPort,
@@ -2257,8 +2281,10 @@ static void StartTransferDMA(SPIDRV_Handle_t handle,
                           RxDMAComplete,
                           handle);
 
+  app_assert(ECODE_OK == retVal, "StartTransferDMA - DMADRV_PeripheralMemory");
+
   // Start transmit DMA.
-  DMADRV_MemoryPeripheral(handle->txDMACh,
+  retVal = DMADRV_MemoryPeripheral(handle->txDMACh,
                           handle->txDMASignal,
                           txPort,
                           (void*)txBuffer,
@@ -2267,6 +2293,8 @@ static void StartTransferDMA(SPIDRV_Handle_t handle,
                           size,
                           NULL,
                           NULL);
+
+  app_assert(ECODE_OK == retVal, "StartTransferDMA-DMADRV_MemoryPeripheral");
 }
 
 /***************************************************************************//**
@@ -2279,6 +2307,7 @@ static void StartTransmitDMA(SPIDRV_Handle_t handle,
 {
   void *rxPort, *txPort;
   DMADRV_DataSize_t size;
+  Ecode_t retVal = ECODE_OK;
 
   handle->blockingCompleted  = false;
   handle->transferCount      = count;
@@ -2324,7 +2353,7 @@ static void StartTransmitDMA(SPIDRV_Handle_t handle,
 
   // Receive DMA runs only to get precise numbers for SPIDRV_GetTransferStatus()
   // Start receive DMA.
-  DMADRV_PeripheralMemory(handle->rxDMACh,
+  retVal = DMADRV_PeripheralMemory(handle->rxDMACh,
                           handle->rxDMASignal,
                           &(handle->dummyRx),
                           rxPort,
@@ -2334,8 +2363,10 @@ static void StartTransmitDMA(SPIDRV_Handle_t handle,
                           RxDMAComplete,
                           handle);
 
+  app_assert(ECODE_OK == retVal, "StartTransferDMA - DMADRV_PeripheralMemory");
+
   // Start transmit DMA.
-  DMADRV_MemoryPeripheral(handle->txDMACh,
+  retVal = DMADRV_MemoryPeripheral(handle->txDMACh,
                           handle->txDMASignal,
                           txPort,
                           (void*)buffer,
@@ -2344,6 +2375,8 @@ static void StartTransmitDMA(SPIDRV_Handle_t handle,
                           size,
                           NULL,
                           NULL);
+
+  app_assert(ECODE_OK == retVal, "StartTransferDMA - DMADRV_PeripheralMemory");
 }
 
 /***************************************************************************//**
@@ -2400,14 +2433,31 @@ static Ecode_t TransferApiPrologue(SPIDRV_Handle_t handle,
   return ECODE_EMDRV_SPIDRV_OK;
 }
 
+
 /***************************************************************************//**
  * @brief Wait for transfer completion.
  ******************************************************************************/
 static void WaitForTransferCompletion(SPIDRV_Handle_t handle)
 {
+
+  volatile uint32_t counter = 5000000;
+
   if (sl_interrupt_manager_is_irq_blocked(SPI_DMA_IRQ)) {
     // Poll for completion by calling IRQ handler.
-    while (handle->blockingCompleted == false) {
+      CORE_DECLARE_IRQ_STATE;
+      CORE_ENTER_ATOMIC();
+      volatile bool complite1 = handle->blockingCompleted ;
+      CORE_EXIT_ATOMIC();
+    while ((complite1 == false)) { // && (counter > 0 )) {
+//        if (-- counter == 0)
+//        {
+//
+//           // __BKPT(0);
+//          while(1)
+//            {
+//              ;
+//            }
+//        }
 #if defined(DMA_PRESENT) && (DMA_COUNT == 1)
       DMA_IRQHandler();
 #elif defined(LDMA_PRESENT) && (LDMA_COUNT == 1)
@@ -2446,10 +2496,32 @@ static void WaitForTransferCompletion(SPIDRV_Handle_t handle)
 #else
 #error "No valid SPIDRV DMA engine defined."
 #endif
+       CORE_ENTER_ATOMIC();
+      complite1 = handle->blockingCompleted ;
+      CORE_EXIT_ATOMIC();
     }
   } else {
-    while (handle->blockingCompleted == false) ;
+      CORE_DECLARE_IRQ_STATE;
+      CORE_ENTER_ATOMIC();
+      volatile bool complite = handle->blockingCompleted ;
+      CORE_EXIT_ATOMIC();
+    while ((complite == false) && (counter > 0 )) {
+        if (-- counter == 0)
+        {
+           //__BKPT(0);
+           //while(1)
+           // {
+           //     ;
+           // }
+           LDMA_IRQHandler();
+        }
+        CORE_ENTER_ATOMIC();
+        complite = handle->blockingCompleted ;
+        CORE_EXIT_ATOMIC();
+      }
+
   }
+
 }
 
 #if defined(EMDRV_SPIDRV_INCLUDE_SLAVE)

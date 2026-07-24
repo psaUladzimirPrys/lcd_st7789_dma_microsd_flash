@@ -22,8 +22,8 @@
 #define FMNU_SUB_MAIN_MENU  1
 #define FMNU_MESSAGE_BOARD  2
 
-#define FMNU_NONE_PROMPT  IMG_MAX_IDS_STORAGE_DESC_COUNT
-#define FMNU_NONE_TITLE   FMNU_NONE_PROMPT
+#define FMNU_NONE_PROMPT  IMG_INVALID_ID
+#define FMNU_NONE_TITLE   IMG_INVALID_ID
 
 /*==========================================================================*/
 /*        G L O B A L   D A T A   D E C L A R A T I O N S                   */
@@ -44,14 +44,17 @@ typedef struct {
     /* Title rendering attributes - fuim_Attributes
        Includes foreground/background color, size, shadow, etc. */
 
-    Word PromptPos;
-    Word ValuePos;
+    Word PromptPos; // PromptPos encodes two separate values using a bitmask. 
+                    // The high byte (bits 9-15) stores the vertical position of the Prompt offset(padding top) from the top, 
+                    // and the low byte (bits 0-8) stores the horizontal position of the Prompt offset(padding left) from the left.
 
-    fuimFieldStruct const *MenuField;
-    // Pointer to an array of field structures
+    Word ValuePos;  // ValuePos encodes two separate values using a bitmask. 
+                    // The high byte (bits 9-15) stores the vertical position of the Value offset(padding top) from the top, 
+                    // and the low byte (bits 0-8) stores the horizontal position of the Value offset offset(padding left) from the left.
+
+    fuimFieldStruct const *MenuField; // Pointer to an array of fields structures
 
     Byte VisibleFields;  // Number of fields visible at once
-
     Byte FieldCount;     // Total number of fields
 
     Byte TimeOut;
@@ -61,8 +64,7 @@ typedef struct {
     fuimFieldStruct const *LeftButtonField;  /* Pointer to structure of the Button field */
 /* Pointer to structure of the Button field */
     fuimFieldStruct const *RightButtonField; /* Pointer to structure of the Button field */
-
- 
+    fuimFixedFieldStruct const *FixedBottomField; /* @field pointer to structure of the fixed bottom field */
 
 } fmnu_MenuStruct;
 
@@ -79,13 +81,11 @@ typedef struct {
 
 typedef struct {
 
-    Word FirstPos;   /* First column position used by the menu/all fields
-                        equals MenuDataPtr->HorLocation */
+    Word StartRow;   /* Start row position where the first field upper left corner is located*/
 
-    Word PromptPos;  /* Column position where the prompt starts */
-    Word ValuePos;   /* Position where the value starts */
+    Word FirstPos;   /* First column number where the upper left corner is located 
+                        position used by the menu/all fields equals MenuDataPtr->HorLocation */
     Word EndPos;     /* Position of the end-box character */
-    Word ValueWidth; /* Total width of the value */
     Word FieldWidth; /* Total width of the field */
 
     Byte FirstFieldNr;  /* Number of the first drawn field of the menu */
@@ -95,7 +95,6 @@ typedef struct {
     /* Number of the currently drawn field of the menu.
        Required for scroll rendering — shows how many positions
        have passed from the beginning */
-
     Byte StartFieldNr;  /* Number of the first field visible in the menu window */
 
 } fmnu_MenuProperty;
@@ -118,7 +117,9 @@ void fmnu_ConstructMenu(fmnu_MenuStruct *Menu);
 void fmnu_HandleCommand(void);
 void fmnu_RemoveCurrentMenu(void);
 void fmnu_Activate(menu_index_enum IndexMenu);
+Bool fmnu_IsMenuActive(menu_index_enum idx);
+void fmnu_ReDrawActiveFields(void);
 
-
+Word fmnu_GetListStringLen(const fuimFieldStruct   *field_data_ptr );
 
 #endif

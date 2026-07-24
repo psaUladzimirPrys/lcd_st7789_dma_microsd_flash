@@ -170,7 +170,7 @@ static sl_status_t flash_spi_init(flash_spi_handle_t spi_handle)
 
   sd_flash.spi.handle = spi_handle;
 
-  if (spi_master_open(&sd_flash.spi, &spi_cfg) != ACQUIRE_SUCCESS) {
+  if (spi_master_open(&sd_flash.spi, &spi_cfg) != SPI_MASTER_SUCCESS) {
     return SL_STATUS_NOT_INITIALIZED;
   }
 

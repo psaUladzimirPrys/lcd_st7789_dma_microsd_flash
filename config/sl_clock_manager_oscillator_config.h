@@ -101,7 +101,7 @@
 // <e> LFXO Settings (if Low Frequency crystal is used)
 // <i> Enable to configure LFXO
 #ifndef SL_CLOCK_MANAGER_LFXO_EN
-#define SL_CLOCK_MANAGER_LFXO_EN    1
+#define SL_CLOCK_MANAGER_LFXO_EN    0
 #endif
 
 // <o SL_CLOCK_MANAGER_LFXO_MODE> Mode
@@ -117,7 +117,7 @@
 // <o SL_CLOCK_MANAGER_LFXO_CTUNE> CTUNE <0-127>
 // <d> 63
 #ifndef SL_CLOCK_MANAGER_LFXO_CTUNE
-#define SL_CLOCK_MANAGER_LFXO_CTUNE    25
+#define SL_CLOCK_MANAGER_LFXO_CTUNE    63
 #endif
 
 // <o SL_CLOCK_MANAGER_LFXO_PRECISION> LFXO precision in PPM <0-65535>
@@ -236,7 +236,7 @@
 // <q SL_CLOCK_MANAGER_DPLL_DITHER> Enable Dither
 // <d> 0
 #ifndef SL_CLOCK_MANAGER_DPLL_DITHER
-#define SL_CLOCK_MANAGER_DPLL_DITHER    0
+#define SL_CLOCK_MANAGER_DPLL_DITHER    1
 #endif
 // </e>
 // </h>

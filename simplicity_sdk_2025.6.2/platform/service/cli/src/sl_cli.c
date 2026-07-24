@@ -264,6 +264,7 @@ __WEAK bool sli_cli_tick(sl_cli_handle_t handle)
 #endif
   } else {
     if (handle->input_len >= handle->input_size - 1) {
+      newline = sl_cli_input_char(handle, '\n');
       sli_cli_io_printf("%s%s", status_to_string(SL_STATUS_FULL), SL_CLI_EOL_STRING);
     }
   }

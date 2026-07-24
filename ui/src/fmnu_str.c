@@ -1,7 +1,7 @@
 /*=======================================================================*/
 /*        I N C L U D E S                                                */
 /*=======================================================================*/
-#include <global.h>
+#include "global.h"
 #include "fuim.h"
 #include "fmnu.h"
 #include "fmnu_str.h"
@@ -16,23 +16,26 @@
 
 const Byte fmnu_str_List[FMNU_LIST_ITEMS_LAST_STRING] =
 {
-    IMG_ID_PROPERTY_1_VARIANT9_4
-   ,IMG_ID_PROPERTY_1_VARIANT8_6
 
-   ,IMG_ID_A
+    IMG_ID_PROPERTY_1_VARIANT8_6                  //FMNU_LIST_ITEMS_GOOD 
+   ,IMG_ID_PROPERTY_1_VARIANT9_6                  //FMNU_LIST_ITEMS_BAD
+
+   ,IMG_INVALID_ID                               //FMNU_LIST_ITEMS_ERROR
 };
 
-const Byte fmnu_str_Prefix[fmnu_str_PrefixLAST_STRING]=
-{
-     IMG_ID_A
-    ,IMG_ID_A
-    ,IMG_ID_A
+const Byte fmnu_str_Prefix[fmnu_str_PrefixLAST_STRING] =
+ {
+    IMG_INVALID_ID
+    ,IMG_ID_PROPERTY_1_VARIANT20_1
+    ,IMG_ID_PROPERTY_1_VARIANT20_2
 };
 
-const Byte fmnu_str_Suffix[fmnu_str_SuffixLAST_STRING]=
+const Byte fmnu_str_Suffix[fmnu_str_SuffixLAST_STRING] =
 {
-     IMG_ID_A
-    ,IMG_ID_A
+    IMG_INVALID_ID
+    ,IMG_ID_PROPERTY_1_VARIANT20_3
+    ,IMG_ID_PROPERTY_1_VARIANT20_4
+
 };
 
 /*=======================================================================*/
